@@ -90,7 +90,7 @@ Reglas:
 
 ## Seed
 
-- `supabase/seed/seed.sql`, idempotente (`on conflict do nothing` / `do update`).
+- `supabase/seed.sql`, idempotente (`on conflict do nothing` / `do update`).
 - 2 ollas, usuarios de prueba, 30 días de jornadas, 5 recetas, un conflicto preparado.
 - Fechas relativas a un reloj fijo (`2026-11-01T08:00:00-05:00`), no a `now()`.
 - Datos sintéticos: alias (`socia-01`), montos redondos. Sin nombres, DNI ni teléfonos.

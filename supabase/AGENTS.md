@@ -6,7 +6,7 @@ Backend: Postgres, RLS, migraciones, seed y edge functions. **Acá vive la verda
 supabase/
   migrations/    YYYYMMDDHHMMSS_slug.sql — solo forward, nunca se edita una aplicada
   functions/     edge functions (Deno)
-  seed/          seed.sql idempotente + fixtures sintéticos
+  seed.sql       seed idempotente + fixtures sintéticos
   tests/         pruebas SQL de RLS y de constraints
 ```
 

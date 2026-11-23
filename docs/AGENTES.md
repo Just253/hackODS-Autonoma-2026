@@ -77,7 +77,7 @@ docs/dia-1.md                      orden exacto del día 1
 | `orquestador` | primary | solo `docs/planes/**`, `docs/adr/**` | sí (7 agentes) | caro (`#high`) |
 | `frontend` | all | `apps/web/**`, `packages/ui/**` | no | medio |
 | `backend` | all | `supabase/functions/**` | no | medio |
-| `datos-supabase` | all | `supabase/migrations/**`, `supabase/seed/**`, `supabase/tests/**` | no | medio |
+| `datos-supabase` | all | `supabase/migrations/**`, `supabase/seed.sql`, `supabase/tests/**` | no | medio |
 | `nutricion` | all | `packages/nutrition/**` | no | caro (`#high`) |
 | `docs` | subagent | `docs/**`, `**/README.md` | no | barato |
 | `qa-verificador` | subagent | solo `qa/evidencia/**` | no | caro (`#high`) |

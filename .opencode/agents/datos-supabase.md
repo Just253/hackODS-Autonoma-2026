@@ -11,7 +11,7 @@ permissions:
     resource: "supabase/migrations/**"
     effect: allow
   - action: edit
-    resource: "supabase/seed/**"
+    resource: "supabase/seed.sql"
     effect: allow
   - action: edit
     resource: "supabase/tests/**"
@@ -47,7 +47,7 @@ Prueba exigida (las tres):
 2. `pnpm exec supabase test db` con un caso que demuestra que el usuario de la olla A **no** ve la B.
 3. La restricción que agregaste rechaza el dato inválido, con el error pegado.
 
-Límites: escribís solo en `supabase/migrations/**`, `supabase/seed/**` y `supabase/tests/**`.
+Límites: escribís solo en `supabase/migrations/**`, `supabase/seed.sql` y `supabase/tests/**`.
 Prohibido: `db push` a un proyecto remoto, `link` a producción, `drop`/`truncate` fuera del seed local,
 nombres o teléfonos reales, cualquier cosa con `service_role`. No tocás la PWA ni `packages/domain`; si
 el contrato cambia, se mergea primero en `domain`.
