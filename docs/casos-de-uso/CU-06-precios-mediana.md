@@ -5,7 +5,7 @@
 fuente y la fecha, sin que un outlier mueva la conclusión.
 
 **Guion:** 2:10 (pollo +12 % contra la mediana de 7; **fixture a crear**: `supabase/seed.sql:59-65` no trae pollo)
-**Área:** `web` + `contracts` · **Estado:** pantalla en `main` (PR #31); mediana sobre fixture, serie no cargada · Issue: #10
+**Área:** `web` + `contracts` · **Estado:** pantalla en `main` con 6 insumos (#61); detalle con precio típico y variación, datos fixture · Issue: #10
 
 ## Precondiciones
 

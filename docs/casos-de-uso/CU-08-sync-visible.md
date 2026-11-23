@@ -5,7 +5,7 @@
 están pendientes y cuándo quedaron sincronizados.
 
 **Guion:** 2:50 (se enciende la red: "4 cambios pendientes → sincronizados")
-**Área:** `web` + `sync` · **Estado:** PR #45 en revisión: outbox Dexie y badge; falta que el badge se refresque al encolar · Issue: #19
+**Área:** `web` + `sync` · **Estado:** outbox Dexie de #45 en integración sobre el cascarón nuevo; falta el badge reactivo · Issue: #19
 
 ## Precondiciones
 
