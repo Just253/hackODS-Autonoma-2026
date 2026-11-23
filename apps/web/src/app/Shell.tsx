@@ -8,6 +8,8 @@ import { outboxDe } from '../data/outbox-repo.js';
 import { contarPersonas, OLLA_DEMO } from '../data/repositorio.js';
 import { SyncLocal } from '../data/sync-local.js';
 import { SECCIONES, destinoDeRuta, destinosDeBarra, destinosDeMas } from './navegacion.js';
+import { ETIQUETA_ROL, OLLAS_DEMO, ROLES, textoDivisor, useSesion } from './sesion.js';
+import type { ControlSesion } from './sesion.js';
 import { fijarPersonasGuardadas, useEstadoSync, alAvisarCambio } from './sync.js';
 import { type TamanoTexto, useTexto } from './texto.js';
 
@@ -102,6 +104,8 @@ function useOutbox(): {
 export function Shell() {
   const [abiertoMas, setAbiertoMas] = useState(false);
   const [tamano, cambiarTamano] = useTexto();
+  const controlSesion = useSesion();
+  const { sesion } = controlSesion;
   const sync = useEstadoSync();
   const { pendientes, empujar } = useOutbox();
   const ubicacion = useLocation();
@@ -179,7 +183,10 @@ export function Shell() {
           <span className="text-[0.6875rem] font-bold uppercase tracking-[0.12em] text-texto-suave">
             Olla común
           </span>
-          <span className="text-lg font-bold leading-tight">San Juan</span>
+          <span className="text-lg font-bold leading-tight">{sesion.nombreOlla}</span>
+          <span className="text-[0.6875rem] font-semibold text-texto-suave">
+            {ETIQUETA_ROL[sesion.rol]}
+          </span>
         </div>
 
         <nav aria-label="Secciones principales" className="flex-1 overflow-y-auto px-2 py-4">
@@ -215,14 +222,26 @@ export function Shell() {
 
         <div className="border-t border-borde px-3 py-3">
           <ControlTexto tamano={tamano} cambiar={cambiarTamano} />
+          <div className="mt-3 border-t border-borde pt-3">
+            <SelectorSesion control={controlSesion} />
+          </div>
         </div>
       </aside>
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <header className="z-20 flex min-h-[var(--alto-header)] shrink-0 items-center justify-between gap-3 border-b border-borde bg-superficie px-4 pt-[env(safe-area-inset-top)] lg:px-8 lg:pt-0">
           <div className="flex min-w-0 flex-col lg:flex-row lg:items-baseline lg:gap-2">
-            <p className="text-xs font-semibold tracking-wide text-texto-suave lg:text-sm">
-              Olla San Juan
+            {/*
+              Divisor de contexto (FE-01, DEC-20261123-1358-8feaf9): "Olla <nombre> · <Rol>".
+              Sale de la sesion, no de una constante. Se lee como TEXTO, no solo
+              por color: en una tablet al sol el color no se distingue y el lector
+              de pantalla necesita la palabra.
+            */}
+            <p
+              className="text-xs font-semibold tracking-wide text-texto-suave lg:text-sm"
+              data-divisor-contexto=""
+            >
+              {textoDivisor(sesion)}
             </p>
             <span aria-hidden="true" className="hidden text-texto-suave lg:inline">
               /
@@ -315,6 +334,10 @@ export function Shell() {
             >
               Cerrar
             </button>
+          </div>
+
+          <div className="mx-auto w-full max-w-[var(--ancho-lectura)] border-t border-borde py-3 lg:hidden">
+            <SelectorSesion control={controlSesion} />
           </div>
         </nav>
       ) : null}
@@ -431,6 +454,86 @@ const TAMANOS: readonly { valor: TamanoTexto; texto: string; nota: string }[] = 
   { valor: 'grande', texto: 'Grande', nota: 'Letra grande' },
   { valor: 'enorme', texto: 'Enorme', nota: 'Letra enorme' },
 ] as const;
+
+/**
+ * Selector de contexto (FE-01): olla y rol.
+ *
+ * Solo en modo demo. En `cloud` la sesion sale del JWT (TODO #62): el control
+ * no se ofrece y se dice el motivo, porque un boton apagado sin explicacion
+ * deja a la persona sin saber por que no puede cambiar de rol. La UI nunca es
+ * la barrera de autorizacion (DEC-20261123-1358-8feaf9): el servidor vuelve a decidir
+ * con `olla_members`.
+ */
+function SelectorSesion({ control }: { readonly control: ControlSesion }) {
+  const { sesion, cambiarRol, cambiarOlla } = control;
+
+  if (sesion.modo === 'cloud') {
+    return (
+      <div className="flex flex-col gap-1">
+        <span className="text-xs font-semibold text-texto-suave">Contexto</span>
+        <p className="text-xs text-texto-suave">
+          En modo nube, el rol y la olla salen de tu cuenta. No se cambian aquí.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <fieldset className="flex min-w-0 flex-col gap-1">
+        <legend className="text-xs font-semibold text-texto-suave">Olla</legend>
+        <div className="flex gap-1">
+          {OLLAS_DEMO.map((olla) => {
+            const elegida = olla.ollaId === sesion.ollaId;
+            return (
+              <button
+                key={olla.ollaId}
+                type="button"
+                aria-pressed={elegida}
+                aria-label={`Olla ${olla.nombreOlla}`}
+                onClick={() => cambiarOlla(olla.ollaId)}
+                className={[
+                  'min-h-11 min-w-0 flex-1 rounded-oc border px-2 text-xs font-semibold',
+                  elegida
+                    ? 'border-primario bg-primario text-primario-texto'
+                    : 'border-borde-fuerte bg-superficie text-texto',
+                ].join(' ')}
+              >
+                {olla.nombreOlla}
+              </button>
+            );
+          })}
+        </div>
+      </fieldset>
+
+      <fieldset className="flex min-w-0 flex-col gap-1">
+        <legend className="text-xs font-semibold text-texto-suave">Rol (demo)</legend>
+        <div className="grid grid-cols-2 gap-1">
+          {ROLES.map((rol) => {
+            const elegido = rol === sesion.rol;
+            return (
+              <button
+                key={rol}
+                type="button"
+                aria-pressed={elegido}
+                onClick={() => cambiarRol(rol)}
+                className={[
+                  'min-h-11 rounded-oc border px-2 text-xs font-semibold',
+                  elegido
+                    ? 'border-primario bg-primario text-primario-texto'
+                    : 'border-borde-fuerte bg-superficie text-texto',
+                ].join(' ')}
+              >
+                {ETIQUETA_ROL[rol]}
+              </button>
+            );
+          })}
+        </div>
+      </fieldset>
+    </div>
+  );
+}
+
 
 /**
  * Tamano de letra: la preferencia que de verdad se usa en la olla.
