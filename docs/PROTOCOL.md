@@ -327,7 +327,10 @@ Rationale: el subagente tiene el contexto del código pero no el del equipo. Las
 | B | `api` | `supabase/` | `web`, `contracts` |
 | C | `contracts` + `infra` | `packages/{contracts,domain,nutrition,sync}/`, `docs/`, `scripts/`, `.github/` | `web`, `api` |
 
-Ajustá las rutas a tu repo; lo que **no** se negocia es: **una carpeta tiene un solo dueño**. El dueño no es el único que puede escribir: es el único que puede aprobar y el que decide ante conflicto.
+Ajustá las rutas a tu repo; lo que **no** se negocia es: **una carpeta tiene un solo dueño**. El dueño
+no es el único que puede escribir: es el único que puede aprobar y el que decide ante conflicto.
+`packages/contracts/` es la excepción: lo mantiene C, pero todo PR ahí necesita **2 aprobaciones**
+(una de A, una de B).
 
 ### 5.2 `contracts/` (área compartida) = contrato primero
 
