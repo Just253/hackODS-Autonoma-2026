@@ -12,6 +12,7 @@ import { SolicitudPantalla } from '../features/solicitud/SolicitudPantalla.js';
 import { AHORA_DEMO, NUEVA_SOLICITUD_DEMO } from '../features/solicitud/fixtures.js';
 import { ReportePantalla } from '../features/reporte/ReportePantalla.js';
 import { MOVIMIENTOS_ENTRE_OLLAS, PERIODO_DEMO } from '../features/reporte/fixtures.js';
+import { RecetasPage } from '../features/recetas/RecetasPage.js';
 
 /**
  * Una ruta por feature, con lazy() cuando exista.
@@ -45,6 +46,8 @@ export const rutas = [
       // Track C · entre ollas y folio
       { path: 'solicitud', element: <SolicitudPantalla nueva={NUEVA_SOLICITUD_DEMO} ahora={AHORA_DEMO} /> },
       { path: 'reporte', element: <ReportePantalla movimientos={MOVIMIENTOS_ENTRE_OLLAS} periodo={PERIODO_DEMO} /> },
+      // Recetario: producir descuenta despensa (#72). Al final para minimizar conflictos.
+      { path: 'recetas', element: <RecetasPage /> },
     ],
   },
 ];
