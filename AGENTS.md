@@ -89,11 +89,14 @@ pnpm build                       # build de todos los paquetes + app
 pnpm test                        # Vitest, todos los paquetes (turbo run test)
 pnpm typecheck                   # TypeScript en todos los paquetes
 pnpm verificar                   # la puerta completa (lo mismo que CI); --rapido saltea el build
+                                 # si el diff no trae código (sólo docs), typecheck/tests/build se
+                                 # omiten solos: el check `ci` corre igual y reporta verde
 pnpm docs:chequear               # ¿el diff trae la doc que le corresponde? (PROCESO-DOCS.md §2)
 pnpm hooks:install               # una vez por máquina: activa .githooks (pre-commit y pre-push)
 pnpm --filter @hackods/nutrition test   # un paquete concreto
-pnpm db:start                    # Postgres + API local (Docker)
+pnpm db:start                    # Postgres + API local (Docker o Podman)
 pnpm db:reset                    # migraciones + seed local. SOLO local
+pnpm db:test                     # suite pgTAP; copia el seed junto a los tests y lo borra al final
 pnpm db:seed                     # seed contra SUPABASE_DB_URL (requiere psql)
 pnpm db:types                    # tipos desde la base local
 pnpm exec supabase db diff -f <slug>    # nueva migración
@@ -107,6 +110,11 @@ Windows: los scripts de coordinación corren con
 Linux/macOS/Git Bash: `bash scripts/preflight.sh ...`.
 
 Nunca `npm install`, `yarn`, `bun install` ni `pnpm add` en un paquete que no es el tuyo.
+
+**Worktrees de agentes:** van en `.worktrees/<slug>` **dentro** del repo, no al lado. Los chequeos
+(`verificar`, `chequear-ids`) omiten `.worktrees` justamente para no escanear una copia del repo como
+si fuera fuente. Ojo: `.git/info/exclude` es local y no viene versionado, así que cada clon agrega la
+línea una vez (`pnpm hooks:install` lo hace) o `git status` va a mostrar el worktree como sin trackear.
 
 ---
 
@@ -150,7 +158,8 @@ Resumen operativo; la gramática completa está en `docs/PROTOCOL.md` §3 y §6.
 5. Draft PR en el primer push (aunque sea un commit vacío). Un issue = un PR.
 6. Claim sin push ni heartbeat en 24 h = huérfano: se reclama con `reclaim/v1` y aviso de 12 h.
 7. Al cerrar: `release/v1 ... reason:done pr:<n>` y limpiar worktree.
-8. Ramas: `feat|fix|chore/<area>-<issue#>-<slug>`, vida < 48 h, rebase sobre `main`, squash al
+8. Ramas: `feat|fix|chore/<area>-<issue#>-<slug>`, vida < 48 h, **merge de `main` en la rama**
+   (nunca rebase ni force-push: hay tres máquinas y un force rompe el clon de otro), squash al
    mergear.
 
 Labels canónicos (`docs/PROTOCOL.md` §3.7 + `.github/labels.yml`): `status:*` (`triage`, `ready`,
@@ -219,7 +228,8 @@ Un PR está listo cuando **todo** esto está en `## Prueba` (plantilla en `docs/
 5. Criterios de aceptación del issue, uno por uno, con evidencia.
 6. Sin secretos: `git diff origin/main...HEAD | rg -i '(api[_-]?key|secret|token|passw|BEGIN .*PRIVATE)'`
    sin resultados.
-7. Rebase sobre `origin/main`, sin merge commits.
+7. Rama al día con `origin/main` con `git merge origin/main` (no rebase, no force-push). Los merge
+   commits de la rama desaparecen al hacer squash.
 8. Aprobación de otra cuenta con `review/v1 ... sha:<sha> verdict:approve`. Mientras exista una
    sola cuenta (§8.1), se registra la ausencia de revisor en el PR y no se finge una firma.
 9. `pnpm ids:chequear` verde: toda cita `DEC-`/`PRB-`/`SPK-` existe en `docs/ids/REGISTRO.md` y todo

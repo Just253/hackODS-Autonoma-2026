@@ -192,12 +192,18 @@ export const personaSchema = z
     anioNacimiento: z.number().int().min(1900).max(2100),
     sexo: sexoSchema,
     categoria: categoriaSchema,
-    anemia: anemiaSchema,
-    pesoKg: z.number().positive().nullable(),
-    tallaCm: z.number().positive().nullable(),
+    /**
+     * Datos de salud: el servidor ya no los entrega por SELECT directo (#4,
+     * docs/adr/0005-rls-salud.md). Solo llegan por `v_personas_salud` o, en
+     * `personas`, a nutricionista/admin; por eso son opcionales en el contrato.
+     */
+    anemia: anemiaSchema.optional(),
+    pesoKg: z.number().positive().nullable().optional(),
+    tallaCm: z.number().positive().nullable().optional(),
     /** Seguimiento opt-in con consentimiento; negarse no quita la racion. */
     consentimientoSeguimiento: z.boolean(),
-    notas: z.string().nullable(),
+    /** Texto libre del padrón: tampoco se concede por SELECT directo (#4). */
+    notas: z.string().nullable().optional(),
   })
   .extend(syncMetaSchema.shape);
 export type Persona = z.infer<typeof personaSchema>;
