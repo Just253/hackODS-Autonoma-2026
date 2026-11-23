@@ -256,7 +256,9 @@ export function InventarioPantalla({
   const [propuesta, setPropuesta] = useState<PropuestaEntrada | null>(null);
   const [guardando, setGuardando] = useState(false);
   const [dictado, setDictado] = useState<'inactivo' | 'transcribiendo' | 'error'>('inactivo');
-  const entradaAudio = useRef<HTMLInputElement>(null);
+  const [grabando, setGrabando] = useState(false);
+  const grabador = useRef<MediaRecorder | null>(null);
+  const trozosAudio = useRef<Blob[]>([]);
   const entradaFoto = useRef<HTMLInputElement>(null);
   const [capturaFoto, setCapturaFoto] = useState<'inactivo' | 'subiendo' | 'error'>('inactivo');
 
@@ -445,11 +447,7 @@ export function InventarioPantalla({
    * agrega es el `textoCrudo` de cada ítem (lo que la Edge entendió), no una
    * cifra inventada. Si falla, se avisa y el cuadro queda como estaba.
    */
-  const capturar = (tipo: 'audio' | 'boleta') => (evento: ChangeEvent<HTMLInputElement>): void => {
-    const archivo = evento.target.files?.[0];
-    evento.target.value = '';
-    if (archivo === undefined) return;
-
+  const enviarCaptura = async (archivo: File, tipo: 'audio' | 'boleta'): Promise<void> => {
     const marcarEnvio = (): void => {
       if (tipo === 'audio') setDictado('transcribiendo');
       else setCapturaFoto('subiendo');
@@ -461,7 +459,7 @@ export function InventarioPantalla({
     marcarEnvio();
     setError(null);
 
-    const enviar = async (): Promise<void> => {
+    try {
       const respuesta = await capturarConIngest(archivo, tipo);
       if (respuesta.datos === null) {
         throw new Error(respuesta.error ?? 'sin respuesta de la ingesta');
@@ -476,11 +474,65 @@ export function InventarioPantalla({
       }
       setTexto((previo) => (previo === '' ? textoNuevo : `${previo}, ${textoNuevo}`));
       marcarFin('inactivo');
-    };
-
-    enviar().catch((fallo: unknown) => {
+    } catch (fallo) {
       marcarFin('error');
       setError(fallo instanceof Error ? fallo.message : 'no se pudo leer la captura');
+    }
+  };
+
+  /** Foto de boleta: el input de cámara sigue siendo un archivo. */
+  const capturarFotoArchivo = (evento: ChangeEvent<HTMLInputElement>): void => {
+    const archivo = evento.target.files?.[0];
+    evento.target.value = '';
+    if (archivo !== undefined) void enviarCaptura(archivo, 'boleta');
+  };
+
+  /**
+   * Dictado con el micrófono del equipo. Graba con `MediaRecorder`, y al tocar
+   * «Detener» manda el audio a la Edge. Si el navegador no graba o el permiso
+   * se niega, lo dice y deja el cuadro de texto: nunca pide "subir un audio".
+   */
+  const alternarGrabacion = (): void => {
+    if (!haySesion) return;
+
+    if (grabando) {
+      grabador.current?.stop();
+      return;
+    }
+
+    if (
+      typeof navigator === 'undefined' ||
+      navigator.mediaDevices?.getUserMedia === undefined ||
+      typeof MediaRecorder === 'undefined'
+    ) {
+      setError('Este navegador no permite grabar audio. Escribí o pegá el texto a mano.');
+      return;
+    }
+
+    const empezar = async (): Promise<void> => {
+      const flujo = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const rec = new MediaRecorder(flujo);
+      trozosAudio.current = [];
+      rec.ondataavailable = (evento) => {
+        if (evento.data.size > 0) trozosAudio.current.push(evento.data);
+      };
+      rec.onstop = () => {
+        for (const pista of flujo.getTracks()) pista.stop();
+        setGrabando(false);
+        const tipo = rec.mimeType === '' ? 'audio/webm' : rec.mimeType;
+        const blob = new Blob(trozosAudio.current, { type: tipo });
+        const archivo = new File([blob], 'dictado.webm', { type: tipo });
+        void enviarCaptura(archivo, 'audio');
+      };
+      grabador.current = rec;
+      rec.start();
+      setGrabando(true);
+      setError(null);
+    };
+
+    empezar().catch(() => {
+      setGrabando(false);
+      setError('No se pudo abrir el micrófono. Revisá el permiso o escribí el texto a mano.');
     });
   };
 
@@ -806,11 +858,15 @@ export function InventarioPantalla({
               </BotonGrande>
 
               <BotonGrande
-                variante="secundario"
+                variante={grabando ? 'primario' : 'secundario'}
                 disabled={!haySesion || dictado === 'transcribiendo'}
-                onClick={() => entradaAudio.current?.click()}
+                onClick={alternarGrabacion}
               >
-                {dictado === 'transcribiendo' ? 'Transcribiendo…' : 'Dictar'}
+                {dictado === 'transcribiendo'
+                  ? 'Transcribiendo…'
+                  : grabando
+                    ? 'Detener y transcribir'
+                    : 'Dictar'}
               </BotonGrande>
               <BotonGrande
                 variante="secundario"
@@ -820,23 +876,21 @@ export function InventarioPantalla({
                 {capturaFoto === 'subiendo' ? 'Leyendo foto…' : 'Subir foto'}
               </BotonGrande>
               <input
-                ref={entradaAudio}
-                type="file"
-                accept="audio/*"
-                aria-label="Archivo de audio para dictar"
-                className="hidden"
-                onChange={capturar('audio')}
-              />
-              <input
                 ref={entradaFoto}
                 type="file"
                 accept="image/png,image/jpeg"
                 capture="environment"
                 aria-label="Foto de la boleta"
                 className="hidden"
-                onChange={capturar('boleta')}
+                onChange={capturarFotoArchivo}
               />
             </div>
+
+            {grabando ? (
+              <p className="text-sm font-semibold text-primario" role="status">
+                Grabando… hablá y tocá «Detener y transcribir».
+              </p>
+            ) : null}
 
             {!haySesion ? (
               <p className="text-sm text-texto-suave" data-estado="dictado-no-configurado">
