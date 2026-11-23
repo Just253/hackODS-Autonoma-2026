@@ -4,14 +4,14 @@
 > Fuente: los 3 PDF de `datos_ollas_comunes.zip` (65 páginas) y las respuestas del usuario del 2026-11-23.
 > Si hay conflicto, manda este archivo. Los otros quedan como insumo e historia.
 
-## D1 · Backend: Supabase, con el contrato `/sync/push` de tu documento
+## D1 · Backend: Supabase, con el contrato `/sync/push` de tu documento — `DEC-2026-0001`
 
 - Postgres + Auth + RLS + Storage en Supabase. **Sin VPS y sin `apps/api`.**
 - El endpoint que pide tu documento existe igual: `POST /sync/push`, implementado como **Edge Function** (o RPC) que valida lote ≤100 eventos, `idempotency_key = event_uuid`, orden `(lamport, device_id)` y devuelve aceptados/rechazados.
 - Hosting del front: Cloudflare Pages. Ese es el híbrido: capas distintas, una sola fuente de verdad.
 - `GET /sync/pull?since=<lamport|timestamp>` como función simétrica.
 
-## D2 · Identidad: el servidor nunca sabe quién es la persona
+## D2 · Identidad: el servidor nunca sabe quién es la persona — `DEC-2026-0002`
 
 - En la nube: solo `person(P-XXXX)`, sin nombre, sin DNI, sin teléfono, sin dirección.
 - `nombreLocal` y `alias` existen **solo en el dispositivo** (Dexie) y **nunca** se sincronizan. El vínculo P-XXXX ↔ persona vive en el papel del comedor.
@@ -19,7 +19,7 @@
 - Seguimiento **opt-in** con consentimiento de dos casillas; negarse no le quita el plato.
 - Consecuencia para el código: el esquema SQL no tiene columna de nombre. El esquema local sí, marcado `localOnly: true`.
 
-## D3 · Nutrición: menú semanal firmado + porción por grupo
+## D3 · Nutrición: menú semanal firmado + porción por grupo — `DEC-2026-0003`
 
 - La unidad de verdad es el **menú semanal firmado por nutricionista**: 2 perfiles × 2 opciones, 7 días, almuerzo y cena.
 - Estados: `borrador → en_revision → aprobado → publicado → retirado`. Sello obligatorio: nombre, colegiatura CNP, fecha, versión y **hash SHA-256** del contenido.
@@ -28,7 +28,7 @@
 - `packages/nutrition` expone: `validarMenu`, `porcionParaGrupo`, `sustituirInsumo`, `explicar`. Se retira el cálculo de una ración por persona.
 - El badge de origen sigue: `sugerencia_sistema | validado_nutricionista | ajustado_organizadora | sin_revisar`.
 
-## D4 · Modelo de datos (correcciones)
+## D4 · Modelo de datos (correcciones) — `DEC-2026-0004`
 
 - `Olla.tipo ∈ {comun, comedor_pca}`. No son lo mismo: cambia subsidio, cuota y defaults (olla 99 pers./317 kg-mes; comedor 78/320).
 - **Precio como serie**: `insumo, canal (mayorista|minorista), unidad, precio, fecha, fuente, url`. Sin serie no hay "menú al costo" ni brecha que mostrar.
@@ -38,26 +38,26 @@
 - `evento_sync` con `event_uuid`, `idempotency_key`, `lamport`, `device_id`, `entidad`, `payload`, `estado`.
 - Nomenclatura: `olla_id` en todo el código; `comedor` es un `tipo`, no otra entidad.
 
-## D5 · Sincronización
+## D5 · Sincronización — `DEC-2026-0005`
 
 - UUIDv7 generado en el cliente; **reloj de Lamport** (nunca `Date.now()` para ordenar); desempate por `device_id`.
 - Outbox persistente; lotes ≤100; reintento con backoff; `idempotency_key` evita duplicados.
 - Cifrado local AES-GCM derivado del PIN de la olla; sin PIN no se descifra en el dispositivo.
 - Conflicto: gana el cierre válido más antiguo y el otro queda como conflicto visible; movimientos y raciones nunca se sobrescriben.
 
-## D6 · Alcance y demo
+## D6 · Alcance y demo — `DEC-2026-0006`
 
 - Demo: **3 minutos** (guion del documento) con un anexo de 2 minutos por si hay preguntas.
 - **75 °C** es requisito de inocuidad del usuario: entra como checklist de cocción en la ficha del servicio, no como cálculo.
 - Fuera de alcance de esta base: OCR de manuscrito, app para la familia, facturación, municipalidad (rol con k ≥ 10 queda como lectura agregada, no como módulo).
 
-## D7 · Privacidad
+## D7 · Privacidad — `DEC-2026-0007`
 
 - Repo público: cero datos reales. Ni los XLSX de Cañete, ni el padrón MIDIS nominal, ni el padrón de VES.
 - Los seeds clínicos (`peso`, `talla`, `hemoglobina`) son ficticios y marcados; Ley 29733.
 - `2p9r37h.pdf` ("Puente", salud mental) es otro proyecto: **no entra** en este alcance.
 
-## D8 · Comprobantes, clasificación de productos y presupuesto
+## D8 · Comprobantes, clasificación de productos y presupuesto — `DEC-2026-0008`
 
 Requisito nuevo del usuario: cada olla **sube sus facturas/boletas**, el sistema **clasifica cada producto**, sigue **cuánto sube y baja** y calcula **el presupuesto de esa olla en ese momento**. Además, un reporte comparable entre ollas.
 
@@ -76,7 +76,7 @@ Requisito nuevo del usuario: cada olla **sube sus facturas/boletas**, el sistema
 - `docs/contracts/comprobantes.md` — comprobantes, unidades, IGV, presupuesto y series de precio.
 - `docs/contracts/clasificacion.md` — catálogo, embeddings, umbrales y revisión humana.
 
-## D9 · Captura sin boleta (texto o voz) y dos backends
+## D9 · Captura sin boleta (texto o voz) y dos backends — `DEC-2026-0009`
 
 Requisito nuevo: la persona puede **escribir o dictar** cuánto gastó en cada cosa, porque muchas compras son en efectivo y sin boleta. Esa captura alimenta la misma clasificación y el mismo presupuesto.
 

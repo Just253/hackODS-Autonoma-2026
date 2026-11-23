@@ -7,6 +7,10 @@ docs/
   DECISIONES.md        decisiones que mandan (D1–D9). Único nivel que decide
   PROTOCOL.md          claims, labels, ramas, gate. Único dueño de esa materia
   FUENTES.md           tabla tema → archivo canónico → commit o archivo:línea
+  ids/REGISTRO.md      el único que emite identificadores (DEC/PRB/SPK)
+  problemas/           un archivo por problema, por categoría
+  decisiones/          decisiones nuevas (DEC), una por archivo
+  spikes/              investigaciones con fecha límite (SPK)
   adr/                 por qué de una implementación, una por archivo
   contracts/           contratos implementables: sync, comprobantes, clasificacion, captura-voz
   historical/          insumos retirados (nutricion-pre-D3, experimentos). No se usan para decidir

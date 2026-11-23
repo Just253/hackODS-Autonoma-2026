@@ -15,6 +15,10 @@ para todo agente antes de tocar nada.
 5. El `AGENTS.md` del paquete que vas a tocar.
 6. La skill del dominio si la tarea lo pide (`/skills` o el `description` de cada una).
 
+**Antes de citar algo, buscá su ID.** Toda decisión, problema o spike tiene un identificador en
+`docs/ids/REGISTRO.md`: `DEC-…` decide, `PRB-…` analiza, `SPK-…` investiga, `#N` es trabajo. Un ID que
+no está en el registro no existe; `pnpm ids:chequear` lo verifica en CI.
+
 Si algo de este archivo contradice a `docs/PROTOCOL.md`, gana `PROTOCOL.md` y se corrige acá en el
 mismo PR.
 
@@ -55,7 +59,7 @@ packages/nutrition/  Menú firmado, porción por grupo y validación (sin cifras
 packages/sync/       Outbox, ids, versiones, conflictos. area:contracts.
 packages/ui/         Componentes y tokens. area:web.
 packages/printing/   Folio y plantilla imprimible. area:web.
-docs/                DECISIONES.md, PROTOCOL.md, adr/, contracts/, historical/. area:infra.
+docs/                DECISIONES.md, PROTOCOL.md, adr/, contracts/, ids/, problemas/, historical/. area:infra.
 scripts/             preflight, labels, seed. area:infra.
 qa/evidencia/        Salidas de verificación (se commitea poco; ver §7).
 ```
@@ -198,6 +202,8 @@ Un PR está listo cuando **todo** esto está en `## Prueba` (plantilla en `docs/
 7. Rebase sobre `origin/main`, sin merge commits.
 8. Aprobación de otra cuenta con `review/v1 ... sha:<sha> verdict:approve`. Mientras exista una
    sola cuenta (§8.1), se registra la ausencia de revisor en el PR y no se finge una firma.
+9. `pnpm ids:chequear` verde: toda cita `DEC-`/`PRB-`/`SPK-` existe en `docs/ids/REGISTRO.md` y todo
+   archivo de problema tiene su fila.
 
 Si falta un ítem, no se pide review. El revisor **checkoutea y corre**; no lee el resumen.
 
@@ -215,6 +221,7 @@ Si falta un ítem, no se pide review. El revisor **checkoutea y corre**; no lee 
 | ¿Empaquetado Android? | `.opencode/skills/capacitor-android/` |
 | ¿Cómo se arman fixtures y tests? | `.opencode/skills/testing-fixtures/` |
 | ¿Cómo delego y qué le exijo al subagente? | `docs/plantilla-delegacion.md`, `docs/delegacion.md` |
+| ¿Cómo cito una decisión, abro un problema o un spike? | `docs/ids/REGISTRO.md` + `.opencode/commands/problema.md` |
 
 **Fuente de verdad:** el repo (`main` mergeado) para el código y las decisiones; los issues y PRs
 para el trabajo; el chat para nada.
