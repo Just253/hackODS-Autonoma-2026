@@ -43,6 +43,13 @@ function serviceWorkerPwa(): Plugin {
 
 export default defineConfig({
   plugins: [react(), tailwindcss(), serviceWorkerPwa()],
+  /**
+   * `.env` vive en la RAIZ del monorepo, no en `apps/web`: es el mismo archivo
+   * que usan `scripts/` y `supabase/` para el backend, y asi local y remoto
+   * cambian con una sola edicion. Vite solo publica las variables `VITE_*`;
+   * el resto del `.env` (service_role, DB URL) no llega al bundle.
+   */
+  envDir: desdeAqui('../..'),
   resolve: {
     alias: [
       // Exactos a proposito: `@hackods/ui/tokens.css` debe resolver por package exports.

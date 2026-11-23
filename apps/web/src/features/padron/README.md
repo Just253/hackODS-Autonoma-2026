@@ -1,24 +1,19 @@
 # Padrón
 
-**Qué hace:** la organizadora de la olla da de alta a una persona sin identidad. Lo único que se
-muestra y viaja es un código `P-XXXX`; la pantalla nunca pide ni imprime nombres, documentos ni
-teléfonos (DEC-2026-0002). Arriba va la cifra de personas registradas en este dispositivo y debajo
-el formulario de alta, con el botón a todo el ancho. En escritorio se parte en dos columnas.
+**Qué hace:** muestra la lista real de personas de la olla, una por fila, con su código `P-XXXX` y
+su grupo. La cifra de arriba sale de esa MISMA lista (no de una consulta aparte que pueda decir otro
+número). No pide ni imprime nombres, documentos, teléfonos ni columnas de salud (DEC-2026-0002).
 
-**Qué lee:** `contarPersonas()` de `src/data/repositorio.ts`, que cuenta las filas de la tabla
-`personas` de `hackods-<ollaId>`. El rango válido del año de nacimiento sale de
-`personaSchema.shape.anioNacimiento` (`@hackods/contracts`), no de una copia en la pantalla.
+**Qué lee:** `listarPersonas(ollaId)` de `src/data/remoto.ts`, que consulta `personas` en Supabase
+con `select('codigo_p, categoria, olla_id')` filtrado por la olla de la sesión. La olla sale de
+`olla_members` (`app/sesion.ts`, modo `cloud`), nunca de un input. Cada payload/fila se valida con lo
+que el contrato exija, y un grupo desconocido se muestra como `sin dato`.
 
-**Qué escribe:** `altaPersona(datos, reloj, ollaId)`, una transacción Dexie sobre `personas`,
-`identidadLocal`, `meta` y `outbox`. La persona va validada con `personaSchema` y nace con
-`anemia: 'sin_dato'` y `pesoKg`/`tallaCm` en `null`. `nombreLocal` y `alias` (opcionales) van solo
-a `identidadLocal` con `localOnly: true`: no entran al evento y no salen al servidor. El alta deja
-un evento `upsert` en el outbox de `@hackods/sync`, en la misma transacción, y después llama a
-`avisarCambioLocal()`. Todo se resuelve sin red: la pantalla avisa "guardado en esta tablet".
+**Estados:** sin sesión o sin `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` → "Conectá Supabase para
+ver el padrón" (sin fixtures); cargando; olla sin personas → "Padrón vacío"; error de red/RLS →
+`EstadoPantalla error` con **Reintentar**, sin caer a datos de ejemplo.
 
-**Qué NO hace:** no calcula el grupo nutricional ni la ración —eso es de `packages/nutrition`
-(DEC-2026-0003)—, no compara duplicados de persona real (no hay identidad que comparar) y no
-empuja nada a Supabase desde acá: el envío del pendiente es de `@hackods/sync`.
-
-**Estados:** leyendo el padrón · padrón vacío · alta guardada (`P-XXXX`) · año fuera de rango
-(error) · fallo al leer o guardar en el dispositivo (error). Ninguno bloquea por red.
+**Qué NO hace:** no escribe. El alta local con outbox sigue viviendo en `data/repositorio.ts`
+(`altaPersona`) y su envío es de `@hackods/sync`; esta pantalla es de lectura remota. No calcula el
+grupo nutricional ni la ración (`packages/nutrition`, DEC-2026-0003) y no muestra salud: esa frontera
+está en la RLS y en el `select`, no en un `if` de la vista.

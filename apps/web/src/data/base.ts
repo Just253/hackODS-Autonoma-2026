@@ -1,5 +1,5 @@
 import Dexie, { type EntityTable, type Table } from 'dexie';
-import type { IdentidadLocal, Insumo, Movimiento, Persona, Racion } from '@hackods/contracts';
+import type { IdentidadLocal, Insumo, Movimiento, Persona, Precio, Racion } from '@hackods/contracts';
 import type { RegistroConsentimiento, ServicioDeReceta } from '@hackods/domain';
 import type { EventoSaliente } from '@hackods/sync';
 
@@ -35,7 +35,7 @@ import type { EventoSaliente } from '@hackods/sync';
  * pre-release y esas filas ni siquiera pueden formar la clave compuesta, porque
  * `null` no es un componente valido en IndexedDB.
  */
-export const VERSION_ESQUEMA = 6;
+export const VERSION_ESQUEMA = 8;
 
 export interface RegistroLamport {
   readonly clave: 'lamport';
@@ -118,6 +118,11 @@ export type BaseOlla = Dexie & {
   /** Vencimiento por lote; local-only, no viaja al servidor. */
   lotes: EntityTable<Lote, 'loteId'>;
   /**
+   * Serie de precios que llega por `sync-pull` (entidad `precios`). Una fila
+   * por observacion, inmutable; el canal separa las series (D8).
+   */
+  precios: EntityTable<Precio, 'id'>;
+  /**
    * Servicio cocinado con receta, comensales por grupo, cocinero, 75 °C y
    * costo. Todavia no es el contrato `Servicio` (no tiene esos campos): vive
    * local y marcado como tal hasta que #62/#65 lo lleven a SQL.
@@ -193,6 +198,13 @@ export function baseDeOlla(ollaId: string): BaseOlla {
   base.version(7).stores({
     insumos: 'id, denominacion',
     lotes: 'loteId, insumoId, fechaVencimiento, estado',
+  });
+
+  // v8: serie de precios que baja por `sync-pull`. Aditiva: una base v7 arranca
+  // sin precios, que es la verdad (todavia no se bajo ninguno). `[insumoId+canal]`
+  // es la lectura de la pantalla, separada por canal como pide D8.
+  base.version(8).stores({
+    precios: 'id, insumoId, canal, fecha, [insumoId+canal]',
   });
 
   abiertas.set(ollaId, base);

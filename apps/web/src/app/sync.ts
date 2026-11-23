@@ -18,12 +18,23 @@ import { useSyncExternalStore } from 'react';
 
 export type TonoSync = 'local' | 'sin-conexion';
 
+/** Como termino la ultima sincronizacion REAL (nunca se afirma sin respuesta). */
+export type TonoResultadoSync = 'enviado' | 'error' | 'conflicto';
+
+export interface ResultadoSync {
+  readonly tono: TonoResultadoSync;
+  /** Texto corto para el detalle de la pastilla. */
+  readonly detalle: string | null;
+}
+
 export interface EstadoSync {
   readonly tono: TonoSync;
   /** Texto corto de la pastilla del header. */
   readonly texto: string;
   /** Detalle en linea aparte, opcional. */
   readonly detalle: string | null;
+  /** Ultimo resultado de push/pull. `null` = todavia no se intento. */
+  readonly resultado: ResultadoSync | null;
 }
 
 function hayRed(): boolean {
@@ -59,6 +70,26 @@ function suscribir(escucha: () => void): () => void {
 /* --- Estado --------------------------------------------------------------- */
 
 let personas = 0;
+let resultado: ResultadoSync | null = null;
+
+/**
+ * Resultado de la ultima sincronizacion contra el backend. Lo llama `Shell`
+ * despues de `SyncRemoto.push()`/`pull()` y solo con lo que el servidor
+ * confirmo. `null` borra el aviso (vuelve a "En este dispositivo").
+ */
+export function fijarResultadoSync(siguiente: ResultadoSync | null): void {
+  if (
+    resultado === siguiente ||
+    (resultado !== null &&
+      siguiente !== null &&
+      resultado.tono === siguiente.tono &&
+      resultado.detalle === siguiente.detalle)
+  ) {
+    return;
+  }
+  resultado = siguiente;
+  avisar();
+}
 
 /**
  * Lo llama la pantalla despues de leer o escribir el padron. Es la unica via
@@ -95,14 +126,20 @@ export function personasGuardadas(): number {
   return personas;
 }
 
-function componer(red: boolean, n: number): EstadoSync {
+function componer(red: boolean, n: number, ultimo: ResultadoSync | null): EstadoSync {
   if (!red) {
-    return { tono: 'sin-conexion', texto: 'Sin conexión', detalle: 'Se guarda en este dispositivo' };
+    return {
+      tono: 'sin-conexion',
+      texto: 'Sin conexión',
+      detalle: 'Se guarda en este dispositivo',
+      resultado: ultimo,
+    };
   }
   return {
     tono: 'local',
     texto: 'En este dispositivo',
     detalle: n === 0 ? null : `${n} ${n === 1 ? 'persona' : 'personas'}`,
+    resultado: ultimo,
   };
 }
 
@@ -110,16 +147,24 @@ function componer(red: boolean, n: number): EstadoSync {
  * Snapshot estable: `useSyncExternalStore` compara por identidad y un objeto
  * nuevo en cada render provocaria un bucle. Se recompone solo si cambio algo.
  */
-let cache: { readonly red: boolean; readonly n: number; readonly valor: EstadoSync } = {
+let cache: {
+  readonly red: boolean;
+  readonly n: number;
+  readonly resultado: ResultadoSync | null;
+  readonly valor: EstadoSync;
+} = {
   red: true,
   n: -1,
-  valor: componer(true, 0),
+  resultado: null,
+  valor: componer(true, 0, null),
 };
 
 function snapshot(): EstadoSync {
   const red = hayRed();
-  if (cache.red === red && cache.n === personas) return cache.valor;
-  cache = { red, n: personas, valor: componer(red, personas) };
+  if (cache.red === red && cache.n === personas && cache.resultado === resultado) {
+    return cache.valor;
+  }
+  cache = { red, n: personas, resultado, valor: componer(red, personas, resultado) };
   return cache.valor;
 }
 
@@ -127,8 +172,9 @@ export function useEstadoSync(): EstadoSync {
   return useSyncExternalStore(suscribir, snapshot, snapshot);
 }
 
-/** Solo para tests: deja el contador en cero. */
+/** Solo para tests: deja el contador y el resultado de sync en cero. */
 export function reiniciarEstadoSync(): void {
   personas = 0;
-  cache = { red: true, n: -1, valor: componer(true, 0) };
+  resultado = null;
+  cache = { red: true, n: -1, resultado: null, valor: componer(true, 0, null) };
 }
