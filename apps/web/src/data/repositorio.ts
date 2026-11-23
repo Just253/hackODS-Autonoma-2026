@@ -1,3 +1,5 @@
+import Dexie from 'dexie';
+
 import {
   identidadLocalSchema,
   MENU_VERSION,
@@ -138,14 +140,46 @@ export async function identidadDe(
 
 export interface NuevaRacion {
   readonly personaCodigoP: string;
-  readonly servicioId: string | null;
+  /**
+   * Servicio (menu del dia) al que pertenece la racion. Sin menu firmado
+   * cargado se omite y toma el servicio del dia; nunca se guarda `null`, porque
+   * `[personaCodigoP+servicioId]` es la clave y en IndexedDB `null` no puede
+   * formar parte de una clave compuesta.
+   */
+  readonly servicioId?: string | null;
   readonly razones: readonly string[];
 }
 
+/** Identificador del servicio de hoy: `servicio-AAAA-MM-DD`. */
+export function servicioDelDia(reloj: Reloj = relojGlobal): string {
+  return `servicio-${reloj.ahora().slice(0, 10)}`;
+}
+
 /**
- * Racion servida. Append-only: si ya existe se reemplaza por la ultima version
- * del mismo dia, nunca se acumulan dos filas para la misma persona y servicio.
- * `racionSchema` exige >= 2 razones: la pantalla no puede inventar una sola.
+ * La racion ya existia para esa persona y servicio.
+ *
+ * Es un error visible, no un reemplazo silencioso: `raciones` es append-only
+ * (contrato) y una racion se anula con otro registro, no editando la anterior.
+ */
+export class RacionDuplicada extends Error {
+  readonly codigoP: string;
+  readonly servicioId: string;
+
+  constructor(codigoP: string, servicioId: string) {
+    super(
+      `Ya hay una ración registrada para ${codigoP} en el servicio ${servicioId}. ` +
+        'Las raciones no se editan: se anulan con otro registro.',
+    );
+    this.name = 'RacionDuplicada';
+    this.codigoP = codigoP;
+    this.servicioId = servicioId;
+  }
+}
+
+/**
+ * Racion servida. Append-only: `add` con clave `[personaCodigoP+servicioId]`;
+ * si ya existe una racion de esa persona en ese servicio falla con
+ * `RacionDuplicada` en vez de pisarla.
  *
  * `componentes` y `cobertura` quedan vacios a proposito: el calculo por grupo
  * es de `packages/nutrition` (fuera de este write-set) y un cero dibujado como
@@ -153,13 +187,15 @@ export interface NuevaRacion {
  */
 export async function guardarRacion(
   datos: NuevaRacion,
+  reloj: Reloj = relojGlobal,
   ollaId: string = OLLA_DEMO,
 ): Promise<Racion> {
   const base = baseDeOlla(ollaId);
+  const servicioId = datos.servicioId ?? servicioDelDia(reloj);
 
   const racion = racionSchema.parse({
     personaCodigoP: datos.personaCodigoP,
-    servicioId: datos.servicioId,
+    servicioId,
     componentes: [],
     // `racionSchema.cobertura` exige una entrada por nutriente del contrato.
     // El calculo es de `packages/nutrition` y no esta conectado: un 0 aqui es
@@ -171,13 +207,26 @@ export async function guardarRacion(
     versionMenu: MENU_VERSION,
   });
 
-  await base.raciones.put(racion);
+  try {
+    await base.raciones.add(racion);
+  } catch (error) {
+    if (error instanceof Dexie.ConstraintError) {
+      throw new RacionDuplicada(racion.personaCodigoP, servicioId);
+    }
+    throw error;
+  }
+
   return racion;
 }
 
+/**
+ * Racion de una persona en un servicio (por defecto, el de hoy). Con la clave
+ * compuesta ya no existe "la racion de la persona": hay una por servicio.
+ */
 export async function racionDe(
   codigoP: string,
   ollaId: string = OLLA_DEMO,
+  servicioId: string = servicioDelDia(),
 ): Promise<Racion | undefined> {
-  return baseDeOlla(ollaId).raciones.get(codigoP);
+  return baseDeOlla(ollaId).raciones.get([codigoP, servicioId]);
 }

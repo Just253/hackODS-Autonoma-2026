@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { racionSchema } from '@hackods/contracts';
 import { BotonGrande } from '@hackods/ui';
 
-import { OLLA_DEMO, guardarRacion, listarPersonas, racionDe } from '../../data/repositorio.js';
+import { OLLA_DEMO, RacionDuplicada, guardarRacion, listarPersonas, racionDe } from '../../data/repositorio.js';
 
 /**
  * Servicio del dia: una racion por persona, explicada con al menos dos razones.
@@ -81,8 +81,13 @@ export function ServicioPage() {
         setRazones(['', '']);
         await recargar();
       })
-      .catch(() => {
-        setError('No se pudo guardar la ración en el dispositivo. Intentá otra vez.');
+      .catch((error: unknown) => {
+        // Duplicado: se dice tal cual. Un "intentá otra vez" ahi seria mentira.
+        setError(
+          error instanceof RacionDuplicada
+            ? error.message
+            : 'No se pudo guardar la ración en el dispositivo. Intentá otra vez.',
+        );
       })
       .finally(() => {
         setGuardando(false);
