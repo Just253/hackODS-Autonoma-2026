@@ -986,6 +986,21 @@ tendencia(productoId: string, t: string, cfg: TrendConfig):
 
 agregarRed(filtro: FiltroRed, k: number /* runtime: k >= 10; nunca desde el cliente */):
   AgregadoRed;
+
+// clasificarItem — movimiento desde apps/web (PR #32). Decide la revisión humana de un ítem.
+// Vive en packages/domain/src/clasificacion/clasificar.ts; la pantalla no compara umbrales propios.
+clasificarItem(item: ItemClasificable, cfg: ConfiguracionClasificacion):
+  { estado: 'confirmado' | 'por_revisar' | 'desconocido'; motivo?: MotivoRevision };
+
+// totales del comprobante — packages/domain/src/comprobantes/totales.ts.
+// La pantalla muestra; no suma. Entran los centimos tal cual, sin Number() en el JSX.
+totalDeLineasConfirmadas(items: ItemLinea[]): Centimos;   // solo `confirmado` suma (DEC-2026-0008)
+totalDelPapel(items: ItemLinea[]): Centimos;              // lo que dice la boleta, para conciliar
+
+// formato de moneda — packages/domain/src/comprobantes/formato.ts.
+// Una sola coma decimal: "S/ 1234,56". `toLocaleString('es-PE')` agrega separador de miles y
+// producia "S/ 1,234,56" al concatenar la coma decimal encima.
+formatearCentimos(centimos: Centimos | number): string;
 ```
 
 Códigos de error estables (para tests y UI): `UNIDAD_AMBIGUA`, `SIN_EQUIVALENCIA`, `CONFIANZA_BAJA`, `EMPATE`, `SUMA_NO_CUADRA`, `IGV_INCONSISTENTE`, `DUPLICADO_FUERTE`, `DUPLICADO_DEBIL`, `REUTILIZADO`, `SIN_PERIODO`, `PERIODO_CERRADO`, `SIN_PRESUPUESTO`, `K_INSUFICIENTE`, `DOMINANCIA`.
