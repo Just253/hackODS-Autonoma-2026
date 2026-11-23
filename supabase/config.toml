@@ -18,7 +18,8 @@ major_version = 15
 # `supabase db reset` ya corre seed.sql cuando esto esta en true.
 [db.seed]
 enabled = true
-sql_paths = ["./seed.sql"]
+# El orden importa: demo-grande.sql depende de las ollas/insumos/menus de seed.sql.
+sql_paths = ["./seed.sql", "./seeds/demo-grande.sql"]
 
 [studio]
 enabled = true

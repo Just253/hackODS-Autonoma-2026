@@ -1,6 +1,7 @@
 export * from './aritmetica.js';
 export * from './errors.js';
 export * from './racion.js';
+export * from './recetas.js';
 export * from './servicio.js';
 export * from './clasificacion/config.js';
 export * from './clasificacion/clasificar.js';
@@ -10,5 +11,6 @@ export * from './comprobantes/formato.js';
 export * from './presupuesto/presupuesto.js';
 export * from './solicitud.js';
 export * from './reporte.js';
+export * from './metricas.js';
 export * from './precios/serie.js';
 export * from './captura/parser.js';

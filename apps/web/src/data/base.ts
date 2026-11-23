@@ -1,5 +1,6 @@
 import Dexie, { type EntityTable, type Table } from 'dexie';
-import type { IdentidadLocal, Persona, Racion } from '@hackods/contracts';
+import type { IdentidadLocal, Movimiento, Persona, Racion } from '@hackods/contracts';
+import type { ServicioDeReceta } from '@hackods/domain';
 import type { EventoSaliente } from '@hackods/sync';
 
 /**
@@ -30,7 +31,7 @@ import type { EventoSaliente } from '@hackods/sync';
  * pre-release y esas filas ni siquiera pueden formar la clave compuesta, porque
  * `null` no es un componente valido en IndexedDB.
  */
-export const VERSION_ESQUEMA = 4;
+export const VERSION_ESQUEMA = 5;
 
 export interface RegistroLamport {
   readonly clave: 'lamport';
@@ -60,6 +61,18 @@ export type BaseOlla = Dexie & {
    * contractual de envio (nunca `creadoEn`); `estado` filtra los pendientes.
    */
   outbox: Table<EventoOutbox, string>;
+  /**
+   * Movimientos append-only de la despensa: el stock se deriva sumandolos
+   * (docs/DECISIONES.md D4). `[ollaId+insumoId]` es el indice del saldo por
+   * insumo; `at` ordena la historia sin depender de `createdAt`.
+   */
+  movimientos: EntityTable<Movimiento, 'id'>;
+  /**
+   * Servicio cocinado con receta, comensales por grupo, cocinero, 75 °C y
+   * costo. Todavia no es el contrato `Servicio` (no tiene esos campos): vive
+   * local y marcado como tal hasta que #62/#65 lo lleven a SQL.
+   */
+  serviciosCocidos: EntityTable<ServicioDeReceta, 'id'>;
 };
 
 export function nombreBase(ollaId: string): string {
@@ -97,6 +110,14 @@ export function baseDeOlla(ollaId: string): BaseOlla {
   // las bases v3 quedan con el outbox vacio, que es la verdad (nada pendiente).
   base.version(4).stores({
     outbox: 'eventUuid, [lamport+deviceId], estado',
+  });
+
+  // v5: recetario -> produccion. `movimientos` es append-only (nunca un saldo
+  // mutable) y `serviciosCocidos` guarda el cierre local del servicio. Ambas
+  // son aditivas: una base v4 arranca con las dos vacias, que es la verdad.
+  base.version(5).stores({
+    movimientos: 'id, ollaId, insumoId, [ollaId+insumoId], at',
+    serviciosCocidos: 'id, ollaId, recetaId, fecha, [ollaId+fecha]',
   });
 
   abiertas.set(ollaId, base);

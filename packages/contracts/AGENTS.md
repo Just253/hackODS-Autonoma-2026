@@ -24,3 +24,8 @@ Cualquier cambio acá necesita **2 aprobaciones** y se mergea **antes** de su co
 
 Dueño: **C** (`area:contracts`); revisan A y B (2 aprobaciones). El canónico de cada tema
 está en `docs/FUENTES.md`; si un doc no figura ahí, no decide.
+
+## Archivo generado
+
+7. `src/db.types.ts` lo genera `pnpm db:types` (Supabase local en estado `main`); no se
+   edita a mano. Cada PR que toque `supabase/migrations/**` lo regenera en el mismo diff.
