@@ -150,7 +150,8 @@ Resumen operativo; la gramática completa está en `docs/PROTOCOL.md` §3 y §6.
 5. Draft PR en el primer push (aunque sea un commit vacío). Un issue = un PR.
 6. Claim sin push ni heartbeat en 24 h = huérfano: se reclama con `reclaim/v1` y aviso de 12 h.
 7. Al cerrar: `release/v1 ... reason:done pr:<n>` y limpiar worktree.
-8. Ramas: `feat|fix|chore/<area>-<issue#>-<slug>`, vida < 48 h, rebase sobre `main`, squash al
+8. Ramas: `feat|fix|chore/<area>-<issue#>-<slug>`, vida < 48 h, **merge de `main` en la rama**
+   (nunca rebase ni force-push: hay tres máquinas y un force rompe el clon de otro), squash al
    mergear.
 
 Labels canónicos (`docs/PROTOCOL.md` §3.7 + `.github/labels.yml`): `status:*` (`triage`, `ready`,
@@ -219,7 +220,8 @@ Un PR está listo cuando **todo** esto está en `## Prueba` (plantilla en `docs/
 5. Criterios de aceptación del issue, uno por uno, con evidencia.
 6. Sin secretos: `git diff origin/main...HEAD | rg -i '(api[_-]?key|secret|token|passw|BEGIN .*PRIVATE)'`
    sin resultados.
-7. Rebase sobre `origin/main`, sin merge commits.
+7. Rama al día con `origin/main` con `git merge origin/main` (no rebase, no force-push). Los merge
+   commits de la rama desaparecen al hacer squash.
 8. Aprobación de otra cuenta con `review/v1 ... sha:<sha> verdict:approve`. Mientras exista una
    sola cuenta (§8.1), se registra la ausencia de revisor en el PR y no se finge una firma.
 9. `pnpm ids:chequear` verde: toda cita `DEC-`/`PRB-`/`SPK-` existe en `docs/ids/REGISTRO.md` y todo
