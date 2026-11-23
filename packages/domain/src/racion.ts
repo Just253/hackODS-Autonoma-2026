@@ -32,11 +32,7 @@ export function saldoDespensa(
 
 /**
  * Un menu solo se sirve si esta `publicado` y su sello es verificable.
+ * Implementado en `servicio.ts` (cierra el TODO M3): necesita el contenido del dia
+ * para verificar el hash, por eso la firma recibe `platos`.
  * No evalua nutricion: eso es `packages/nutrition`.
- *
- * TODO(M3): verificar estado, sello y hash contra el contenido.
  */
-export function esMenuServible(menu: MenuTemplate): boolean {
-  void menu;
-  throw new NoImplementado('esMenuServible');
-}

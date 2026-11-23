@@ -26,3 +26,20 @@ export class NoImplementado extends ErrorDominio {
     super(`${fn}(): pendiente de implementacion (esqueleto M0)`);
   }
 }
+
+/**
+ * El menu no se puede servir: falta el sello, no esta publicado o el hash no
+ * corresponde. `campo` dice exactamente que fallo (`estado`, `sello`, `sello.hash`,
+ * `sello.version`, `porcion.<grupo>`).
+ */
+export class MenuNoServible extends ErrorDominio {
+  override name = 'MenuNoServible';
+
+  constructor(
+    readonly menuId: string,
+    readonly campo: string,
+    readonly detalle: string,
+  ) {
+    super(`menu ${menuId}: no servible por "${campo}": ${detalle}`);
+  }
+}
