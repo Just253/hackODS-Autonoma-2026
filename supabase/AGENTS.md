@@ -15,7 +15,10 @@ supabase/
 ## Qué es de este paquete
 
 - Esquema: `ollas` (tipo `comun | comedor_pca`), `personas` (**solo `codigo_p` P-XXXX**),
-  `insumos`, `precios` (serie con canal/fecha/fuente), familia de menú
+  `insumos`, `precios` (serie por insumo: canal/fecha/fuente), `producto_catalogo` +
+  `producto_alias` (catálogo global, lectura de cliente) y `precio_observado` (serie
+  inmutable por producto/olla, D8; la olla ve solo lo suyo, el agregado de red es RPC
+  k ≥ 10), familia de menú
   (`menu_template`, `menu_day`, `dish`, `ingredient`, `portion`, `menu_constraint`,
   `substitution`, `validation`), `movimientos` (append-only), `servicios`, `solicitudes`,
   `evento_sync`.

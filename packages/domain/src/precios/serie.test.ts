@@ -3,7 +3,12 @@ import { describe, expect, it } from 'vitest';
 import type { Microcentesimos } from '@hackods/contracts';
 
 import { mediana } from '../aritmetica.js';
-import { medianaMovil, type ObservacionPrecio } from './serie.js';
+import {
+  medianaMovil,
+  medianaPorProducto,
+  type ObservacionPrecio,
+  type ObservacionPorProducto,
+} from './serie.js';
 
 const micro = (valor: number): Microcentesimos => valor as Microcentesimos;
 
@@ -66,6 +71,52 @@ describe('medianaMovil', () => {
     expect(resultado.evaluadas).toHaveLength(0);
     expect(resultado.mediana).toBeNull();
     expect(resultado.muestraInsuficiente).toBe(true);
+  });
+});
+
+describe('medianaPorProducto', () => {
+  const obs = (
+    productoId: string,
+    canal: string,
+    valores: readonly number[],
+  ): ObservacionPorProducto[] =>
+    valores.map((valor, indice) => ({
+      id: `${productoId}_${canal}_${indice + 1}`,
+      productoId,
+      canal,
+      valor: micro(valor),
+      fecha: `2026-11-0${indice + 1}`,
+    }));
+
+  it('agrupa por producto y canal sin mezclarlos (D8)', () => {
+    const filas = [
+      ...obs('arroz', 'mayorista', [1200, 2200, 3200, 4200, 5200, 6200, 7200]),
+      ...obs('arroz', 'minorista', [9000, 9000, 9000]),
+    ];
+
+    const resultado = medianaPorProducto(filas);
+    const mayor = resultado.find((r) => r.productoId === 'arroz' && r.canal === 'mayorista');
+    const minor = resultado.find((r) => r.productoId === 'arroz' && r.canal === 'minorista');
+
+    expect(mayor?.mediana).toBe(4200);
+    expect(mayor?.muestra).toBe(7);
+    expect(minor?.mediana).toBe(9000);
+  });
+
+  it('no inventa fila para un producto sin historia', () => {
+    const resultado = medianaPorProducto(obs('papa', 'mayorista', [2300, 2300, 2300]));
+
+    expect(resultado).toHaveLength(1);
+    expect(resultado.find((r) => r.productoId === 'pollo')).toBeUndefined();
+  });
+
+  it('excluye un atipico de unidad y conserva la mediana', () => {
+    const filas = obs('pollo', 'mayorista', [9000, 9500, 9800, 12_500_000, 9000, 9000, 9000]);
+
+    const resultado = medianaPorProducto(filas)[0];
+
+    expect(resultado?.muestra).toBe(6);
+    expect(resultado?.mediana).toBe(9000);
   });
 });
 
