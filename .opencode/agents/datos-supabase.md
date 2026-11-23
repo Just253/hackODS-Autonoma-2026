@@ -11,10 +11,19 @@ permissions:
     resource: "supabase/migrations/**"
     effect: allow
   - action: edit
+    resource: "**/supabase/migrations/**"
+    effect: allow
+  - action: edit
     resource: "supabase/seed.sql"
     effect: allow
   - action: edit
+    resource: "**/supabase/seed.sql"
+    effect: allow
+  - action: edit
     resource: "supabase/tests/**"
+    effect: allow
+  - action: edit
+    resource: "**/supabase/tests/**"
     effect: allow
   - action: subagent
     resource: "*"

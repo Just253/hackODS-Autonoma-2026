@@ -11,7 +11,13 @@ permissions:
     resource: "packages/nutrition/**"
     effect: allow
   - action: edit
+    resource: "**/packages/nutrition/**"
+    effect: allow
+  - action: edit
     resource: "docs/nutricion/**"
+    effect: allow
+  - action: edit
+    resource: "**/docs/nutricion/**"
     effect: allow
   - action: subagent
     resource: "*"

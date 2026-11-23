@@ -10,6 +10,9 @@ permissions:
   - action: edit
     resource: "docs/seguridad/**"
     effect: allow
+  - action: edit
+    resource: "**/docs/seguridad/**"
+    effect: allow
   - action: subagent
     resource: "*"
     effect: deny

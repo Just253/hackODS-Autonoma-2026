@@ -11,6 +11,9 @@ permissions:
     resource: "docs/**"
     effect: allow
   - action: edit
+    resource: "**/docs/**"
+    effect: allow
+  - action: edit
     resource: "**/README.md"
     effect: allow
   - action: subagent

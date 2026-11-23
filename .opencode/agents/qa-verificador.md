@@ -10,6 +10,9 @@ permissions:
   - action: edit
     resource: "qa/evidencia/**"
     effect: allow
+  - action: edit
+    resource: "**/qa/evidencia/**"
+    effect: allow
   - action: subagent
     resource: "*"
     effect: deny

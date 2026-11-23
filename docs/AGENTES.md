@@ -63,7 +63,8 @@ Cada `.md` de `.opencode/agents/` empieza con un frontmatter `permissions:` que 
    relativa (`apps/web/src`); en un worktree llega completa (`.../.worktrees/x/apps/web/src`). Con
    `apps/web/**` solo funcionaba el root; con `**/apps/web/**`, solo el worktree. Hacen falta **las
    dos formas** declaradas, si no cae en el `deny` global y solo le queda `shell` — que es como se
-   escriben los BOM de PowerShell.
+   escriben los BOM de PowerShell. Vale para **todos** los agentes, no solo para `frontend`: cada uno
+   declara su área dos veces (`area/**` y `**/area/**`).
 
 .opencode/commands/
   preflight.md  claim.md  verify.md  seed.md  demo.md  release.md

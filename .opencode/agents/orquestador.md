@@ -11,7 +11,13 @@ permissions:
     resource: "docs/planes/**"
     effect: allow
   - action: edit
+    resource: "**/docs/planes/**"
+    effect: allow
+  - action: edit
     resource: "docs/adr/**"
+    effect: allow
+  - action: edit
+    resource: "**/docs/adr/**"
     effect: allow
   - action: subagent
     resource: "*"

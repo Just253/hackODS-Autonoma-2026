@@ -11,7 +11,13 @@ permissions:
     resource: "supabase/functions/**"
     effect: allow
   - action: edit
+    resource: "**/supabase/functions/**"
+    effect: allow
+  - action: edit
     resource: "docs/guias/api-*.md"
+    effect: allow
+  - action: edit
+    resource: "**/docs/guias/api-*.md"
     effect: allow
   - action: subagent
     resource: "*"
