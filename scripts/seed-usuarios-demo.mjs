@@ -43,10 +43,10 @@ const CUENTAS = [
   {
     email: 'admin@demo.hackods.test',
     nombre: 'Admin Demo',
-    ollas: [
-      { n: 1, rol: 'admin' },
-      { n: 3, rol: 'admin' },
-    ],
+    // Admin global (#92): `app.es_admin_global()` da true con UNA fila admin,
+    // y `app.mis_ollas()` devuelve entonces todas las ollas. Se deja admin en
+    // las 8 igualmente para que la demo y el seed coincidan en el mismo mapa.
+    ollas: [1, 2, 3, 4, 5, 6, 7, 8].map((n) => ({ n, rol: 'admin' })),
   },
 ];
 
