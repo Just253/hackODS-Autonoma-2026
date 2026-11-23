@@ -121,19 +121,21 @@ resuelve sembrando el menú publicado en `seed.sql`, no construyendo CU-17 antes
 | `hecho` | PR mergeado y issue cerrado. | El merge (keyword de cierre) o el orquestador. |
 | `descartado` | Se decidió no hacerlo: issue cerrado como *not planned* con motivo. | El orquestador o quien tenga el alcance. |
 
-Estado actual de `CU-01`…`CU-09`, verificado contra `main` en `377bff1` y con `gh issue list --state all`:
+Estado actual de `CU-01`…`CU-09`, verificado contra `main` en `16f9419`:
 
-| CU | estado | evidencia |
-|---|---|---|
-| CU-01 | `hecho` | PR #16 mergeado; manifest y SW en `main`. Verificado en código, no en modo avión real. |
-| CU-02 | `en_curso` | PR #30 mergeado, pero el alta **no guarda al hacer click** (issue #41). |
-| CU-03 | `en_curso` | `servirDelDia` en `main` (#26); falta la pantalla (#17). |
-| CU-04 | `en_curso` | Pantalla en `main` (#32); falta el enchufe al presupuesto y la captura (#9). |
-| CU-05 | `en_curso` | Pantalla en `main` (#31) sobre fixture; confirmar no mueve el presupuesto (#9). |
-| CU-06 | `en_curso` | Pantalla en `main` (#31); mediana sobre fixture, sin serie cargada. |
-| CU-07 | `hecho` | PR #37 mergeado (`377bff1`): dominio, pantallas y agregado sin identidades en `main`. |
-| CU-08 | `listo` | Issue #19; no hay outbox en `apps/web` ni badge. |
-| CU-09 | `en_curso` | Pie del Shell con «datos simulados / no es un diagnóstico»; faltan dos de las tres frases. |
+| CU | estado | ¿sirve hoy? | evidencia |
+|---|---|---|---|
+| CU-01 | `hecho` | ⚠️ | PWA y SW en `main` (#16). Probado en código, **no** en modo avión real. |
+| CU-02 | `en_curso` | ❌ | PR #30 mergeado, pero el alta **no guarda al hacer click** (#41). |
+| CU-03 | `en_revision` | ⚠️ | `servirDelDia` en `main` (#26); la pantalla va en el PR #44. |
+| CU-04 | `en_curso` | ⚠️ | Pantalla en `main` (#32), pero pinta **6 de 6 en rojo** y dice «6 por revisar» (#9); sin enchufe al presupuesto. |
+| CU-05 | `en_curso` | ⚠️ | Pantalla en `main` (#31) sobre fixture; confirmar no mueve el presupuesto (#9). |
+| CU-06 | `en_curso` | ✅ | Mediana real, +12,00 %, descarta el outlier; la serie es fixture, no cargada. |
+| CU-07 | `hecho` | ✅ | PR #37 mergeado (`377bff1`): solicitud, agregado sin identidades y reporte. |
+| CU-08 | `en_revision` | ⚠️ | PR #45: outbox Dexie real y badge; el badge se lee una sola vez y no se refresca. |
+| CU-09 | `en_curso` | ⚠️ | El pie dice «datos simulados / no es un diagnóstico»; faltan «no prescribe dietas» y «no guarda nombres en la nube». |
+
+«Sirve hoy» significa que se puede mostrar sin explicar por qué no anda. Hoy: **2 sí, 6 a medias, 1 no**.
 
 `CU-15` y `CU-16` ya tienen su parte de lectura en `main`: #23 mergeó la RLS de salud y las vistas
 agregadas. Siguen sin archivo propio, así que se quedan en la tabla del catálogo.

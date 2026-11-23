@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
-import type { MenuTemplate, Portion } from '@hackods/contracts';
+import type { MenuTemplate } from '@hackods/contracts';
 
 import {
   HASH_SEED_301,
@@ -65,22 +65,6 @@ function templateDelSeed(
     sello: { ...sello, hash },
     version: 1,
     hash,
-  };
-}
-
-function porcionDelSeed(
-  id: string,
-  grupo: Portion['grupo'],
-  cantidad: number,
-): Portion {
-  return {
-    id,
-    dishId: '00000000-0000-4000-8000-000000000501',
-    grupo,
-    cantidad,
-    unidad: 'g',
-    version: 1,
-    hash: `hash-${id}`,
   };
 }
 

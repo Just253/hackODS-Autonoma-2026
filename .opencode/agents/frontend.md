@@ -1,17 +1,27 @@
 ---
 description: Implementa la PWA y los componentes. Offline primero.
 mode: all
-model: anthropic/claude-sonnet-5-5
+model: mistral/deepseek-v4-1-flash-1017
 steps: 60
 permissions:
   - action: edit
     resource: "*"
     effect: deny
+  # El recurso llega RELATIVO al cwd cuando el agente trabaja en el root
+  # (`apps/web/src`) y con la ruta completa cuando trabaja en un worktree
+  # (`.../.worktrees/x/apps/web/src`). Por eso van las dos formas: `apps/web/**`
+  # cubre el root y `**/apps/web/**` cubre los worktrees.
   - action: edit
     resource: "apps/web/**"
     effect: allow
   - action: edit
+    resource: "**/apps/web/**"
+    effect: allow
+  - action: edit
     resource: "packages/ui/**"
+    effect: allow
+  - action: edit
+    resource: "**/packages/ui/**"
     effect: allow
   - action: subagent
     resource: "*"

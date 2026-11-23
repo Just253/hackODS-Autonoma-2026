@@ -104,6 +104,14 @@ paso('entorno', () => {
 // 2. Identificadores -----------------------------------------------------------
 paso('ids', () => correr('node', ['scripts/chequear-ids.mjs']).trim().split('\n').pop());
 
+// 2b. Lint ---------------------------------------------------------------------
+// ESLint 9 flat config (issue #7): variables sin usar y `console.log` que se cuela al cliente.
+// Corre también si el diff es sólo docs: es barato y así el gate `ci` nunca miente.
+paso('lint', () => {
+  correr('pnpm', ['lint']);
+  return 'ESLint en cero';
+});
+
 // 3. Tipos ---------------------------------------------------------------------
 // Los tres pasos pesados se saltan si el diff no toca código: un PR de docs no compila nada.
 const SALTAR_PESADOS = RAPIDO ? '--rapido' : soloDocs ? MOTIVO_DOCS : false;
