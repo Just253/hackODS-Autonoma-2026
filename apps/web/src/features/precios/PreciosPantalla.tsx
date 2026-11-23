@@ -169,7 +169,7 @@ export function PreciosPantalla({
         titulo="Precio de los insumos"
         descripcion={
           <>
-            Series de demo cargadas a mano (sin OCR ni voz). El precio típico de esta quincena se
+            Los precios se cargan a mano. El precio típico de esta quincena se
             compara con el de la anterior. Fuente: {fuente}.
           </>
         }
@@ -285,7 +285,7 @@ export function PreciosPantalla({
               )}
 
               <p className="mt-auto border-t border-borde pt-3 text-xs text-texto-suave">
-                Datos simulados: series de demo, sin escaneo de boletas.
+                Los precios que ves son de ejemplo.
               </p>
             </>
           )}

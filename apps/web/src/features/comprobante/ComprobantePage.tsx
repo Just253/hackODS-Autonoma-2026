@@ -196,8 +196,8 @@ export function ComprobantePage() {
 
       <footer className="flex flex-col gap-1 text-xs text-texto-suave">
         <span>
-          Datos simulados: la boleta de demo ya viene leída, sin OCR ni cámara; cada línea se
-          confirma a mano.
+          La boleta ya viene de ejemplo. Cada línea se confirma a mano antes de que sume al
+          presupuesto.
         </span>
         <span>Guardado en esta tablet. Todavía no se envía a ninguna parte.</span>
       </footer>

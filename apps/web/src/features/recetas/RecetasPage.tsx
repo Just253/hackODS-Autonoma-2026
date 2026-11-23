@@ -208,12 +208,11 @@ export function RecetasPage() {
     <section className="flex flex-col gap-4 lg:gap-6">
       <EncabezadoPantalla
         titulo="Recetario"
-        descripcion="Elegí el plato, contá quiénes comen y registrá que se cocinó. Todo queda en esta tablet."
+        descripcion="Elige el plato, cuenta quiénes comen y registra que se cocinó. Todo queda en esta tablet."
       />
 
       <p className="oc-tarjeta text-sm text-texto-suave" data-estado="sin-datos-reales">
-        Datos ficticios de demostración: ningún plato, stock, precio ni sello pertenece a una
-        persona u olla real.
+        Los platos, el stock y los precios de esta pantalla no pertenecen a ninguna olla real.
       </p>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-start lg:gap-6">
@@ -246,7 +245,7 @@ export function RecetasPage() {
                           <span className="font-mono">
                             {ingrediente.gramosPorPorcion === null
                               ? 'sin dato'
-                              : `${ingrediente.gramosPorPorcion} g por ración`}
+                              : `${formatearGramos(ingrediente.gramosPorPorcion)} por ración`}
                           </span>
                         </span>
                       ))}
@@ -286,8 +285,8 @@ export function RecetasPage() {
                       </label>
                       <span className="text-xs text-texto-suave">
                         {firmada === undefined
-                          ? `Sin porción firmada: se usa la base de ${receta.porcionBaseGramos} g.`
-                          : `Porción firmada: ${firmada} g.`}
+                          ? `Sin porción firmada: se usa la base de ${formatearGramos(receta.porcionBaseGramos)}.`
+                          : `Porción firmada: ${formatearGramos(firmada)}.`}
                       </span>
                     </div>
                   );
@@ -349,7 +348,7 @@ export function RecetasPage() {
                       className="flex flex-col gap-1"
                     >
                       <p className="text-sm">
-                        <strong>{nombreDe(faltante.insumoId)}</strong>: necesitás{' '}
+                        <strong>{nombreDe(faltante.insumoId)}</strong>: necesitas{' '}
                         {formatearGramos(faltante.requerido)} y hay{' '}
                         {formatearGramos(faltante.disponible)}. Faltan{' '}
                         <strong>{formatearGramos(faltante.faltan)}</strong>.
@@ -373,9 +372,8 @@ export function RecetasPage() {
                               onChange={() => elegirSustitucion(faltante.insumoId, sustitucion)}
                             />
                             <span>
-                              {nombreDe(sustitucion.insumoDestinoId)} · factor{' '}
-                              {formatearFactor(sustitucion.factor)} · aprobada por{' '}
-                              {sustitucion.aprobadaPor}
+                              {nombreDe(sustitucion.insumoDestinoId)} · en proporción{' '}
+                              {formatearFactor(sustitucion.factor)} · aprobada por la nutricionista
                             </span>
                           </label>
                         ))}
@@ -402,7 +400,7 @@ export function RecetasPage() {
           <section className="oc-tarjeta flex flex-col gap-2" aria-label="Costo del servicio">
             <h2 className="text-lg font-bold">Costo</h2>
             {explosion.totalComensales === 0 ? (
-              <p className="text-sm text-texto-suave">Elegí al menos un comensal para costear.</p>
+              <p className="text-sm text-texto-suave">Elige al menos un comensal para costear.</p>
             ) : (
               <>
                 <ul className="flex flex-col gap-1 text-sm">
@@ -464,8 +462,8 @@ export function RecetasPage() {
             {sustitutosCortos.length > 0 ? (
               <p className="text-sm text-error">
                 El sustituto tampoco alcanza:{' '}
-                {sustitutosCortos.map((faltante) => nombreDe(faltante.insumoId)).join(', ')}. Comprá
-                o elegí otra opción.
+                {sustitutosCortos.map((faltante) => nombreDe(faltante.insumoId)).join(', ')}. Compra
+                o elige otra opción.
               </p>
             ) : null}
 

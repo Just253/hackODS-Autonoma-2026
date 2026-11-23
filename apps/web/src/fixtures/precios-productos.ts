@@ -131,4 +131,4 @@ export const PRODUCTOS_DEMO: readonly ProductoPrecioDemo[] = [
 export const PRODUCTO_DESTACADO = 'pollo';
 
 /** De donde salen los precios, en palabras de la olla y sin prometer OCR. */
-export const FUENTE_PRECIOS_DEMO = 'Boletas del mercado mayorista (canal mayorista)';
+export const FUENTE_PRECIOS_DEMO = 'Boletas del mercado mayorista';

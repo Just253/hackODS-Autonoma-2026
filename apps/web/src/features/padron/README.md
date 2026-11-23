@@ -22,3 +22,5 @@ empuja nada a Supabase desde acá: el envío del pendiente es de `@hackods/sync`
 
 **Estados:** leyendo el padrón · padrón vacío · alta guardada (`P-XXXX`) · año fuera de rango
 (error) · fallo al leer o guardar en el dispositivo (error). Ninguno bloquea por red.
+
+**Texto visible:** el código de la persona se explica sin el marcador de plantilla `P-XXXX`.

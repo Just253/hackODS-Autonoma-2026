@@ -124,7 +124,7 @@ export function SolicitudPantalla({ nueva, ahora }: SolicitudPantallaProps) {
             data-estado={solicitud.estado}
             data-tono={tono}
           >
-            <p className="text-lg font-semibold">Pedido: {pedido} de arroz</p>
+            <p className="text-lg font-semibold">Pedido: {pedido}</p>
             <p className="flex flex-wrap items-center gap-2">
               Estado:
               <span className="inline-flex items-center rounded-full border border-borde-fuerte bg-tenue px-3 py-0.5">

@@ -51,8 +51,8 @@ const ANIO_MAXIMO_AL_NACER = ANIO_NACIMIENTO.maxValue;
 
 function mensajeDeAnioInvalido(): string {
   return ANIO_MINIMO !== null && ANIO_MAXIMO_AL_NACER !== null
-    ? `Año de nacimiento: un año entre ${ANIO_MINIMO} y ${ANIO_MAXIMO_AL_NACER}.`
-    : 'Año de nacimiento: el contrato no lo acepta.';
+    ? `Escribe el año en que nació, con cuatro cifras: entre ${ANIO_MINIMO} y ${ANIO_MAXIMO_AL_NACER}.`
+    : 'Escribe el año en que nació, con cuatro cifras.';
 }
 
 /** Etiqueta de un campo: texto arriba, control debajo. Un solo tamano. */
@@ -121,7 +121,7 @@ export function PadronPage() {
     <section className="flex flex-col gap-4 lg:gap-6">
       <EncabezadoPantalla
         titulo="Padrón"
-        descripcion="Se guarda un código P-XXXX. No se piden nombres, documentos ni teléfonos."
+        descripcion="Se guarda un código para esa persona. No se piden nombres, documentos ni teléfonos."
       />
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:items-start lg:gap-6">
