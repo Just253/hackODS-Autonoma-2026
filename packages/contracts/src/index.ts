@@ -1,1 +1,4 @@
 export * from './domain.js';
+export * from './finanzas.js';
+export * from './captura.js';
+export * from './compute.js';
