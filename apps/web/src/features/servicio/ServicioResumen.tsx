@@ -80,30 +80,32 @@ function TarjetaOpcion({
       </p>
 
       {opcion.porGrupo.length > 0 ? (
-        <table className="w-full border-collapse text-left">
-          <thead>
-            <tr className="border-b border-gray-300">
-              <th className="py-1">Grupo</th>
-              <th className="py-1">Personas</th>
-              <th className="py-1">Porcion</th>
-              <th className="py-1">Raciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {opcion.porGrupo.map((fila) => (
-              <tr key={fila.grupo} className="border-b border-gray-200">
-                <td className="py-1">{grupo(fila.grupo)}</td>
-                <td className="py-1">{fila.personas}</td>
-                <td className="py-1">
-                  {fila.porcion} {fila.unidad}
-                </td>
-                <td className="py-1">
-                  {fila.raciones} {fila.unidad}
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse text-left">
+            <thead>
+              <tr className="border-b border-gray-300">
+                <th className="py-1">Grupo</th>
+                <th className="py-1">Personas</th>
+                <th className="py-1">Porcion</th>
+                <th className="py-1">Total</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {opcion.porGrupo.map((fila) => (
+                <tr key={fila.grupo} className="border-b border-gray-200">
+                  <td className="py-1">{grupo(fila.grupo)}</td>
+                  <td className="py-1">{fila.personas}</td>
+                  <td className="py-1">
+                    {fila.porcion} {fila.unidad}
+                  </td>
+                  <td className="py-1">
+                    {fila.raciones} {fila.unidad}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       ) : (
         <p className="text-gray-600">
           Porcion por grupo: <strong>sin dato</strong> - esta opcion no trae platos firmados.

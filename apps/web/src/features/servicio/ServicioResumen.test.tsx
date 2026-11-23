@@ -21,6 +21,9 @@ describe('ServicioResumen (servirDelDia conectado)', () => {
     expect(html).toContain('280 g');
     expect(html).toContain('180 g');
     expect(html).toContain('320 g');
+    // La columna de gramos se llama Total, no Raciones: "raciones" es el conteo de personas.
+    expect(html).toContain('>Total</th>');
+    expect(html).not.toContain('>Raciones</th>');
     expect(html).toContain('Total de raciones: 5');
   });
 
