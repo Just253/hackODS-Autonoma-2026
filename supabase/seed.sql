@@ -13,10 +13,14 @@ insert into ollas (id, titulo, codigo, tipo, distrito) values
   ('00000000-0000-4000-8000-000000000003', 'Comedor Demo Comas', 'DEMHCC', 'comedor_pca', 'Comas')
 on conflict (id) do nothing;
 
--- Hashes de PIN ficticios (no son credenciales utiles).
+-- Hashes de PIN ficticios: bcrypt real de '1234' (docs/adr/0008-enrolamiento.md).
+-- No son credenciales utiles (es un PIN demo publico), pero validan con
+-- `crypt('1234', pin_hash) = pin_hash`, asi pgTAP y el login local prueban el flujo
+-- completo. `gen_salt('bf', 8)` y no el literal para no emparejar datos entre corridas.
+-- Idempotente con `on conflict (id) do nothing`: la segunda corrida no re-hashea.
 insert into members (id, pin_hash, recovery_hash) values
-  ('00000000-0000-4000-8000-000000000101', '$2a$10$demo.demo.demo.demo.demo.demo.demo.demo.demo', 'demo-recovery-01'),
-  ('00000000-0000-4000-8000-000000000102', '$2a$10$demo.demo.demo.demo.demo.demo.demo.demo.demo', 'demo-recovery-02')
+  ('00000000-0000-4000-8000-000000000101', crypt('1234', gen_salt('bf', 8)), crypt('recovery-demo-01', gen_salt('bf', 8))),
+  ('00000000-0000-4000-8000-000000000102', crypt('1234', gen_salt('bf', 8)), crypt('recovery-demo-02', gen_salt('bf', 8)))
 on conflict (id) do nothing;
 
 insert into olla_members (member_id, olla_id, rol) values
