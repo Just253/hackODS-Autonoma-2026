@@ -31,6 +31,7 @@ Cada olla fotografía o sube sus boletas/facturas; el sistema lee los ítems, **
 - **Supabase sigue siendo el único backend** (ADR-004). Cloudflare Workers AI se usa **solo como inferencia sin estado** (visión + embeddings) desde una Edge Function; no guarda datos, no reemplaza Postgres, no crea una segunda fuente de verdad.
 - **Local-first** (ADR-003): capturar y confirmar funciona sin red. La extracción por IA **sí** necesita red; por eso la entrada manual es camino de primera clase, no fallback vergonzante.
 - **Nada entra al presupuesto sin confirmación humana** (D8). No hay auto-confirmación, ni siquiera con confianza 1.0.
+  - Contrato: `itemPresupuestableSchema` (`packages/contracts/src/comprobantes.ts`) exige `estado === 'confirmado'`; el guard `esItemPresupuestable` sirve al consumidor en memoria. Test: `comprobantes.test.ts` (#5).
 - **Precio como serie inmutable**, tendencia contra mediana (D8), no contra promedio.
 - **k ≥ 10** para agregados entre ollas, tomado del documento del usuario (`nxtqbsr` §7.6; `10-texto` §7), donde se declara **criterio de privacidad, no obligación legal**.
 
