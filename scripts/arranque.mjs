@@ -153,16 +153,22 @@ paso('backlog', () => {
 
 // 8. Base de datos (no bloquea el demo) --------------------------------------
 paso('base de datos', () => {
-  const docker = run('docker', ['info', '--format', '{{.ServerVersion}}']);
-  const cli = run('npx', ['--no-install', 'supabase', '--version']);
-  if (docker.status !== 0 || cli.status !== 0) {
+  // Docker o Podman: cualquiera de los dos sirve para el stack local.
+  const motor = ['docker', 'podman']
+    .map((bin) => ({ bin, r: run(bin, ['info', '--format', '{{.ServerVersion}}']) }))
+    .find(({ r }) => r.status === 0);
+  // El CLI puede estar global (standalone) o el que baja npx.
+  const directo = run('supabase', ['--version']);
+  const cli = directo.status === 0 ? directo : run('npx', ['--no-install', 'supabase', '--version']);
+  if (!motor || cli.status !== 0) {
     return {
       estado: 'aviso',
-      detalle: 'sin Docker/supabase: issues de RLS y seed quedan bloqueados',
-      arreglo: 'MODO-6H §2: el demo es local (IndexedDB)',
+      detalle: `sin Postgres local acá (${motor ? motor.bin : 'ni docker ni podman'}; ${cli.status === 0 ? 'supabase ok' : 'sin CLI de supabase'})`,
+      arreglo: 'el demo no lo necesita (MODO-6H §2); #2 y #4 se corren en la máquina que sí lo tenga',
     };
   }
-  return { detalle: `docker ${docker.out.slice(0, 12)} · supabase ok` };
+  const version = cli.out.match(/\d+\.\d+\.\d+/)?.[0] ?? cli.out.slice(0, 12);
+  return { detalle: `${motor.bin} ${motor.r.out.slice(0, 10)} · supabase ${version}` };
 });
 
 // --- Salida ------------------------------------------------------------------

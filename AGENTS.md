@@ -188,18 +188,24 @@ Detalle de permisos, modelos y prompts: `.opencode/agents/*.md` y `docs/AGENTES.
 
 ### 8.1 Estado real de la protección de `main`
 
-Hoy hay **una sola cuenta** (`@Just253`, admin), así que:
+Hoy hay **tres cuentas** con `write`: `@Just253` (admin), `@ImBoolean-2` y `@Hansnahu` (push, sin
+admin). `CODEOWNERS` sigue por persona, así que:
 
 | Regla | Valor real |
 |---|---|
 | `enforce_admins` | `false` — el admin puede mergear/pushear sin aprobación (bootstrap) |
-| `require_code_owner_reviews` | `false` — `CODEOWNERS` apunta a esa misma cuenta |
-| Aprobaciones requeridas | 1, pero el admin puede saltearla con `enforce_admins: false` |
-| Checks requeridos | `ci` |
+| `require_code_owner_reviews` | `false` — `CODEOWNERS` apunta todo a `@Just253`: prenderlo dejaría sin salida todo PR que él no apruebe |
+| Aprobaciones requeridas | 1, y el admin puede saltearla con `enforce_admins: false`. Las otras dos cuentas, no |
+| Checks requeridos | `ci` (el job se llama `ci`; si se renombra, ningún PR puede mergear) |
 | Force push / borrar rama | prohibido |
 
-**Condición para activarlos:** 3 cuentas con `write` + `CODEOWNERS` por equipo (no por persona).
-Recién entonces `enforce_admins: true` y `require_code_owner_reviews: true`, en el PR que documente
+**El camino normal es rama + PR**, para las tres cuentas. El admin conserva el bypass que da
+`enforce_admins: false` y lo usa sólo para dos cosas: el bootstrap del repo y destrabar `main` en rojo.
+Force push y borrado de rama están prohibidos para todos.
+
+**Condición para activar `enforce_admins` y `require_code_owner_reviews`:** `CODEOWNERS` por equipo
+(hoy apunta a una sola persona). Las 3 cuentas con `write` ya están.
+Recién entonces se prenden, en el PR que documente
 el cambio. Activarlos antes bloquea todos los PRs.
 
 ### 8.2 Checklist del PR
