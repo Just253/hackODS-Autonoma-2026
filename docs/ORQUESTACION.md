@@ -112,6 +112,8 @@ ANTES DE NADA: leer docs/MODO-6H.md (manda sobre el protocolo hoy), AGENTS.md §
 ANTES DE RECLAMAR: pnpm arranque y su salida, tal cual, como comentario en el issue coordination (#11).
 FORMA DE TRABAJO: rama propia + PR por issue (main esta protegida: nadie pushea directo). Sin claim ni
   worktree obligatorio; rama de 90 minutos; squash al mergear.
+PRIMEROS 15 MINUTOS: rama + draft PR abierto, aunque sea con un commit vacio. Quien puede
+  escribir sin poder abrir un PR no lo descubre en la hora 3.
 CADA TAREA: 45 minutos. Si no termina, se corta, se anota en el issue y se sigue con la siguiente.
 ANTES DE CADA PUSH: pnpm verificar (es lo mismo que corre CI). Rojo no se pushea.
 PRUEBA: lo que digo que funciona, lo muestro con el comando y su salida. Sin salida, no paso.
