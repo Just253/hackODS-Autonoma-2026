@@ -59,6 +59,11 @@ Se agregan al final, una fila por ID, con la salida de `pnpm ids:nuevo`.
 | ID | Tipo | Título | Estado | Abierto | Autor | Archivo | Relacionado |
 |---|---|---|---|---|---|---|---|
 | PRB-20261123-0947-db51d4 | PRB | Labels fuera del set canónico en GitHub | resuelto | 2026-11-23T09:47:54-05:00 | GAMA | `problemas/infra/PRB-20261123-0947-db51d4.md` | — |
+| PRB-20261123-1348-47e9d2 | PRB | evento_sync no se materializa: el backend no escribe | abierto | 2026-11-23T13:48:41-05:00 | GAMA | `problemas/backend/PRB-20261123-1348-47e9d2.md` | — |
+| PRB-20261123-1349-321438 | PRB | La RLS se salta por evento_sync y las credenciales son legibles | abierto | 2026-11-23T13:49:13-05:00 | GAMA | `problemas/seguridad/PRB-20261123-1349-321438.md` | — |
+| DEC-20261123-1349-9c5d5a | DEC | Supabase local ahora; cloud después con admin, enrolamiento y seed | abierto | 2026-11-23T13:49:19-05:00 | GAMA | `decisiones/DEC-20261123-1349-9c5d5a.md` | — |
+| DEC-20261123-1349-d04467 | DEC | Roles separados: admin global y nutricionista que firma | abierto | 2026-11-23T13:49:26-05:00 | GAMA | `decisiones/DEC-20261123-1349-d04467.md` | — |
+| SPK-20261123-1349-96169d | SPK | Compute de pruebas: OCR, transcripcion y embeddings | abierto | 2026-11-23T13:49:33-05:00 | GAMA | `spikes/SPK-20261123-1349-96169d.md` | — |
 
 ## 5. Estados
 
