@@ -30,6 +30,7 @@ Si tocás la columna izquierda, en el **mismo PR** tiene que estar la derecha. E
 | Variable de entorno, comando nuevo, versión de Node | `AGENTS.md` §4 (comandos) o §2 (stack) | mismo commit |
 | Dependencia nueva | issue justificándola + `AGENTS.md` §2 | antes |
 | Bugfix | nada, salvo causa no obvia: `PRB` con `## Cómo se cierra` y prueba rojo→verde | mismo commit |
+| Herramienta de proceso (`scripts/`) | `AGENTS.md` §4 o este archivo, con la convención que la herramienta ahora aplica | mismo commit |
 
 Un `DEC` que cambia una decisión anterior no la edita: la supersede (`Superseded by`), como dice
 `docs/AGENTS.md`.
