@@ -357,7 +357,8 @@ export const menuTemplateSchema = z.object({
   estado: estadoMenuSchema,
   sello: selloMenuSchema.nullable(),
   version: z.number().int().min(1),
-  hash: z.string().min(1),
+  /** SHA-256 hex del contenido canonico del menu (packages/domain/src/servicio.ts). */
+  hash: z.string().regex(/^[0-9a-f]{64}$/),
 });
 export type MenuTemplate = z.infer<typeof menuTemplateSchema>;
 
