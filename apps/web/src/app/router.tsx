@@ -13,6 +13,10 @@ import { PresupuestoPantalla } from '../features/presupuesto/PresupuestoPantalla
 import { Shell } from './Shell.js';
 import { PadronPage } from '../features/padron/PadronPage.js';
 import { ServicioPage } from '../features/servicio/ServicioPage.js';
+import { SolicitudPantalla } from '../features/solicitud/SolicitudPantalla.js';
+import { AHORA_DEMO, NUEVA_SOLICITUD_DEMO } from '../features/solicitud/fixtures.js';
+import { ReportePantalla } from '../features/reporte/ReportePantalla.js';
+import { MOVIMIENTOS_ENTRE_OLLAS, PERIODO_DEMO } from '../features/reporte/fixtures.js';
 import { RutaVacia } from '../pages/RutaVacia.js';
 
 /**
@@ -47,8 +51,8 @@ export const rutas = [
         ),
       },
       // Track C · entre ollas y folio
-      { path: 'solicitud', element: <RutaVacia titulo="Entre ollas" dueno="C" /> },
-      { path: 'reporte', element: <RutaVacia titulo="Reporte" dueno="C" /> },
+      { path: 'solicitud', element: <SolicitudPantalla nueva={NUEVA_SOLICITUD_DEMO} ahora={AHORA_DEMO} /> },
+      { path: 'reporte', element: <ReportePantalla movimientos={MOVIMIENTOS_ENTRE_OLLAS} periodo={PERIODO_DEMO} /> },
     ],
   },
 ];
