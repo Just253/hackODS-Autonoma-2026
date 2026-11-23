@@ -14,7 +14,7 @@ hay en el dispositivo.
   no los lee y no salen al servidor.
 - `meta`: el contador de Lamport que consume `siguienteLamport()`.
 
-**Estados:** leyendo el padrón · padrón vacío · alta guardada (`P-XXXX`, "pendiente de sincronizar")
+**Estados:** leyendo el padrón · padrón vacío · alta guardada (`P-XXXX`, "guardado en esta tablet")
 · año de nacimiento fuera de rango (error) · fallo al leer o guardar en el dispositivo (error).
 Ninguno bloquea por red: el alta se resuelve en el dispositivo.
 
@@ -22,6 +22,8 @@ Ninguno bloquea por red: el alta se resuelve en el dispositivo.
 grupo nutricional ni ración —eso es de `packages/nutrition` (DEC-2026-0003)— y no empuja nada a
 Supabase desde acá.
 
-**En el cascarón móvil:** es el primer destino de la barra inferior en modo simple. Formulario a
-pantalla completa, campos con toque de 56 px y el botón de alta al alcance del pulgar; la cifra de
-personas registradas se muestra como número grande.
+**Distribución:** en el teléfono es el primer destino de la barra inferior. La cifra de personas
+registradas va arriba (número grande) y el formulario debajo, con campos de 56 px y el botón de alta a
+todo el ancho al final, sin `sticky` para no chocar con la barra. En escritorio (≥ 1024 px) el rail
+lateral reemplaza la barra y la pantalla se parte en dos columnas: resumen a la izquierda, formulario a
+la derecha con los campos cortos (año, sexo; alias, nombre local) en dos filas.

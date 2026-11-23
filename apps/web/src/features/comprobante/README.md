@@ -18,10 +18,11 @@ pantalla y la pantalla no suma: la regla de dos puertas + piso vive en
 **Estados:** leyendo la boleta · 2 líneas `por_revisar` que no suman · confirmar una línea · todas
 confirmadas · `desconocido` por debajo de `PISO` (ver test).
 
-**En el cascarón móvil:** la pantalla vive dentro de `Shell` con barra inferior y header compacto,
-no como una página de escritorio. El total confirmado va como cifra grande al tope (sticky), la
-cantidad de líneas por revisar se anuncia en texto, y cada línea `confirmado` / `por_revisar` lleva
-su marca escrita además del color.
+**Distribución:** el total confirmado es la cifra de la pantalla. En el teléfono va arriba y pegado
+(sticky) mientras se revisan las líneas; en escritorio pasa a la columna derecha, al lado de la lista,
+y deja de empujar la boleta hacia abajo. Una barra de avance (`role="progressbar"`, además del texto)
+dice cuántas líneas están listas. Cada línea `confirmado` / `por_revisar` lleva su marca escrita además
+del color.
 
 **De dónde salen los colores:** `packages/ui/src/tokens.css` define los colores como triplete RGB
 (`--color-superficie`, `--color-texto`…); `apps/web/src/styles/tailwind.css` los puentea al tema de

@@ -7,10 +7,16 @@
  *
  * Una entrega NO mueve stock aca: se muestra el movimiento que el dominio
  * devuelve, para que la despensa lo escriba (append-only). El saldo se deriva.
+ *
+ * Distribucion: el pedido y sus decisiones son la columna principal; lo que
+ * genero la entrega (el movimiento) va al costado en escritorio y debajo en el
+ * telefono. Todo con los tokens de la app: esta pantalla era la unica que
+ * mezclaba `gray-*` sueltos.
  */
 import { useState } from 'react';
 
-import { BotonGrande } from '@hackods/ui';
+import { OLLAS_DEMO } from '@hackods/domain';
+import { BotonGrande, EncabezadoPantalla, EstadoPantalla } from '@hackods/ui';
 
 import {
   TransicionInvalida,
@@ -73,12 +79,17 @@ export function SolicitudPantalla({ nueva, ahora }: SolicitudPantallaProps) {
       });
       setSolicitud(resultado.solicitud);
       if (resultado.movimientos.length > 0) {
-        // La entrega son dos movimientos (origen negativo, destino positivo):
-        // se muestran los deltas para ver que la transferencia no crea stock.
-        const detalle = resultado.movimientos
-          .map((m) => `${m.ollaId}: ${m.delta >= 0 ? '+' : ''}${m.delta}`)
-          .join(' · ');
-        setMovimiento(`${pedido} transferidos (pendiente de registrar). ${detalle}`);
+        // La entrega son dos apuntes: la olla que entrega y la que recibe. Se
+        // nombran por su titulo publico ("Olla Norte"), nunca por el id interno.
+        const sale = resultado.movimientos.find((m) => m.delta < 0);
+        const entra = resultado.movimientos.find((m) => m.delta > 0);
+        const titulo = (ollaId: string): string =>
+          OLLAS_DEMO.find((olla) => olla.ollaId === ollaId)?.titulo ?? 'La otra olla';
+        if (sale !== undefined && entra !== undefined) {
+          setMovimiento(
+            `${titulo(sale.ollaId)} entregó ${pedido} · ${titulo(entra.ollaId)} recibió ${pedido}`,
+          );
+        }
       }
     } catch (e) {
       if (e instanceof TransicionInvalida) {
@@ -100,61 +111,81 @@ export function SolicitudPantalla({ nueva, ahora }: SolicitudPantallaProps) {
     solicitud.estado === 'aceptada';
 
   return (
-    <section className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <h2 className="text-2xl font-bold">Entre ollas</h2>
-        <p className="text-gray-600">Pedido entre ollas, sin mover stock hasta la entrega.</p>
-      </div>
+    <section className="flex flex-col gap-4 lg:gap-6">
+      <EncabezadoPantalla
+        titulo="Entre ollas"
+        descripcion="Pedido entre ollas: nada se mueve hasta que se entrega."
+      />
 
-      <div
-        className="flex flex-col gap-1 rounded-lg border border-gray-300 bg-gray-50 p-4"
-        data-estado={solicitud.estado}
-        data-tono={tono}
-      >
-        <p className="text-lg font-semibold">Pedido: {pedido} de arroz</p>
-        <p>
-          Estado: <strong data-estado-texto>{ETIQUETA[solicitud.estado] ?? solicitud.estado}</strong>
-        </p>
-      </div>
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] lg:items-start lg:gap-6">
+        <div className="flex flex-col gap-4">
+          <div
+            className="oc-tarjeta flex flex-col gap-1"
+            data-estado={solicitud.estado}
+            data-tono={tono}
+          >
+            <p className="text-lg font-semibold">Pedido: {pedido} de arroz</p>
+            <p className="flex flex-wrap items-center gap-2">
+              Estado:
+              <span className="inline-flex items-center rounded-full border border-borde-fuerte bg-tenue px-3 py-0.5">
+                <strong data-estado-texto>
+                  {ETIQUETA[solicitud.estado] ?? solicitud.estado}
+                </strong>
+              </span>
+            </p>
+          </div>
 
-      {error !== null ? (
-        <p role="alert" className="font-semibold">
-          {error}
-        </p>
-      ) : null}
+          {error !== null ? (
+            <EstadoPantalla estado="error">{error}</EstadoPantalla>
+          ) : null}
 
-      {movimiento !== null ? (
-        <div
-          role="status"
-          className="rounded-lg border border-gray-300 bg-gray-50 p-4"
-          data-estado="movimiento-generado"
-        >
-          <p className="font-semibold">Entrega registrada</p>
-          <p className="text-gray-600">{movimiento}</p>
+          <div className="oc-tarjeta flex flex-col gap-2">
+            <p className="text-sm font-semibold text-texto-suave">Decisiones del pedido</p>
+            <div className="flex flex-wrap gap-2">
+              <BotonGrande disabled={!puedeEnviar} onClick={() => resolver('enviar')}>
+                Enviar
+              </BotonGrande>
+              <BotonGrande disabled={!puedeAprobar} onClick={() => resolver('aprobar')}>
+                Aprobar
+              </BotonGrande>
+              <BotonGrande
+                variante="secundario"
+                disabled={!puedeEntregar}
+                onClick={() => resolver('entregar')}
+              >
+                Entregar
+              </BotonGrande>
+              <BotonGrande
+                variante="secundario"
+                disabled={!puedeCancelar}
+                onClick={() => resolver('cancelar')}
+              >
+                Cancelar
+              </BotonGrande>
+            </div>
+          </div>
         </div>
-      ) : null}
 
-      <div className="flex flex-wrap gap-2">
-        <BotonGrande disabled={!puedeEnviar} onClick={() => resolver('enviar')}>
-          Enviar
-        </BotonGrande>
-        <BotonGrande disabled={!puedeAprobar} onClick={() => resolver('aprobar')}>
-          Aprobar
-        </BotonGrande>
-        <BotonGrande
-          variante="secundario"
-          disabled={!puedeEntregar}
-          onClick={() => resolver('entregar')}
-        >
-          Entregar
-        </BotonGrande>
-        <BotonGrande
-          variante="secundario"
-          disabled={!puedeCancelar}
-          onClick={() => resolver('cancelar')}
-        >
-          Cancelar
-        </BotonGrande>
+        <div className="flex flex-col gap-4">
+          {movimiento !== null ? (
+            <div
+              role="status"
+              className="oc-tarjeta flex flex-col gap-1 border-primario bg-primario-suave"
+              data-estado="movimiento-generado"
+            >
+              <p className="font-semibold">Entrega registrada</p>
+              <p className="text-sm text-texto-suave">{movimiento}</p>
+            </div>
+          ) : (
+            <div className="oc-tarjeta flex flex-col gap-1" data-estado="sin-movimiento">
+              <p className="text-sm font-semibold text-texto-suave">Qué movió la entrega</p>
+              <p className="text-sm text-texto-suave">
+                Todavía no hay nada. Cuando se entregue, quedan dos apuntes: lo que sale de una
+                olla y lo que entra en la otra.
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </section>
   );

@@ -4,39 +4,42 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { Icono } from '@hackods/ui';
 
 import { contarPersonas } from '../data/repositorio.js';
-import { destinoDeRuta, destinosDeBarra, destinosDeMas } from './navegacion.js';
-import { type Modo, useModo } from './modo.js';
+import { SECCIONES, destinoDeRuta, destinosDeBarra, destinosDeMas } from './navegacion.js';
+import { type TamanoTexto, useTexto } from './texto.js';
 import { fijarPersonasGuardadas, useEstadoSync, alAvisarCambio } from './sync.js';
 
 /**
- * Cascaron movil de la PWA.
+ * Cascaron de la PWA. Una sola pantalla, dos distribuciones:
  *
- * Tres zonas fijas y una que scrollea:
+ *   telefono (< 64rem)                 escritorio (>= 64rem)
+ *   ┌──────────────────────┐           ┌──────────┬────────────────────────┐
+ *   │ Olla San Juan  ● loc │           │ Olla     │ Olla / seccion   ● loc │
+ *   ├──────────────────────┤           │  San Juan├────────────────────────┤
+ *   │ contenido (scroll)   │           │ Dia a dia│ contenido (scroll)     │
+ *   │                      │           │  Padron  │  max ~68rem, grillas   │
+ *   ├──────────────────────┤           │  Servir  │  de 2 columnas         │
+ *   │ [Padron][Servir]...  │           │ ...      │                        │
+ *   └──────────────────────┘           │ letra    │                        │
+ *                                      └──────────┴────────────────────────┘
  *
- *   ┌──────────────────────────────────┐
- *   │ Olla San Juan   ● En este disp.  │  header 56 px, no se mueve
- *   ├──────────────────────────────────┤
- *   │ contenido (scroll)               │
- *   │                                  │
- *   ├──────────────────────────────────┤
- *   │ [Padrón] [Servir] [Boleta] [···] │  barra inferior ≥64 px + safe-area
- *   └──────────────────────────────────┘
+ * Por que: en la tablet se usa de pie, con una mano en la olla; el pulgar
+ * alcanza la mitad inferior y los destinos diarios van abajo. En un monitor,
+ * una barra inferior es un telefono estirado: el rail deja el contenido a la
+ * vista y la navegacion siempre en el mismo lugar.
  *
- * Por que: la tablet se usa de pie, con una mano en la olla. El pulgar alcanza
- * la mitad inferior de la pantalla; los destinos diarios van abajo y el menu
- * web de 7 enlaces en fila desaparece. Un solo objetivo por pantalla.
- *
- * El modo (`simple`/`avanzado`) decide cuantos destinos hay en la barra: tres
- * en simple, cuatro + "Más" en avanzado. Ver `navegacion.ts`.
+ * Las dos navegaciones existen en el DOM y el CSS muestra una; solo cambia el
+ * `aria-label` para no declarar dos veces el mismo landmark en el lector de
+ * pantalla. El conteo del padron alimenta la pastilla del header: el header no
+ * abre Dexie por su lado.
  */
 export function Shell() {
-  const [modo, cambiarModo] = useModo();
   const [abiertoMas, setAbiertoMas] = useState(false);
+  const [tamano, cambiarTamano] = useTexto();
   const sync = useEstadoSync();
   const ubicacion = useLocation();
 
-  const barra = destinosDeBarra(modo);
-  const mas = destinosDeMas(modo);
+  const barra = destinosDeBarra();
+  const mas = destinosDeMas();
   const actual = destinoDeRuta(ubicacion.pathname);
 
   // Alimenta la pastilla del header sin que el header abra Dexie por su lado.
@@ -66,8 +69,21 @@ export function Shell() {
     setAbiertoMas(false);
   }, [ubicacion.pathname]);
 
+  // Escape cierra la hoja. Sin esto, en un telefono con teclado externo la
+  // unica salida es tocar "Cerrar".
+  useEffect(() => {
+    if (!abiertoMas) return;
+    const alTeclear = (evento: KeyboardEvent): void => {
+      if (evento.key === 'Escape') setAbiertoMas(false);
+    };
+    window.addEventListener('keydown', alTeclear);
+    return () => {
+      window.removeEventListener('keydown', alTeclear);
+    };
+  }, [abiertoMas]);
+
   return (
-    <div className="flex h-dvh flex-col bg-fondo text-texto">
+    <div className="flex h-dvh flex-col overflow-hidden bg-fondo text-texto lg:flex-row">
       <a
         href="#contenido"
         className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-oc focus:bg-primario focus:px-4 focus:py-3 focus:text-primario-texto"
@@ -75,51 +91,110 @@ export function Shell() {
         Ir al contenido
       </a>
 
-      <header className="z-20 flex min-h-[var(--alto-header)] shrink-0 items-center justify-between gap-3 border-b border-borde bg-superficie px-4 pt-[env(safe-area-inset-top)]">
-        <div className="flex min-w-0 flex-col">
-          <p className="text-xs font-semibold tracking-wide text-texto-suave">Olla San Juan</p>
-          <p className="truncate text-base font-bold">{actual?.descripcion ?? 'Ollas comunes'}</p>
+      {/* Rail de escritorio: marca, secciones agrupadas y tamano de letra. */}
+      <aside className="hidden w-[var(--ancho-rail)] shrink-0 flex-col border-r border-borde bg-superficie lg:flex">
+        <div className="flex flex-col gap-0.5 border-b border-borde px-4 py-4">
+          <span className="text-[0.6875rem] font-bold uppercase tracking-[0.12em] text-texto-suave">
+            Olla común
+          </span>
+          <span className="text-lg font-bold leading-tight">San Juan</span>
         </div>
 
-        <SyncPildora tono={sync.tono} texto={sync.texto} detalle={sync.detalle} />
-      </header>
+        <nav aria-label="Secciones principales" className="flex-1 overflow-y-auto px-2 py-4">
+          {SECCIONES.map((seccion) => (
+            <div key={seccion.titulo} className="mb-5 last:mb-0">
+              <p className="px-2 pb-1.5 text-[0.6875rem] font-bold uppercase tracking-[0.12em] text-texto-suave">
+                {seccion.titulo}
+              </p>
+              <ul className="flex flex-col gap-0.5">
+                {seccion.destinos.map((destino) => (
+                  <li key={destino.a}>
+                    <NavLink
+                      to={destino.a}
+                      title={destino.tarea}
+                      className={({ isActive }) =>
+                        [
+                          'flex min-h-11 items-center gap-2.5 rounded-oc px-2.5 py-2 text-[0.9375rem] font-semibold transition-colors',
+                          isActive
+                            ? 'bg-primario-suave text-primario'
+                            : 'text-texto-suave hover:bg-tenue hover:text-texto',
+                        ].join(' ')
+                      }
+                    >
+                      <Icono nombre={destino.icono} />
+                      <span className="truncate">{destino.descripcion}</span>
+                    </NavLink>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </nav>
 
-      <main
-        id="contenido"
-        className="mx-auto w-full max-w-[var(--ancho-columna)] flex-1 overflow-y-auto px-4 pt-4"
-        style={{ paddingBottom: 'calc(var(--alto-nav) + 1.5rem)' }}
-      >
-        <Outlet />
-        <p className="mt-8 text-sm text-texto-suave">
-          Datos simulados. Esto apoya la decisión de la olla; no es un diagnóstico.
-        </p>
-      </main>
+        <div className="border-t border-borde px-3 py-3">
+          <ControlTexto tamano={tamano} cambiar={cambiarTamano} />
+        </div>
+      </aside>
 
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <header className="z-20 flex min-h-[var(--alto-header)] shrink-0 items-center justify-between gap-3 border-b border-borde bg-superficie px-4 pt-[env(safe-area-inset-top)] lg:px-8 lg:pt-0">
+          <div className="flex min-w-0 flex-col lg:flex-row lg:items-baseline lg:gap-2">
+            <p className="text-xs font-semibold tracking-wide text-texto-suave lg:text-sm">
+              Olla San Juan
+            </p>
+            <span aria-hidden="true" className="hidden text-texto-suave lg:inline">
+              /
+            </span>
+            <p className="truncate text-base font-bold lg:text-sm lg:font-normal lg:text-texto-suave">
+              {actual?.descripcion ?? 'Ollas comunes'}
+            </p>
+          </div>
+
+          <SyncPildora tono={sync.tono} texto={sync.texto} detalle={sync.detalle} />
+        </header>
+
+        <main id="contenido" className="min-h-0 flex-1 overflow-y-auto">
+          <div className="mx-auto w-full max-w-[var(--ancho-contenido)] px-4 pt-4 pb-[calc(var(--alto-nav)+env(safe-area-inset-bottom)+1.5rem)] lg:px-8 lg:py-8">
+            <Outlet />
+            <p className="mt-10 border-t border-borde pt-4 text-xs text-texto-suave">
+              Datos simulados. Esto apoya la decisión de la olla; no es un diagnóstico.
+            </p>
+          </div>
+        </main>
+      </div>
+
+      {/*
+        Hoja "Más" del telefono: abre DENTRO del flujo, entre el contenido y la
+        barra. No es un overlay: asi no hay que adivinar la altura de la barra
+        (que crece con el tamano de letra) ni pelear con el area segura.
+      */}
       {abiertoMas && mas.length > 0 ? (
         <nav
           id="mas-secciones"
           aria-label="Más secciones"
-          className="fixed inset-x-0 z-30 border-t border-borde bg-superficie px-4 pt-3 shadow-[var(--sombra-alta)]"
-          style={{ bottom: 'calc(var(--alto-nav) + env(safe-area-inset-bottom))' }}
+          className="z-40 shrink-0 border-t border-borde bg-superficie px-4 pt-3 shadow-[var(--sombra-alta)] lg:hidden"
         >
-          <ul className="mx-auto grid max-w-[var(--ancho-columna)] grid-cols-2 gap-2 pb-3">
+          <p className="mx-auto max-w-[var(--ancho-lectura)] px-1 pb-2 text-[0.6875rem] font-bold uppercase tracking-[0.12em] text-texto-suave">
+            Otros
+          </p>
+          <ul className="mx-auto flex max-w-[var(--ancho-lectura)] flex-col gap-2 pb-3">
             {mas.map((destino) => (
               <li key={destino.a}>
                 <NavLink
                   to={destino.a}
-                  className="flex min-h-[56px] items-center gap-3 rounded-oc border border-borde bg-fondo px-3 py-2 text-base font-semibold active:bg-primario-suave"
+                  className="flex min-h-14 items-center gap-2.5 rounded-oc border border-borde bg-fondo px-3 py-2 text-[0.9375rem] font-semibold active:bg-primario-suave"
                 >
                   <Icono nombre={destino.icono} />
-                  <span className="flex flex-col">
-                    {destino.descripcion}
+                  <span className="flex min-w-0 flex-col">
+                    <span>{destino.descripcion}</span>
                     <span className="text-xs font-normal text-texto-suave">{destino.tarea}</span>
                   </span>
                 </NavLink>
               </li>
             ))}
           </ul>
-          <div className="mx-auto flex max-w-[var(--ancho-columna)] items-center justify-between gap-3 border-t border-borde py-3">
-            <ModoRapido modo={modo} cambiarModo={cambiarModo} />
+          <div className="mx-auto flex max-w-[var(--ancho-lectura)] items-end justify-between gap-3 border-t border-borde py-3">
+            <ControlTexto tamano={tamano} cambiar={cambiarTamano} />
             <button
               type="button"
               onClick={() => setAbiertoMas(false)}
@@ -131,33 +206,34 @@ export function Shell() {
         </nav>
       ) : null}
 
+      {/* Barra inferior del telefono: cuatro diarios + "Más". */}
       <nav
         aria-label="Secciones"
-        className="z-40 shrink-0 border-t border-borde bg-superficie pb-[env(safe-area-inset-bottom)]"
+        className="z-40 shrink-0 border-t border-borde bg-superficie pb-[env(safe-area-inset-bottom)] lg:hidden"
       >
-        <ul className="mx-auto flex max-w-[var(--ancho-columna)] items-stretch">
+        <ul className="mx-auto flex max-w-[var(--ancho-lectura)] items-stretch">
           {barra.map((destino) => (
-            <li key={destino.a} className="flex-1">
+            <li key={destino.a} className="min-w-0 flex-1">
               <NavLink
                 to={destino.a}
                 className={({ isActive }) =>
                   [
-                    'flex min-h-[calc(var(--alto-nav)-1px)] flex-col items-center justify-center gap-1 px-1 py-2 text-xs font-semibold',
-                    isActive ? ' text-primario' : 'text-texto-suave',
-                  ].join('')
+                    'flex min-h-[calc(var(--alto-nav)-1px)] flex-col items-center justify-center gap-0.5 px-1 py-1.5 text-[0.6875rem] font-semibold leading-tight',
+                    isActive ? 'text-primario' : 'text-texto-suave',
+                  ].join(' ')
                 }
               >
                 {({ isActive }) => (
                   <>
                     <span
                       className={[
-                        'flex h-9 w-9 items-center justify-center rounded-full',
+                        'flex h-8 w-8 items-center justify-center rounded-full',
                         isActive ? 'bg-primario-suave text-primario' : '',
-                      ].join('')}
+                      ].join(' ')}
                     >
                       <Icono nombre={destino.icono} />
                     </span>
-                    <span>{destino.texto}</span>
+                    <span className="max-w-full truncate">{destino.texto}</span>
                   </>
                 )}
               </NavLink>
@@ -165,20 +241,20 @@ export function Shell() {
           ))}
 
           {mas.length > 0 ? (
-            <li className="flex-1">
+            <li className="min-w-0 flex-1">
               <button
                 type="button"
                 onClick={() => setAbiertoMas((v) => !v)}
                 aria-expanded={abiertoMas}
                 aria-controls={mas.length > 0 ? 'mas-secciones' : undefined}
                 className={[
-                  'flex min-h-[calc(var(--alto-nav)-1px)] w-full flex-col items-center justify-center gap-1 px-1 py-2 text-xs font-semibold',
+                  'flex min-h-[calc(var(--alto-nav)-1px)] w-full flex-col items-center justify-center gap-0.5 px-1 py-1.5 text-[0.6875rem] font-semibold leading-tight',
                   abiertoMas ? 'text-primario' : 'text-texto-suave',
                 ].join(' ')}
               >
                 <span
                   className={[
-                    'flex h-9 w-9 items-center justify-center rounded-full',
+                    'flex h-8 w-8 items-center justify-center rounded-full',
                     abiertoMas ? 'bg-primario-suave' : '',
                   ].join(' ')}
                 >
@@ -230,54 +306,53 @@ function SyncPildora({
   );
 }
 
-/** Cambio de modo en la hoja "Más": es la pantalla de ajustes de bolsillo. */
-function ModoRapido({
-  modo,
-  cambiarModo,
+const TAMANOS: readonly { valor: TamanoTexto; texto: string; nota: string }[] = [
+  { valor: 'normal', texto: 'Normal', nota: 'Letra normal' },
+  { valor: 'grande', texto: 'Grande', nota: 'Letra grande' },
+  { valor: 'enorme', texto: 'Enorme', nota: 'Letra enorme' },
+] as const;
+
+/**
+ * Tamano de letra: la preferencia que de verdad se usa en la olla.
+ *
+ * Antes aca vivia un modo simple/avanzado que cambiaba cuantos destinos tenia
+ * la barra y solo se encontraba dentro de "Más": escondia "Plata" y en
+ * escritorio no hacia nada. El tamano de letra sirve en las dos
+ * distribuciones, se nota al instante y usa los tokens `data-texto` que ya
+ * existian en `tokens.css` (18 / 22 / 26 px de base).
+ */
+function ControlTexto({
+  tamano,
+  cambiar,
 }: {
-  readonly modo: Modo;
-  readonly cambiarModo: (siguiente: Modo) => void;
+  readonly tamano: TamanoTexto;
+  readonly cambiar: (siguiente: TamanoTexto) => void;
 }) {
   return (
-    <fieldset className="flex flex-col gap-1">
-      <legend className="text-xs font-semibold text-texto-suave">Cómo se muestra la app</legend>
+    <fieldset className="flex min-w-0 flex-col gap-1">
+      <legend className="text-xs font-semibold text-texto-suave">Tamaño de letra</legend>
       <div className="flex gap-1">
-        <ModoBoton modo="simple" actual={modo} cambiarModo={cambiarModo}>
-          Simple
-        </ModoBoton>
-        <ModoBoton modo="avanzado" actual={modo} cambiarModo={cambiarModo}>
-          Avanzado
-        </ModoBoton>
+        {TAMANOS.map((opcion) => {
+          const elegido = opcion.valor === tamano;
+          return (
+            <button
+              key={opcion.valor}
+              type="button"
+              aria-pressed={elegido}
+              aria-label={opcion.nota}
+              onClick={() => cambiar(opcion.valor)}
+              className={[
+                'min-h-11 min-w-0 flex-1 rounded-oc border px-2 text-xs font-semibold',
+                elegido
+                  ? 'border-primario bg-primario text-primario-texto'
+                  : 'border-borde-fuerte bg-superficie text-texto',
+              ].join(' ')}
+            >
+              {opcion.texto}
+            </button>
+          );
+        })}
       </div>
     </fieldset>
-  );
-}
-
-function ModoBoton({
-  modo,
-  actual,
-  cambiarModo,
-  children,
-}: {
-  readonly modo: Modo;
-  readonly actual: Modo;
-  readonly cambiarModo: (siguiente: Modo) => void;
-  readonly children: string;
-}) {
-  const elegido = modo === actual;
-  return (
-    <button
-      type="button"
-      aria-pressed={elegido}
-      onClick={() => cambiarModo(modo)}
-      className={[
-        'min-h-[44px] rounded-oc border px-3 text-sm font-semibold',
-        elegido
-          ? 'border-primario bg-primario text-primario-texto'
-          : 'border-borde-fuerte bg-superficie text-texto',
-      ].join(' ')}
-    >
-      {children}
-    </button>
   );
 }
