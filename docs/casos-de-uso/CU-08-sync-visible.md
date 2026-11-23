@@ -5,8 +5,8 @@
 están pendientes y cuándo quedaron sincronizados.
 
 **Guion:** 2:50 (se enciende la red: "4 cambios pendientes → sincronizados")
-**Área:** `web` + `sync` · **Estado:** implementado sobre el cascarón de `main` (supersede el PR #45)
-· Issue: #19
+**Área:** `web` + `sync` · **Estado:** implementado en `main` (#67); outbox Dexie y badge reactivo, con
+sync **local** (no habla con Supabase) · Issue: #19
 
 ## Precondiciones
 
