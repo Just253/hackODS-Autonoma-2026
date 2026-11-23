@@ -84,3 +84,7 @@ anuncian en el issue y en `packages/contracts` **antes** del código.
    extensions.vector(1024)` + `embedding_modelo`, nullable — la dimensión es la del modelo
    del contrato de clasificación (bge-m3, `docs/contracts/clasificacion.md`). Los embeddings
    reales los calcula el adaptador de D8; hasta entonces las columnas van `null`.
+10. Máquina de estados de `solicitudes` (migración `20261123191010`): la validan
+    servidor-side el trigger `app.validar_transicion_solicitud` (origen: `borrador→enviada`,
+    `cancelada`; destino: `enviada→aceptada→entregada`; terminales intocables). El trigger es
+    invoker: `authenticated` necesita `USAGE` en el esquema `app` (concedido en la misma migración).
