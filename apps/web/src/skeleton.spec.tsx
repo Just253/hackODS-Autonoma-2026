@@ -18,6 +18,7 @@ import {
   servicioDelDia,
 } from './data/repositorio.js';
 import { crearRouterDePrueba } from './app/router.js';
+import { TEMPLATE_DEMO_301 } from './fixtures/servicio-demo.js';
 
 /**
  * Prueba exigida por el issue #1: alta -> desmontar -> remontar -> la racion
@@ -145,7 +146,11 @@ describe('esqueleto offline', () => {
     const [persona] = await listarPersonas();
     expect(persona?.codigoP).toBe(codigoP);
 
-    const racion = await racionDe('P-DDDD');
+    // La racion se busca por el id del MENU que se sirvio (#90), no por el del
+    // reloj: `servicio-AAAA-MM-DD` era el id del bug, cuando se guardaba `null`.
+    // Buscarla por el id del reloj fue justamente lo que dejo pasar el `null`.
+    const racion = await racionDe('P-DDDD', OLLA_DEMO, TEMPLATE_DEMO_301);
+    expect(racion?.servicioId).toBe(TEMPLATE_DEMO_301);
     expect(racion?.razones).toHaveLength(2);
     expect(racion?.razones.every((r) => r.trim() !== '')).toBe(true);
 

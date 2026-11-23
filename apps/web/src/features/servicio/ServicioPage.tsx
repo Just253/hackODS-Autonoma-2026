@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import type { Persona } from '@hackods/contracts';
 import { racionSchema } from '@hackods/contracts';
@@ -17,7 +17,7 @@ import {
   listarPersonas,
   racionDe,
 } from '../../data/repositorio.js';
-import { menusDelDiaDemo } from '../../fixtures/servicio-demo.js';
+import { menuDelDia, textoDelMenu, type LecturaMenu } from './menu-del-dia.js';
 import { ServicioResumen } from './ServicioResumen.js';
 
 /**
@@ -28,12 +28,19 @@ import { ServicioResumen } from './ServicioResumen.js';
  * calculan aca (son de `packages/nutrition`, DEC-2026-0003): si no hay calculo,
  * se dice `sin dato` en vez de dibujar un cero.
  *
- * Estados: cargando / vacio (sin padron) / error / pendiente de sincronizar.
+ * Estados: cargando / vacio (sin padron) / error / pendiente de sincronizar /
+ * sin menu firmado del dia.
+ *
+ * Una sola fuente del menu (#90): `menuDelDia()` se resuelve UNA vez y de ahi
+ * salen el `servicioId` que se guarda en cada racion y la lista que pinta
+ * `ServicioResumen`. Antes el formulario guardaba `servicioId: null` y el
+ * resumen pedia el fixture por su cuenta: dos fuentes que podian no coincidir,
+ * y al remontar el resumen volvia al fixture. Si hoy no hay menu servible, la
+ * pantalla lo dice y NO deja servir: un `null` silencioso es el bug.
  *
  * Orden: las razones van ANTES de la lista de personas porque son el requisito
- * de la accion. Antes estaban despues: se tocaba "Servir ración", la app
- * respondia "faltan razones" y habia que bajar a buscarlas. En escritorio la
- * tarjeta de razones queda fija a la derecha mientras se recorre el padron.
+ * de la accion. En escritorio la tarjeta de razones queda fija a la derecha
+ * mientras se recorre el padron.
  */
 /**
  * El mínimo de razones no se copia acá: lo manda `racionSchema.razones` y se
@@ -47,7 +54,16 @@ interface Fila {
   readonly guardada: boolean;
 }
 
-export function ServicioPage() {
+export interface ServicioPageProps {
+  /**
+   * De donde se lee el menu del dia. Por defecto, `menuDelDia()` (hoy el
+   * fixture con `template.id` estable). El test entra por aca para probar el
+   * caso "sin menu firmado"; ningun otro consumidor lo usa.
+   */
+  readonly leerMenu?: LecturaMenu;
+}
+
+export function ServicioPage({ leerMenu }: ServicioPageProps = {}) {
   const [filas, setFilas] = useState<readonly Fila[] | null>(null);
   const [cargando, setCargando] = useState(true);
   const [personas, setPersonas] = useState<readonly Persona[] | null>(null);
@@ -56,9 +72,22 @@ export function ServicioPage() {
   const [guardando, setGuardando] = useState(false);
   const [ultimaGuardada, setUltimaGuardada] = useState<string | null>(null);
 
+  /**
+   * El menu, resuelto una vez por montaje: el id que se guarda y el menu que se
+   * muestra son EL MISMO objeto. Se memoiza sobre `leerMenu` para que el id no
+   * cambie entre renders sin que cambie la fuente.
+   */
+  const menu = useMemo(() => (leerMenu === undefined ? menuDelDia() : menuDelDia(leerMenu)), [leerMenu]);
+  const { servicioId } = menu;
+
   const recargar = async (): Promise<void> => {
     const lista = await listarPersonas(OLLA_DEMO);
-    const raciones = await Promise.all(lista.map((p) => racionDe(p.codigoP, OLLA_DEMO)));
+    // La fila se pregunta por el servicio del menu mostrado, no por "el de hoy"
+    // del reloj: si el id del menu es el de la plantilla, `racionDe` tiene que
+    // buscarlo con ese id o la racion recien guardada no apareceria marcada.
+    const raciones = await Promise.all(
+      lista.map((p) => racionDe(p.codigoP, OLLA_DEMO, servicioId ?? undefined)),
+    );
     setPersonas(lista);
     setFilas(lista.map((p, i) => ({ codigoP: p.codigoP, guardada: raciones[i] !== undefined })));
   };
@@ -75,14 +104,22 @@ export function ServicioPage() {
     return () => {
       vigente = false;
     };
-    // Se monta una vez: la lista se refresca despues de cada guardado.
-  }, []);
+    // Se monta una vez: la lista se refresca despues de cada guardado. La
+    // dependencia `servicioId` vuelve a leer si la fuente del menu cambia.
+  }, [servicioId]);
 
   const razonesValidas = razones.filter((r) => r.trim() !== '');
   const faltanRazones = !RAZONES_DEL_CONTRATO.safeParse(razonesValidas).success;
+  const sinMenu = servicioId === null;
 
   const guardar = (codigoP: string): void => {
     setError(null);
+    if (servicioId === null) {
+      // Nunca se cae a `null`: la accion esta deshabilitada y, si igual se
+      // llamara, la pantalla dice por que no se registra.
+      setError(menu.motivoSinMenu ?? 'Sin menú firmado del día, no se registra servicio.');
+      return;
+    }
     if (faltanRazones) {
       setError('Faltan razones: la ración necesita más de una explicación.');
       return;
@@ -91,9 +128,10 @@ export function ServicioPage() {
     setGuardando(true);
     guardarRacion({
       personaCodigoP: codigoP,
-      // Los componentes del menu firmado son de la integracion (H3:30) y de
-      // `packages/nutrition`: hoy no hay menu cargado, asi que sin servicio.
-      servicioId: null,
+      // El id del menu que esta a la vista (su `template.id`), no `null`: es la
+      // clave compuesta `[personaCodigoP+servicioId]` la que distingue un
+      // servicio de otro (issue #90).
+      servicioId,
       razones: razonesValidas,
     })
       .then(async () => {
@@ -132,6 +170,18 @@ export function ServicioPage() {
             <EstadoPantalla estado="cargando">
               Leyendo el servicio guardado en este dispositivo…
             </EstadoPantalla>
+          ) : null}
+
+          {/* Sin menu firmado: se dice antes de la lista, no despues de fallar. */}
+          {sinMenu ? (
+            <div className="oc-tarjeta flex flex-col gap-1" data-estado="sin-menu" role="alert">
+              <span className="oc-estado__etiqueta text-texto-suave">Sin menú firmado</span>
+              <p className="font-semibold">Sin menú firmado del día, no se registra servicio.</p>
+              <p className="text-sm text-texto-suave">
+                {menu.motivoSinMenu ?? 'Todavía no se cargó el menú del día.'} Las raciones se
+                registran contra el menú que se sirve: sin él, no hay a qué ligarlas.
+              </p>
+            </div>
           ) : null}
 
           {filas !== null && filas.length === 0 ? (
@@ -211,7 +261,7 @@ export function ServicioPage() {
                     <span className="oc-pendiente">Ración registrada · guardada en esta tablet</span>
                   ) : (
                     <div className="w-full sm:w-auto [&>button]:w-full sm:[&>button]:w-auto">
-                      <BotonGrande disabled={guardando} onClick={() => guardar(fila.codigoP)}>
+                      <BotonGrande disabled={guardando || sinMenu} onClick={() => guardar(fila.codigoP)}>
                         Servir ración
                       </BotonGrande>
                     </div>
@@ -224,9 +274,10 @@ export function ServicioPage() {
           {personas !== null && personas.length > 0 ? (
             <section className="flex flex-col gap-2" aria-label="Menú firmado del día">
               <h3 className="text-sm font-bold uppercase tracking-wide text-texto-suave">
-                Menú firmado del día
+                {textoDelMenu(menu)}
               </h3>
-              <ServicioResumen menus={menusDelDiaDemo()} personas={personas} />
+              {/* El MISMO menu que da el `servicioId`: una sola fuente. */}
+              <ServicioResumen menus={menu.menus} personas={personas} />
             </section>
           ) : null}
         </div>
