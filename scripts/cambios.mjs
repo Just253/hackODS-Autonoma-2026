@@ -16,7 +16,14 @@ export const PATRON_CODIGO = new RegExp(
     '^turbo\\.json$',
     '^tsconfig[^/]*\\.json$',
     '^\\.github/workflows/',
+    '^\\.github/actions/',
     '^\\.githooks/',
+    // Configuración que cambia cómo compila o corre el código: si se toca, hay que verificar de más.
+    '^\\.nvmrc$',
+    '^\\.node-version$',
+    '^Dockerfile$',
+    '^[Dd]ocker-compose[^/]*\\.ya?ml$',
+    '^(vite|vitest|jest|eslint|prettier|postcss|tailwind|playwright|tsup|rollup)\\.config\\.[cm]?[jt]s$',
   ].join('|'),
 );
 

@@ -36,6 +36,17 @@ test('configuración que compila o instala también es código', () => {
   assert.equal(soloDocumentacion(['.githooks/pre-push']), false);
 });
 
+test('un archivo de configuración suelto no se toma por documentación', () => {
+  // El caso que faltaba: un diff de sólo `.nvmrc` cambiaba la versión de Node y saltaba los tests.
+  assert.equal(soloDocumentacion(['.nvmrc']), false);
+  assert.equal(soloDocumentacion(['.node-version']), false);
+  assert.equal(soloDocumentacion(['Dockerfile']), false);
+  assert.equal(soloDocumentacion(['docker-compose.yml']), false);
+  assert.equal(soloDocumentacion(['vitest.config.ts']), false);
+  assert.equal(soloDocumentacion(['eslint.config.mjs']), false);
+  assert.equal(soloDocumentacion(['.github/actions/setup/action.yml']), false);
+});
+
 test('sin diff calculable se corre todo: el lado seguro', () => {
   assert.equal(soloDocumentacion([]), false);
 });
