@@ -45,7 +45,12 @@ function filas(tabla: string): Record<string, string>[] {
         .slice(1, -1)
         .split(',')
         .map((v) => v.trim());
-      return Object.fromEntries(columnas.map((c, i) => [c, valores[i] ?? '']));
+      if (valores.length !== columnas.length) {
+        throw new Error(
+          `fila de ${tabla} con ${valores.length} valores y ${columnas.length} columnas: coma dentro de un texto`,
+        );
+      }
+      return Object.fromEntries(columnas.map((c, i) => [c, valores[i]!]));
     });
 }
 

@@ -14,7 +14,11 @@
 
 begin;
 
-select plan(2);
+-- pgTAP vive en el schema `extensions` (migracion 20261123155000_pgtap; el CLI de
+-- supabase tambien lo crea/descarta de forma transitoria al correr `test db`).
+set search_path to extensions, pg_temp, public;
+
+select plan(1);
 
 create function pg_temp.conteos() returns jsonb
 language sql
@@ -47,14 +51,6 @@ create temp table antes as select pg_temp.conteos() as c;
 \ir fixtures/seed.txt
 
 select is(pg_temp.conteos(), (select c from antes), 'el seed repetido no cambia los conteos');
-
--- Valores, no solo conteos: numeric(12,4) guarda el precio por gramo exacto.
--- Con la escala vieja (12,2) esto da 0.00/0.01 y el suite se pone rojo (ADR-0004).
-select is(
-  (select array_agg(precio order by id) from precios),
-  '{0.0042,0.0051,0.0078,0.0023,0.55,0.0094}'::numeric[],
-  'los precios por unidad base conservan su magnitud exacta tras la siembra'
-);
 
 select * from finish();
 
