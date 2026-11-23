@@ -1,31 +1,13 @@
--- 0001_init.sql — migracion inicial del esqueleto.
+-- 0001_init.sql — marcador historico del esqueleto.
 --
--- A PROPOSITO VACIA: el esquema real se disena en el PR de contratos v1
--- (issue #3, docs/ARQUITECTURA.md 6.2) y nace con RLS default-deny.
--- Una migracion aplicada no se edita nunca: el esquema entra en una migracion nueva.
+-- A PROPOSITO VACIA: el esquema real vive en 20261123150000_modelo_base.sql
+-- (docs/DECISIONES.md D2/D4). Nunca se aplico en ninguna base.
 --
--- Forma prevista (no activar sin el PR de contratos):
---
--- create table ollas (
---   id uuid primary key default gen_random_uuid(),
---   nombre text not null,
---   codigo text not null unique,
---   distrito text,
---   creada_en timestamptz not null default now()
--- );
---
--- create table members (
---   id uuid primary key default gen_random_uuid(),
---   nombre text not null,
---   telefono text,
---   pin_hash text not null,
---   recovery_hash text not null,
---   creado_en timestamptz not null default now()
--- );
---
--- create table olla_members (...);
--- create table devices (...);
---
--- Regla: toda tabla nueva nace con `enable row level security` y sin policies.
--- El test `supabase/tests/000_rls_encendido.sql` falla si una tabla de public
--- queda con RLS deshabilitado.
+-- Recordatorio del modelo:
+--   * `ollas` con `tipo ∈ {comun, comedor_pca}` y `titulo`.
+--   * `personas` solo con `codigo_p` (P-XXXX); sin identidad personal.
+--   * `precios` como serie (canal, unidad, fecha, fuente, url).
+--   * familia de menu: menu_template, menu_day, dish, ingredient, portion,
+--     menu_constraint, substitution, validation (todas con version y hash).
+--   * `movimientos` append-only; `evento_sync` para el outbox idempotente.
+--   * Toda tabla nace con RLS default-deny; el test 000_rls_encendido.sql lo verifica.
