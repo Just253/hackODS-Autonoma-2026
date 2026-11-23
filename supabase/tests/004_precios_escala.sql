@@ -20,9 +20,15 @@ select is(
 );
 
 select is(
-  (select array_agg(precio order by id) from precios),
+  (select array_agg(precio order by id) from precios
+   where id in ('00000000-0000-4000-8000-000000000201',
+                '00000000-0000-4000-8000-000000000202',
+                '00000000-0000-4000-8000-000000000203',
+                '00000000-0000-4000-8000-000000000204',
+                '00000000-0000-4000-8000-000000000205',
+                '00000000-0000-4000-8000-000000000206')),
   '{420000,510000,780000,230000,550000,940000}'::bigint[],
-  'los valores sembrados son enteros de microcentesimos exactos'
+  'las seis filas base del seed son enteros de microcentesimos exactos (la serie demo añade más)'
 );
 
 select * from finish();
