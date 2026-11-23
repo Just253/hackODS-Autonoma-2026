@@ -57,12 +57,14 @@ values
 on conflict (id) do nothing;
 
 insert into precios (id, olla_id, insumo_id, canal, unidad, precio, fecha, fuente, url) values
-  ('00000000-0000-4000-8000-000000000201', '00000000-0000-4000-8000-000000000001', 'arroz', 'mayorista', 'g', 0.0042, '2026-11-01', 'demo-ficticio', null),
-  ('00000000-0000-4000-8000-000000000202', '00000000-0000-4000-8000-000000000001', 'arroz', 'minorista', 'g', 0.0051, '2026-11-01', 'demo-ficticio', null),
-  ('00000000-0000-4000-8000-000000000203', '00000000-0000-4000-8000-000000000001', 'lentejas', 'mayorista', 'g', 0.0078, '2026-11-01', 'demo-ficticio', null),
-  ('00000000-0000-4000-8000-000000000204', '00000000-0000-4000-8000-000000000001', 'papa', 'minorista', 'g', 0.0023, '2026-11-01', 'demo-ficticio', null),
-  ('00000000-0000-4000-8000-000000000205', '00000000-0000-4000-8000-000000000002', 'huevo', 'minorista', 'unidad', 0.55, '2026-11-01', 'demo-ficticio', null),
-  ('00000000-0000-4000-8000-000000000206', '00000000-0000-4000-8000-000000000003', 'quinua', 'mayorista', 'g', 0.0094, '2026-11-01', 'demo-ficticio', null)
+  -- precio: bigint en microcentesimos por unidad base (ADR-0004; comprobantes.md:1231).
+  -- S/4,20/kg por gramo = 420000. 1 = 10^-6 centimo.
+  ('00000000-0000-4000-8000-000000000201', '00000000-0000-4000-8000-000000000001', 'arroz', 'mayorista', 'g', 420000, '2026-11-01', 'demo-ficticio', null),
+  ('00000000-0000-4000-8000-000000000202', '00000000-0000-4000-8000-000000000001', 'arroz', 'minorista', 'g', 510000, '2026-11-01', 'demo-ficticio', null),
+  ('00000000-0000-4000-8000-000000000203', '00000000-0000-4000-8000-000000000001', 'lentejas', 'mayorista', 'g', 780000, '2026-11-01', 'demo-ficticio', null),
+  ('00000000-0000-4000-8000-000000000204', '00000000-0000-4000-8000-000000000001', 'papa', 'minorista', 'g', 230000, '2026-11-01', 'demo-ficticio', null),
+  ('00000000-0000-4000-8000-000000000205', '00000000-0000-4000-8000-000000000002', 'huevo', 'minorista', 'unidad', 550000, '2026-11-01', 'demo-ficticio', null),
+  ('00000000-0000-4000-8000-000000000206', '00000000-0000-4000-8000-000000000003', 'quinua', 'mayorista', 'g', 940000, '2026-11-01', 'demo-ficticio', null)
 on conflict (id) do nothing;
 
 -- Menu demo firmado (hash calculado sobre un literal de demo, no es un menu clinico).
