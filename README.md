@@ -11,9 +11,10 @@ Hackathon ODS — Universidad Autónoma del Perú.
 
 ## Estado
 
-Esqueleto M0 con las decisiones D1–D7 aplicadas: el monorepo instala, compila y arranca.
-**No hay features de producto todavía.** La pantalla de `/` es una prueba de humo
-(router + Tailwind + tokens + paquetes).
+Esqueleto M0 con las decisiones D1–D9 documentadas: el monorepo instala, compila y arranca.
+D8/D9 ya tienen contratos (`packages/contracts`) y reglas puras con tests (`packages/domain`).
+**La PWA sigue siendo una prueba de humo** (router + Tailwind + tokens + paquetes): todavía no hay
+pantallas de comprobantes, presupuesto ni captura por voz.
 
 Alcance de la demo: **3 minutos** (+ anexo de 2). El **75 °C** es checklist de inocuidad del
 servicio, no un cálculo.
@@ -64,7 +65,11 @@ scripts/               preflight, labels, seed
 
 ## Documentación
 
-- `docs/DECISIONES.md` — **decisiones que mandan** (D1–D7), fuente: PDFs + respuestas del usuario.
+- `docs/DECISIONES.md` — **decisiones que mandan** (D1–D9), fuente: PDFs + respuestas del usuario.
+- `docs/contracts/comprobantes.md` — comprobantes, clasificación de productos, presupuesto y series de precio (D8).
+- `docs/contracts/clasificacion.md` — catálogo, embeddings y umbrales de revisión (D8).
+- `docs/contracts/captura-voz.md` — captura por texto o voz y parser determinista (D9).
+- `docs/ARQUITECTURA-COMPUTE.md` — segundo backend de cómputo, `ComputePort` y degradación (D9).
 - `AGENTS.md` — reglas para todo agente/persona antes de tocar nada.
 - `docs/PROTOCOL.md` — coordinación: claims, ramas, PRs, verificación.
 - `docs/VERIFICACION.md` — búsqueda anti-duplicados antes de abrir un issue.

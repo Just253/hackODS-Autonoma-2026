@@ -70,6 +70,27 @@ Requisito nuevo del usuario: cada olla **sube sus facturas/boletas**, el sistema
 - **Reporte entre ollas**: agregados por período y categoría, sin identidad de personas ni de proveedores; cada olla ve su detalle, las demás solo el agregado.
 - **Deduplicación**: mismo comprobante subido dos veces → se detecta por hash de imagen + proveedor + folio + total; no se suma dos veces.
 
+**Referencia implementable (D8):**
+
+- `docs/contracts/comprobantes.md` — comprobantes, unidades, IGV, presupuesto y series de precio.
+- `docs/contracts/clasificacion.md` — catálogo, embeddings, umbrales y revisión humana.
+
+## D9 · Captura sin boleta (texto o voz) y dos backends
+
+Requisito nuevo: la persona puede **escribir o dictar** cuánto gastó en cada cosa, porque muchas compras son en efectivo y sin boleta. Esa captura alimenta la misma clasificación y el mismo presupuesto.
+
+- **Tres orígenes, un mismo destino**: `comprobante`, `manual` (texto) y `voz`. Todos terminan en `comprobante_item` y, tras revisión, en `precio_observado`, con `origen` y evidencia (`imagen`, `texto`, `audio`).
+- **Voz**: se graba **offline**, se transcribe cuando hay red o en el dispositivo, se extraen ítems y **una persona confirma los números**. Un número mal oído no entra al presupuesto.
+- **Cola única**: si no hay red o el servicio de cálculo no responde, la captura queda `pendiente_compute` y se procesa al volver. Nada se pierde y no se duplica (`idempotency_key`).
+- **Dos backends, un contrato**: **Supabase** es el registro (auth, RLS, storage, cola); **Compute** (`ComputePort`) ejecuta transcripción, extracción, vectorización y cálculo pesado sin guardar estado. En el prototipo corre en una **PC remota con `cloudflared` quick tunnel**; en producción, VPS con dominio y TLS.
+- **Regla de honestidad**: la UI dice "esperando para procesar", no finge que ya calculó. El presupuesto solo cambia con ítems confirmados.
+- **Quick tunnel es de prototipo**: URL efímera, sin autenticación propia y sin SLA. Exige token de servicio, límites de tamaño y tasa, y **nunca** expone Postgres. El audio crudo no se sube por defecto; si se sube, retención corta y borrado.
+
+**Referencia implementable (D9; el diseño llama D10 a la separación de backends, acá queda dentro de D9):**
+
+- `docs/contracts/captura-voz.md` — flujo, estados, `AsrPort` y parser determinista.
+- `docs/ARQUITECTURA-COMPUTE.md` — topología del segundo backend, `ComputePort`, auth y degradación.
+
 ## Lo que cambia respecto de lo ya escrito
 
 | Antes | Ahora |
