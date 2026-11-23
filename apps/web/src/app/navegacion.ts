@@ -87,6 +87,15 @@ export const SECUNDARIOS: readonly Destino[] = [
     icono: 'reporte',
     tarea: 'Ver el volumen movido por categoría.',
   },
+  {
+    a: '/consentimiento',
+    texto: 'Permisos',
+    descripcion: 'Consentimiento',
+    // Se reusa el icono del padrón: los permisos son de personas y `packages/ui`
+    // (area:web, otro write-set) no tiene un glifo propio todavía.
+    icono: 'padron',
+    tarea: 'Dar o retirar el permiso de seguimiento y de estadísticas.',
+  },
 ] as const;
 
 /** Los grupos, en el orden del rail. */

@@ -13,3 +13,4 @@ export * from './reporte.js';
 export * from './metricas.js';
 export * from './precios/serie.js';
 export * from './captura/parser.js';
+export * from './consentimiento.js';

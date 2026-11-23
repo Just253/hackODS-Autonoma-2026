@@ -67,10 +67,11 @@ describe('cascaron', () => {
       .map((a) => a.textContent ?? '');
     // Cada enlace concatena `descripcion` + `tarea` sin espacio entre ambos:
     // "Entre ollasPedir o entregar...". Por eso se compara con includes.
-    expect(nombres).toHaveLength(3);
+    expect(nombres).toHaveLength(4);
     expect(nombres.some((t) => t.includes('Precios de insumos'))).toBe(true);
     expect(nombres.some((t) => t.includes('Entre ollas'))).toBe(true);
     expect(nombres.some((t) => t.includes('Reporte entre ollas'))).toBe(true);
+    expect(nombres.some((t) => t.includes('Consentimiento'))).toBe(true);
   });
 
   it('la hoja "Más" se cierra con Escape y no queda tapando la accion', () => {
@@ -89,11 +90,11 @@ describe('cascaron', () => {
     );
   });
 
-  it('el rail de escritorio lista las siete secciones en dos grupos', () => {
+  it('el rail de escritorio lista las ocho secciones en dos grupos', () => {
     montarApp('/padron');
 
     const rail = enlacesDelRail();
-    expect(rail).toHaveLength(7);
+    expect(rail).toHaveLength(8);
     expect(rail.map((a) => a.textContent)).toEqual([
       'Padrón',
       'Servicio del día',
@@ -102,6 +103,7 @@ describe('cascaron', () => {
       'Precios de insumos',
       'Entre ollas',
       'Reporte entre ollas',
+      'Consentimiento',
     ]);
 
     // El rail agrupa en "Día a día" y "Otros"; "Entre ollas" es ademas una pantalla.
