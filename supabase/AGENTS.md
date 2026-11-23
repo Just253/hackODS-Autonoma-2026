@@ -70,6 +70,11 @@ Toda tabla nueva entra **con su política y su test en el mismo PR**. Tabla sin 
 5. Los ids de cliente son UUIDv7 generados en el dispositivo: la base no los inventa para eventos.
 6. Seed con `on conflict do nothing` y fechas fijas, no `now()`.
 7. `evento_sync` no se edita ni se borra desde el cliente: solo `insert` y `select` bajo RLS.
+8. **Escritura por flujo** (ADR-0007): cada flujo abre su INSERT con olla **y** rol
+   (`app.mi_rol`). Un UPDATE se concede por columna (`grant update (col)`) y la policy
+   repite el filtro; si la fila toca más de una olla (p. ej. `solicitudes`), se comprueba
+   el rol en cada lado, no con un `in` mezclado. Desde el cliente no hay DELETE: se
+   revoca explícitamente y el test lo afirma con `42501`.
 
 ## Dueño y revisión
 
