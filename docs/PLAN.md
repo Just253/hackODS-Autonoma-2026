@@ -1,5 +1,7 @@
 # 04 — Plan ejecutable: 3 orquestadores, un repo, una PWA para ollas comunes
 
+> **Vigente: `docs/DECISIONES.md`; este documento queda como insumo.**
+
 **Producto:** PWA offline-first para ollas comunes del Perú (padrón de personas, despensa, recetas, motor nutricional explicable, solicitudes entre ollas, impresión/escaneo).
 **Equipo:** 3 orquestadores (OpenChamber Desktop) + hasta 3 subagentes simultáneos cada uno, en 3 PCs distintas, un repo público `Just253/hackODS-Autonoma-2026` (hoy vacío).
 **Protocolo base:** `_orquestacion-research/02-protocolo-coordinacion.md` (claims, labels `status:*`, draft PR temprano, gate con `## Prueba`, revisión cruzada). Este plan **no lo reemplaza**: lo instancia.
@@ -448,7 +450,7 @@ Cinco estrategias, de la más barata a la más cara. Se elige la primera que fun
 |---|---|---|---|
 | 0:00–0:35 | Portada con los ODS y el número sembrado "78 personas, 1 celular, 0 datos" | "Una olla común alimenta a 78 personas con un celular compartido y sin internet. ODS 2, 3, 10 y 12 se juegan acá." | Encuadre del ODS en 35 s; el dato está rotulado como simulado |
 | 0:35–1:05 | Pantalla de padrón | "Hoy el registro es un cuaderno. Esto es lo mismo, pero que después sirve para decidir." | Muestra el problema sin dramatizar |
-| 1:05–2:05 | Alta de Rosa, 34, gestante, anemia reportada | "Tres campos, seis toques, sin internet." | **El corazón del producto**: registro real en < 60 s |
+| 1:05–2:05 | Alta de una persona ficticia (P-0001), gestante, anemia reportada | "Tres campos, seis toques, sin internet." | **El corazón del producto**: registro real en < 60 s |
 | 2:05–2:50 | Pantalla de ración con `reasons` desplegadas | "Le sugiere esta ración y le dice por qué. La organizadora puede discutirlo: no es una caja negra." | Explicabilidad = diferencial defendible |
 | 2:50–3:20 | Alta de un niño de 4 años, misma olla | "Cambia la persona, cambia la ración. Misma despensa." | Prueba de que hay motor, no una tabla fija |
 | 3:20–3:55 | Despensa con semáforo + alerta de mínimo | "Sabe qué falta antes de cocinar, no después." | Conecta nutrición con logística |

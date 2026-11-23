@@ -1,5 +1,7 @@
 # 02 · Arquitectura — PWA para ollas comunes
 
+> **Vigente: `docs/DECISIONES.md`; este documento queda como insumo.**
+
 **Proyecto:** hackODS-Autónoma 2026 · repo público y vacío `Just253/hackODS-Autonoma-2026`
 **Alcance:** arquitectura ejecutable por 3 personas en paralelo, con ADRs.
 **Fecha de investigación:** 2026-11-23. Los precios y límites de free tier cambian sin aviso: cada número lleva su fuente y fecha de consulta.
@@ -283,7 +285,7 @@ db.version(1).stores({
 
 > **La decisión más importante de todo el documento:** la despensa **no guarda saldos, guarda movimientos**. El saldo es una vista. Es lo que hace que el inventario siga siendo verdad después de un día sin red, y es lo que se puede explicar en el pitch en una frase: *"nunca perdemos un movimiento, aunque el celular esté desconectado"*.
 
-**Conflictos que se muestran:** si el merge descarta una edición de persona, la UI muestra una tarjeta discreta en "Más → Pendientes de revisar": "Se corrigió el nombre de Rosa Q. desde otro celular". Nunca un modal. Nunca un error.
+**Conflictos que se muestran:** si el merge descarta una edición local, la UI muestra una tarjeta discreta en "Más → Pendientes de revisar": "Se corrigió la etiqueta local de una persona desde otro celular". Nunca un modal. Nunca un error.
 
 ### 4.4 Qué se rompe sin internet (lista explícita, para el guion)
 
@@ -507,7 +509,7 @@ grant select (id, olla_id, nombre, edad_anios, sexo, deleted_at) on personas to 
 -- `gestante` y `anemia` NO se otorgan: solo los lee la vista y los roles con privilegio
 ```
 
-Resultado: la cocinera ve "Rosa Q. — ración especial (gestante)" y no ve ni puede consultar el campo, aunque llame a la API directamente con su JWT. Es *data minimization* implementada en la base, no en la UI.
+Resultado: la cocinera ve "P-0002 — porción especial (gestante)" y no ve ni puede consultar el campo, aunque llame a la API directamente con su JWT. Es *data minimization* implementada en la base, no en la UI.
 
 ### 6.4 Sesión offline
 
@@ -637,7 +639,7 @@ Por lo tanto:
 
 El escaneo es **acelerador, nunca requisito**. Toda pantalla que escanea tiene, al lado, la entrada manual:
 
-1. Autocompletar el nombre desde el padrón local (con normalización de tildes y mayúsculas: "ROSA QUISPE" encuentra "Rosa Quispe").
+1. Autocompletar por código `P-XXXX` o por la etiqueta local del dispositivo (con normalización de tildes y mayúsculas: "P-0123" encuentra la ficha).
 2. Cantidades con `−` / `+` y chips con los valores usados ayer ("2 kg", "1 atado").
 3. Mensaje en lenguaje humano, no técnico: **"No pudimos leer el papel. Escribilo acá."** Nunca "Error de OCR".
 
@@ -745,7 +747,7 @@ Ruleset:
 ### 9.5 Seed y datos ficticios
 
 - `supabase/seed.sql` **idempotente** (`on conflict do nothing`): 3 ollas, 40 personas, 20 insumos, 5 recetas, 14 días de raciones y movimientos, 4 membresías (una por rol), 2 solicitudes en estados distintos.
-- Nombres explícitamente falsos: `Persona Demo 01`, `Rosa Quispe (ficticia)`. Nada de nombres reales de beneficiarias, ni siquiera "de ejemplo".
+- Códigos explícitamente ficticios: `P-0001..P-0040`; ninguna etiqueta local en el seed. Nada de identidad real de beneficiarias, ni siquiera "de ejemplo".
 - El seed incluye **el caso borde**: una persona gestante con anemia, un niño de 2 años, un adulto mayor de 75, y una persona dada de baja (`deleted_at`), para que el merge y las vistas se prueben con datos que importan.
 - `tools/gen-qr.ts` genera los SVG de los folios del seed, para que los QR del demo apunten a datos que existen.
 

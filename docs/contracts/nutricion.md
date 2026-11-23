@@ -1,5 +1,8 @@
 # 03 · Motor nutricional — contrato de interfaz
 
+> **Vigente: `docs/DECISIONES.md` D3 y `packages/nutrition/src` (menú firmado + porción
+> por grupo). Este documento queda como insumo histórico del contrato anterior.**
+
 > **Alcance de este documento:** solo el **contrato** del paquete `packages/nutrition`.
 > No define valores nutricionales, ni tablas de composición, ni requerimientos, ni umbrales
 > clínicos. Todo eso entra por inyección (§1.6) y lo provee el usuario con otros agentes.

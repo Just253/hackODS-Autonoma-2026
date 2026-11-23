@@ -4,10 +4,12 @@ La memoria escrita del proyecto. Si una decisión no está acá, no existe.
 
 ```text
 docs/
+  DECISIONES.md        decisiones que mandan (D1–D7)
   PROTOCOL.md          claims, labels, ramas, gate (copiado de _orquestacion-research/02)
   adr/                 decisiones, una por archivo, numeradas
+  contracts/           nutricion.md (histórico) y sync.md (vigente)
+  research/            PRD e insumos de producto
   dominio/             qué es una olla, actores, reglas de negocio, datos sintéticos
-  nutricion/           contrato, supuestos y valores [a confirmar]
   guias/               cómo correr, cómo seedear, cómo demostrar
   seguridad/           informes de auditoría (no políticas inventadas)
   planes/              planes de oleada y SINTESIS.md (los escribe el orquestador)

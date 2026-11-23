@@ -75,17 +75,18 @@ bash scripts/labels.sh        # idempotente; crea status:*, area:*, type:*, p0..
 
 - `docs/adr/0001-stack.md`: pnpm + Vite/React PWA, Supabase, IndexedDB, sin Capacitor por ahora.
 - `docs/adr/0002-sincronizacion.md`: eventos append-only + outbox + LWW solo en maestros.
-- `docs/adr/0003-multitenant.md`: `olla_id` en todo, autorización por `members`.
+- `docs/adr/0003-multitenant.md`: `olla_id` en todo, autorización por `olla_members` + `devices`.
 
 Se mergean **antes** del código que los usa. 2 aprobaciones. 10 líneas cada uno.
 
 ### Bloque 5 — Contrato (45 min · C · PR de `contracts`, 2 aprobaciones)
 
-- `packages/domain`: `Olla`, `Jornada`, `Racion`, `Aporte` + Zod + invariantes + 6 tests.
-- `packages/sync`: `OutboxItem`, `encolar`, `flush`, adaptador remoto (interfaz, sin Supabase).
-- `packages/nutrition`: contrato del motor (`ProveedorComposicion`, `ProveedorRequerimientos`),
-  `ReglasMotor` con `[valor a confirmar]` y 5 fixtures con `null`. **Sin cifras.**
-- `fixtures/canonico.json` con ids fijos.
+- `packages/contracts`: `Olla`, `Persona` (`codigoP` P-XXXX), `Insumo`, `Precio`, familia de menú,
+  `Movimiento`, `EventoSync` + Zod + invariantes + tests.
+- `packages/sync`: `OutboxMemoria`/`Outbox`, `SyncPort` (push ≤ 100, orden `(lamport, deviceId)`).
+- `packages/nutrition`: menú firmado + porción por grupo (`validarMenu`, `porcionParaGrupo`,
+  `sustituirInsumo`, `explicar`), `ReglasMotor` con `[valor a confirmar]`. **Sin cifras.**
+- Seed ficticio en `supabase/seed.sql` con ids fijos y personas `P-XXXX`.
 
 **Hecho cuando:** `pnpm test` verde y A/B pueden importar los tipos sin tocar nada más.
 

@@ -1,6 +1,6 @@
 # ADR 0001 — Base del monorepo (ensamblado del esqueleto)
 
-- **Estado:** aceptado
+- **Estado:** aceptado · **parcialmente superseded por ADR-0002** (identidad, menú, sync y esquema)
 - **Fecha:** 2026-11-23
 - **Decisores:** ensamblado inicial (base para las 3 personas)
 - **Issues:** ninguno todavía (M0, issue `[infra] Monorepo, CI, labels, plantillas`)
