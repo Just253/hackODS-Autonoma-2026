@@ -1,6 +1,7 @@
 export * from './aritmetica.js';
 export * from './errors.js';
 export * from './racion.js';
+export * from './servicio.js';
 export * from './clasificacion/config.js';
 export * from './comprobantes/conciliacion.js';
 export * from './presupuesto/presupuesto.js';
