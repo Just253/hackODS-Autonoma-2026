@@ -1,55 +1,42 @@
-import type { Movimiento, Persona, RacionSugerida, Servicio } from '@hackods/contracts';
+import type { MenuTemplate, Movimiento, Servicio } from '@hackods/contracts';
 
 import { NoImplementado } from './errors.js';
 
-/** Todo lo que la funcion necesita entra por parametro: sin IO, sin reloj global. */
-export interface ContextoRacion {
-  /** Saldo derivado por insumoId, en unidad base. */
-  readonly stock: Readonly<Record<string, number>>;
-  /** Version de la tabla de requerimientos usada. */
-  readonly versionTabla: string;
-  /** ISO 8601 UTC. Inyectado para que el calculo sea determinista. */
-  readonly ahora: string;
-}
-
 /**
- * Racion sugerida para una persona con explicacion legible.
+ * Servicios vigentes de una fecha. Una racion entregada no se edita: se anula
+ * con otro registro, y el servicio se filtra por `deletedAt === null`.
  *
- * TODO(M3): implementar. Debe ser pura, determinista y traer >= 2 razones en espanol.
- * Sin valores nutricionales hardcodeados: el aporte entra por proveedor (packages/nutrition).
+ * TODO(M1): filtrar por olla y fecha, ordenando por hora.
  */
-export function calcularRacion(
-  persona: Persona,
-  contexto: ContextoRacion,
-): RacionSugerida {
-  void persona;
-  void contexto;
-  throw new NoImplementado('calcularRacion');
-}
-
-/**
- * Raciones vigentes de una fecha. La racha se anula con otro registro, nunca se edita.
- *
- * TODO(M1): filtrar por olla, fecha y `deletedAt === null`, ordenando por hora.
- */
-export function racionesDelDia(
+export function serviciosDelDia(
   servicios: readonly Servicio[],
   fecha: string,
 ): readonly Servicio[] {
   void servicios;
   void fecha;
-  throw new NoImplementado('racionesDelDia');
+  throw new NoImplementado('serviciosDelDia');
 }
 
 /**
  * Saldo de despensa derivado de movimientos append-only.
- * Regla del proyecto: el saldo NUNCA se escribe a mano (docs/ARQUITECTURA.md 4.3).
+ * Regla del proyecto: el saldo NUNCA se escribe a mano (docs/DECISIONES.md D4).
  *
- * TODO(M2): sumar deltas por insumoId. No existe un campo "saldo" persistido.
+ * TODO(M2): sumar deltas por insumoId, incluyendo `transferencia` entre ollas.
  */
 export function saldoDespensa(
   movimientos: readonly Movimiento[],
 ): Readonly<Record<string, number>> {
   void movimientos;
   throw new NoImplementado('saldoDespensa');
+}
+
+/**
+ * Un menu solo se sirve si esta `publicado` y su sello es verificable.
+ * No evalua nutricion: eso es `packages/nutrition`.
+ *
+ * TODO(M3): verificar estado, sello y hash contra el contenido.
+ */
+export function esMenuServible(menu: MenuTemplate): boolean {
+  void menu;
+  throw new NoImplementado('esMenuServible');
 }

@@ -1,9 +1,12 @@
-import type { Olla, RacionSugerida, Receta, Servicio, Solicitud } from '@hackods/contracts';
+import type { Olla, Racion, Receta, Servicio, Solicitud } from '@hackods/contracts';
 
 export interface FilaPadron {
-  readonly personaId: string;
-  /** Alias, nunca nombre completo ni DNI. */
-  readonly alias: string;
+  readonly codigoP: string;
+  /**
+   * Etiqueta solo del dispositivo (`localOnly`). Si es `null`, se imprime el codigo.
+   * Nunca viaja al servidor ni al evento de sync.
+   */
+  readonly etiquetaLocal: string | null;
   readonly edadAnios: number | null;
   readonly tipoRacion: string;
   readonly marcado: boolean;
@@ -11,7 +14,7 @@ export interface FilaPadron {
 
 export interface InsumoReceta {
   readonly insumoId: string;
-  readonly nombre: string;
+  readonly denominacion: string;
   /** `null` = [valor a confirmar]. */
   readonly gramos: number | null;
 }
@@ -34,5 +37,5 @@ export type Documento =
       readonly origen: Olla;
       readonly destino: Olla;
     }
-  | { readonly tipo: 'comprobante'; readonly racion: RacionSugerida; readonly folio: string; readonly qr: string }
+  | { readonly tipo: 'comprobante'; readonly racion: Racion; readonly folio: string; readonly qr: string }
   | { readonly tipo: 'etiqueta'; readonly olla: Olla; readonly fecha: string; readonly qr: string };

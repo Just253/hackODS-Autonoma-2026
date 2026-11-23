@@ -12,15 +12,15 @@ export function escapar(texto: string): string {
 export function tituloDocumento(doc: Documento): string {
   switch (doc.tipo) {
     case 'padron':
-      return `Padron del dia - ${doc.olla.nombre}`;
+      return `Padron del dia - ${doc.olla.titulo}`;
     case 'receta':
-      return doc.receta.nombre;
+      return doc.receta.titulo;
     case 'solicitud':
-      return `Solicitud de insumos - ${doc.origen.nombre}`;
+      return `Solicitud de insumos - ${doc.origen.titulo}`;
     case 'comprobante':
       return `Comprobante ${doc.folio}`;
     case 'etiqueta':
-      return `Etiqueta - ${doc.olla.nombre} - ${doc.fecha}`;
+      return `Etiqueta - ${doc.olla.titulo} - ${doc.fecha}`;
   }
 }
 
