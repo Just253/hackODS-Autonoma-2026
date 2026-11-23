@@ -5,7 +5,7 @@
 permita comparar ollas **sin exponer identidades**.
 
 **Guion:** 2:30 (otra olla pide 20 kg de arroz; se acepta; agregado de 3 ollas sin identidades)
-**Área:** `contracts` + `web` · **Estado:** PR #37 en revisión (dominio y pantallas); bloqueado por los ids UUID de los movimientos · Issue: #18
+**Área:** `contracts` + `web` · **Estado:** PR #37 mergeado (`377bff1`); dominio y pantallas en `main` · Issue: #18
 
 ## Precondiciones
 
