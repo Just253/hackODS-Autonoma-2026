@@ -22,7 +22,7 @@ begin;
 
 set local search_path to extensions, pg_temp, public;
 
-select plan(29);
+select plan(31);
 
 -- ---------------------------------------------------------------------------
 -- Fixtures: olla P (donde la cocinera y la organizadora trabajan), olla Q
@@ -250,8 +250,26 @@ select is(
   'organizadora P (destino): acepta la solicitud (1 fila)'
 );
 
--- La organizadora de Q (origen): la entrega.
+-- La organizadora de Q (origen) NO entrega: la entrega es del lado destino
+-- (máquina de estados del servidor, migración 191010; `ORIGENES_VALIDOS` del
+-- dominio). Intenta y recibe 42501: el pedido sigue en `aceptada`.
 select set_config('request.jwt.claims', '{"sub":"80000000-0000-4000-8000-000000000004","role":"authenticated"}', true);
+
+select throws_ok(
+  $$update public.solicitudes set estado = 'entregada'
+    where id = 'cccccccc-0000-4000-8000-0000000000a1'$$,
+  '42501', null,
+  'organizadora Q (origen): entregar lanza 42501 (es del lado destino)'
+);
+
+select is(
+  (select estado from public.solicitudes where id = 'cccccccc-0000-4000-8000-0000000000a1'),
+  'aceptada',
+  'organizadora Q: el intento no cambió el estado (sigue aceptada)'
+);
+
+-- La organizadora de P (destino): la entrega.
+select set_config('request.jwt.claims', '{"sub":"80000000-0000-4000-8000-000000000002","role":"authenticated"}', true);
 
 with tocadas as (
   update public.solicitudes set estado = 'entregada'
@@ -261,13 +279,13 @@ with tocadas as (
 select is(
   (select count(*) from tocadas),
   1::bigint,
-  'organizadora Q (origen): transiciona a entregada (1 fila)'
+  'organizadora P (destino): entrega la solicitud (1 fila)'
 );
 
 select is(
   (select estado from public.solicitudes where id = 'cccccccc-0000-4000-8000-0000000000a1'),
   'entregada',
-  'organizadora Q: el estado final es entregada'
+  'organizadora P (destino): el estado final es entregada'
 );
 
 -- ---------------------------------------------------------------------------
