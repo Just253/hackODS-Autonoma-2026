@@ -10,7 +10,7 @@ import { PreciosDeLaOlla } from './PreciosDeLaOlla.js';
 /**
  * Precios de la olla contra Supabase (doble, sin red).
  *
- * - Sin sesión: "Conectá Supabase", sin productos de ejemplo.
+ * - Sin sesión: "Conecta Supabase", sin productos de ejemplo.
  * - Con sesión: las series reales, con la unidad de compra y "sin dato" cuando
  *   no hay ventana previa (el seed tiene una sola semana).
  * - Error: estado de error con reintento, sin fixtures.
@@ -58,7 +58,7 @@ describe('PreciosDeLaOlla', () => {
   it('sin sesión pide conectar Supabase y no muestra precios de ejemplo', () => {
     montar(clienteFalso({}).cliente);
 
-    expect(screen.getByText('Conectá Supabase para ver los precios')).toBeInTheDocument();
+    expect(screen.getByText('Conecta Supabase para ver los precios')).toBeInTheDocument();
     expect(screen.queryByText(/arroz/i)).toBeNull();
   });
 

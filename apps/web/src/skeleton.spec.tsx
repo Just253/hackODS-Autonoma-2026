@@ -81,7 +81,7 @@ describe('esqueleto offline', () => {
     // siendo el camino offline y es lo que este test cubre.
     entrarComo('organizadora');
     const { unmount } = montarApp('/padron');
-    await screen.findByText('Conectá Supabase para ver el padrón');
+    await screen.findByText('Conecta Supabase para ver el padrón');
 
     const alta = await altaPersona(
       {

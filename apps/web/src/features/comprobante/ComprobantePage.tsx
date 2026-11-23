@@ -93,8 +93,13 @@ export function ComprobantePage() {
       />
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)] lg:items-start lg:gap-6">
-        {/* Resumen: en el telefono queda arriba y pegado; en escritorio, a la derecha. */}
-        <div className="oc-tarjeta sticky top-0 z-10 flex flex-col gap-2 bg-superficie lg:col-start-2 lg:row-start-1 lg:sticky lg:top-2">
+        {/*
+          Resumen: en el telefono queda arriba y pegado; en escritorio, a la
+          derecha. El `top` es el alto del header del cascarón, no 0: `<main>` es
+          el que scrollea y el header (`z-20`, `Shell.tsx`) flota encima, así que
+          con `top-0` el resumen se metía DEBAJO del header al desplazar.
+        */}
+        <div className="oc-tarjeta sticky top-[var(--alto-header)] z-10 flex flex-col gap-2 bg-superficie lg:col-start-2 lg:row-start-1 lg:sticky lg:top-2">
           <p className="text-sm text-texto-suave" data-estado="por-revisar">
             {lineasPorRevisar.length === 0
               ? `Las ${ITEMS_BOLETA.length} líneas coinciden con la lista.`
@@ -145,7 +150,10 @@ export function ComprobantePage() {
                   </span>
                 </div>
 
-                <dl className="grid grid-cols-3 gap-2 text-xs text-texto-suave">
+                {/* Una columna en 360 px: con `grid-cols-3` fijo, "Precio
+                    unitario" (la etiqueta más larga) se partía y arrastraba el
+                    resto de la línea. Lo mismo que hacen los botones de abajo. */}
+                <dl className="grid grid-cols-1 gap-2 text-xs text-texto-suave sm:grid-cols-3">
                   <div>
                     <dt className="font-semibold">Cantidad</dt>
                     <dd>{cantidadLegible(item)}</dd>

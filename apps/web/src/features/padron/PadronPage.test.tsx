@@ -44,7 +44,7 @@ describe('PadronPage (datos remotos)', () => {
   it('sin sesión pide conectar Supabase y no muestra ninguna persona de ejemplo', () => {
     montar(clienteFalso({}).cliente);
 
-    expect(screen.getByText('Conectá Supabase para ver el padrón')).toBeInTheDocument();
+    expect(screen.getByText('Conecta Supabase para ver el padrón')).toBeInTheDocument();
     expect(screen.queryByText(/^P-[A-Z0-9]{4}$/)).toBeNull();
     expect(screen.queryByLabelText(/en el padrón/)).toBeNull();
   });

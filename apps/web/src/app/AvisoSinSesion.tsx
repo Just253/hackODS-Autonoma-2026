@@ -16,7 +16,7 @@ export function AvisoSinSesion({ que }: { readonly que: string }) {
 
   return (
     <div className="oc-tarjeta flex flex-col gap-2" role="status" data-estado="sin-sesion">
-      <p className="text-lg font-bold">Conectá Supabase para ver {que}</p>
+      <p className="text-lg font-bold">Conecta Supabase para ver {que}</p>
       {configurado ? (
         <p className="text-sm text-texto-suave">
           Entra con una cuenta demo desde Ajustes: el botón «Más» en el teléfono, el panel

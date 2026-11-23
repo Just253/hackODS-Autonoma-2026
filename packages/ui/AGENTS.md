@@ -62,3 +62,10 @@ pnpm --filter @hackods/ui typecheck
 
 Dueño: **A** (`area:web`). Revisa **C** (accesibilidad y consistencia). `print.css` lo revisa **B**
 porque lo consumen los reportes del backend.
+
+## Anchos y escala
+
+`--ancho-rail` está en `rem`, no en px: tiene que crecer con `data-texto` como el resto de la
+interfaz. En px fijos, a letra `enorme` (26 px) el rail no daba abasto y el selector de letra quedaba
+fuera de pantalla (bug corregido en #96/#98). Cualquier ancho nuevo de layout se declara en `rem`;
+los `px` quedan para bordes y sombras.

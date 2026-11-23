@@ -22,3 +22,5 @@ ventana, la variación dice `sin dato`: no se inventa una flecha.
 datos vive en `PreciosDeLaOlla`.
 
 **Texto visible:** la fuente dice de dónde salen los precios de la olla, sin jerga de escaneo.
+
+**Texto visible:** sin sesión remota pide "Conecta Supabase" (tuteo peruano), no "Conectá".

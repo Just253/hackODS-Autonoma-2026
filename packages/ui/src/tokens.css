@@ -77,9 +77,24 @@
   --ancho-lectura: 34rem;
   /* Ancho del area de contenido en escritorio (rail + grillas de 2 columnas). */
   --ancho-contenido: 68rem;
-  /* Rail lateral de escritorio. En px: es cromo de layout, no texto; si
-     creciera con el tamano de letra se comeria la pantalla. */
-  --ancho-rail: 240px;
+  /*
+   * Rail lateral de escritorio, en `rem` A PROPÓSITO.
+   *
+   * Estuvo en `240px` fijos con el argumento de que es "cromo de layout, no
+   * texto". Con `data-texto='enorme'` (26 px de base) el rail se quedaba en
+   * 240 px mientras el contenido del rail crecía ~44 %: el control de tamaño de
+   * letra, que vive adentro, quedaba fuera de pantalla y no había forma de
+   * volver a una letra normal (`#root` es `overflow: hidden`, no hay scroll de
+   * página). El rail scrollea por dentro (`Shell.tsx`, `overflow-y-auto`), pero
+   * un rail angosto no se arregla scrolleando: lo que no entra, no entra.
+   *
+   * En `rem` el rail crece con la misma variable que gobierna el texto del
+   * rail: 15rem son 270 px a 18 px de base, 330 px a 22 y 390 px a 26. El
+   * control de letra (tres pasos + rótulos) entra a `enorme`, y el área de
+   * contenido se achica —no se come la pantalla— porque `--ancho-contenido` ya
+   * la acota y el rail sólo toma lo que necesita.
+   */
+  --ancho-rail: 15rem;
   --sombra-alta: 0 -1px 0 rgb(var(--color-borde));
 
   /* Escala tipografica: 18 px por defecto, no 16. Se ajusta con data-texto. */

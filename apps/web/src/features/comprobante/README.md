@@ -34,3 +34,5 @@ pantalla sería un PR rechazado (`packages/ui/AGENTS.md` §3).
 los fixtures), no deduplica comprobantes y no empuja nada a Supabase.
 
 **Texto visible:** la boleta de ejemplo se anuncia como de ejemplo; no se habla de OCR ni de escaneo, que la demo no hace.
+
+**Texto visible y layout:** el resumen `sticky` no pelea con el header (`z-20`), y la fila de precio unitario es `grid-cols-1 sm:grid-cols-3` para no partirse en 360 px.
