@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { nutrienteIdSchema, racionSchema } from '@hackods/contracts';
 
+import { SESION_INICIAL, cambiarRol, guardarSesion } from './app/sesion.js';
 import { baseDeOlla, cerrarBases } from './data/base.js';
 import {
   OLLA_DEMO,
@@ -56,15 +57,27 @@ beforeEach(async () => {
   vi.spyOn(Math, 'random').mockReturnValue(AZAR_FIJO());
 });
 
+/**
+ * Entra con el rol que de verdad tiene esa pantalla en la matriz (FE-02). El
+ * padron es solo de la organizadora; servicio y comprobante, de la cocinera.
+ * Se siembra el rol, no se debilita la guarda.
+ */
+function entrarComo(rol: 'cocinera' | 'organizadora') {
+  guardarSesion(cambiarRol(SESION_INICIAL, rol));
+}
+
 afterEach(async () => {
   cleanup();
   vi.restoreAllMocks();
   await limpiarBaseDePrueba();
+  localStorage.clear();
 });
 
 describe('esqueleto offline', () => {
   it('alta P-XXXX -> desmontar -> remontar -> la racion sigue en pantalla', async () => {
     // 1. Alta de una persona ficticia desde el padron, sin red.
+    // El padron es de la organizadora desde FE-02.
+    entrarComo('organizadora');
     const { unmount } = montarApp('/padron');
     await screen.findByText(/Todavía no hay personas/i);
 
@@ -85,7 +98,10 @@ describe('esqueleto offline', () => {
     expect(screen.getByText(/Guardado en esta tablet/i)).toBeInTheDocument();
 
     // 2. Racion con dos razones.
+    // Servir es tarea de la cocinera: se cambia el rol como lo haria una persona
+    // que comparte la tablet, no se salta la guarda.
     unmount();
+    entrarComo('cocinera');
     montarApp('/servicio');
     await screen.findByText(/raciones registradas/i);
     // El total sale del padron real: una persona, una racion en cada opcion (no una constante).

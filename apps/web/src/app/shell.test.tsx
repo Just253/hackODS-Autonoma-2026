@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { crearRouterDePrueba } from './router.js';
 import { CLAVE_TEXTO, TEXTO_INICIAL, leerTexto } from './texto.js';
 import { DIARIOS, SECUNDARIOS, destinosDeBarra, destinosDeMas } from './navegacion.js';
+import { CLAVE_SESION, SESION_INICIAL } from './sesion.js';
 import { reiniciarEstadoSync } from './sync.js';
 
 /**
@@ -48,33 +49,37 @@ afterEach(() => {
 });
 
 describe('cascaron', () => {
-  it('la barra del telefono muestra los cuatro diarios y deja los secundarios en "Más"', () => {
-    montarApp('/padron');
+  it('la barra del telefono muestra solo los diarios de la cocinera; "Más" sigue para el contexto', () => {
+    montarApp('/servicio');
 
     const barra = enlacesDeBarra();
-    expect(barra).toHaveLength(4);
-    expect(barra.map((a) => a.textContent)).toEqual(['Padrón', 'Servir', 'Boleta', 'Plata']);
+    // Cocinera: servicio y comprobante. Padron y plata son de la organizadora.
+    expect(barra).toHaveLength(2);
+    expect(barra.map((a) => a.textContent)).toEqual(['Servir', 'Boleta']);
 
-    // "Más" es un boton, no un destino: abre lo que la barra no muestra.
+    // "Más" siempre esta: ahi viven las secciones extra Y la hoja de contexto.
+    // Para la cocinera la hoja no tiene enlaces, pero el boton no desaparece.
     const mas = screen.getByRole('button', { name: /Más/i });
     expect(mas).toHaveAttribute('aria-expanded', 'false');
     fireEvent.click(mas);
     expect(mas).toHaveAttribute('aria-expanded', 'true');
-
     const hoja = screen.getByRole('navigation', { name: 'Más secciones' });
     const nombres = within(hoja)
       .getAllByRole('link')
       .map((a) => a.textContent ?? '');
     // Cada enlace concatena `descripcion` + `tarea` sin espacio entre ambos:
-    // "Entre ollasPedir o entregar...". Por eso se compara con includes.
-    expect(nombres).toHaveLength(3);
-    expect(nombres.some((t) => t.includes('Precios de insumos'))).toBe(true);
-    expect(nombres.some((t) => t.includes('Entre ollas'))).toBe(true);
-    expect(nombres.some((t) => t.includes('Reporte entre ollas'))).toBe(true);
+    // "RecetarioElegir un plato...". Por eso se compara con includes.
+    // La cocinera solo tiene Recetario en "Más"; lo demas es de otros roles.
+    expect(nombres).toHaveLength(1);
+    expect(nombres[0]).toContain('Recetario');
   });
 
   it('la hoja "Más" se cierra con Escape y no queda tapando la accion', () => {
-    montarApp('/servicio');
+    window.localStorage.setItem(
+      CLAVE_SESION,
+      JSON.stringify({ ...SESION_INICIAL, rol: 'organizadora' }),
+    );
+    montarApp('/padron');
     fireEvent.click(screen.getByRole('button', { name: /Más/i }));
     expect(screen.getByRole('navigation', { name: 'Más secciones' })).toBeInTheDocument();
 
@@ -89,19 +94,23 @@ describe('cascaron', () => {
     );
   });
 
-  it('el rail de escritorio lista las siete secciones en dos grupos', () => {
+  it('el rail de escritorio lista las secciones del rol, en dos grupos', () => {
+    // Organizadora: es el rol con mas destinos (6 de 8) y prueba el agrupado.
+    window.localStorage.setItem(
+      CLAVE_SESION,
+      JSON.stringify({ ...SESION_INICIAL, rol: 'organizadora' }),
+    );
     montarApp('/padron');
 
     const rail = enlacesDelRail();
-    expect(rail).toHaveLength(7);
+    expect(rail).toHaveLength(6);
     expect(rail.map((a) => a.textContent)).toEqual([
       'Padrón',
-      'Servicio del día',
-      'Comprobante',
       'Presupuesto',
       'Precios de insumos',
       'Entre ollas',
       'Reporte entre ollas',
+      'Recetario',
     ]);
 
     // El rail agrupa en "Día a día" y "Otros"; "Entre ollas" es ademas una pantalla.
@@ -174,15 +183,19 @@ describe('cascaron', () => {
   });
 
   it('las reglas de navegacion no repiten destinos entre la barra y "Más"', () => {
-    // Contrato del modelo, sin DOM: la barra y la hoja parten el menu en dos.
-    expect(destinosDeBarra()).toEqual(DIARIOS);
-    expect(destinosDeMas()).toEqual(SECUNDARIOS);
+    // Contrato del modelo, sin DOM. Admin es el unico que ve todo, asi que
+    // sirve para verificar que barra + hoja parten el menu sin repetir.
+    const todo = { rol: 'admin' as const };
+    const barraDeAdmin = destinosDeBarra(todo).map((d) => d.a);
+    const hojaDeAdmin = destinosDeMas(todo).map((d) => d.a);
+    expect(new Set([...barraDeAdmin, ...hojaDeAdmin]).size).toBe(
+      barraDeAdmin.length + hojaDeAdmin.length,
+    );
+    // Barra + hoja es exactamente lo que el rol puede ver, sin faltar ni sobrar.
+    expect([...barraDeAdmin, ...hojaDeAdmin]).toEqual([...DIARIOS, ...SECUNDARIOS].map((d) => d.a));
+    // Admin: los cuatro diarios y los cuatro secundarios.
+    expect(barraDeAdmin).toHaveLength(4);
+    expect(hojaDeAdmin).toHaveLength(4);
     expect(TEXTO_INICIAL).toBe('normal');
-
-    const barra = destinosDeBarra().map((d) => d.a);
-    const hoja = destinosDeMas().map((d) => d.a);
-    expect(new Set([...barra, ...hoja]).size).toBe(barra.length + hoja.length);
-    // Todo lo que existe en la barra se puede alcanzar en un toque: sin "Más".
-    expect(barra).toHaveLength(4);
   });
 });

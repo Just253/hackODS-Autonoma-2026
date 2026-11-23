@@ -28,14 +28,26 @@ Modelo y alcance: `docs/DECISIONES.md` D2/D3/D4/D8.
   `porcion.<grupo>`). Sustituciones: solo las aprobadas en la plantilla; el resto queda
   `sin sustituto`, sin equivalencias inventadas. Categorías → grupo: `nino`→`menor_5`,
   `lactante`→`lactante_6_23m`, `adulto`/`adulto_mayor`/`gestante` iguales.
-- **Stubs explícitos** (`serviciosDelDia`, `saldoDespensa`): lanzan
-  `NoImplementado`; un stub que devuelve un número inventado es un bug.
+- **Recetario y producción** (`recetas.ts`, #72): `explotarIngredientes` multiplica los gramos
+  por porción base por los comensales de cada grupo; el factor sale de la porción firmada
+  (`porcion del grupo / porción base`) y, si el grupo no tiene, usa la base con factor 1 y lo
+  declara (`porcion_base`). `costoDeReceta` es `Σ gramos × precio por unidad base` y devuelve
+  `null` en el total si falta un precio (`insumosSinPrecio`); `precioPorUnidadBase` solo convierte
+  con equivalencias declaradas (kg→g, l→ml, `gramosPorUnidad`). `faltantesDeDespensa` compara
+  con el saldo derivado; `sustitucionesParaFaltantes` solo lista aprobadas y
+  `aplicarSustituciones` reemplaza únicamente lo que la persona elige. `movimientosDeSalida`
+  devuelve deltas negativos. `ServicioDeReceta` es el cierre local (receta, comensales por
+  grupo, cocinero, 75 °C, costo y sustituciones) hasta que #62/#65 lo lleven al contrato.
+- **Saldo de despensa derivado**: `saldoDespensa(movimientos)` suma los deltas append-only
+  (incluye `transferencia` y ignora bajas lógicas). El saldo nunca se escribe a mano (D4).
 - **Acta entre ollas** (`acta.ts`, #76): `codigoActa` (4 dígitos) y `hashActa` (SHA-256, orden
   independiente de items) deterministas; `firmarActa` es puro y solo llega a `firmada` con **dos
   firmas de puntas distintas** desde `borrador|en_revision` (si no, `ActaNoFirmable`);
   `movimientosDeActa` genera el par `transferencia` (origen −, destino +, suma 0) solo de actas
   firmadas; `matchExcedentes` rankea con pesos 0.3/0.5/0.2 y razones explicables; `impactoDesdeActas`
   cuenta **solo actas firmadas** (una por `(origen, codigo)`), ignora movimientos sueltos y mermas.
+- **Stub explícito** (`serviciosDelDia`): lanza `NoImplementado`; un stub que devuelve un
+  número inventado es un bug.
 - Errores tipados (`OllaCerrada`, `ServicioDuplicado`, `DatoFaltante`, `NoImplementado`, `MenuNoServible`, `ActaNoFirmable`).
 
 ## Qué NO es de este paquete

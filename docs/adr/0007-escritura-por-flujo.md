@@ -41,8 +41,10 @@ pedido: origen envía y cancela, destino acepta y entrega.
   organizadora porque gestiona la relación entre ollas y los reportes. Cambiar de
   rol es una línea en dos policies y su test.
 - Las transiciones (`borrador < enviada < aceptada < entregada`, `cancelada`
-  terminal) las valida `packages/domain`; la DB solo impide reescribir origen,
-  destino, `lamport` o `device_id`.
+  terminal) las valida el servidor con un trigger `before update` en
+  `solicitudes` (migración `191010`), no solo la app: origen envía y cancela,
+  destino acepta y entrega. La DB además impide reescribir origen, destino,
+  `lamport` o `device_id`.
 - Se revoca UPDATE y DELETE en `precios`/`servicios` y DELETE en `solicitudes`
   (append-only, §4.2 regla 5): el `grant all` de Supabase los dejaba abiertos.
 - Deuda: `solicitud_items` no exige que el insumo sea de la olla origen.
