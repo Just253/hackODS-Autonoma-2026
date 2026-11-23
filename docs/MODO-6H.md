@@ -78,7 +78,7 @@ la ventana cerrada.
 |---|---|---|---|
 | 0:00 | Tablet **en modo avión**, se abre la PWA instalada | offline-first real, no un slide | inicio |
 | 0:15 | Alta `P-0471`, mujer 68, sin comorbilidad | identidad sin nombre ni DNI | padrón |
-| 0:40 | Servicio: menú firmado (sello + hash), 2 opciones, porción por grupo → **148 raciones** | `DEC-2026-0003` | servicio |
+| 0:40 | Servicio: menú firmado (sello + hash), 2 opciones, porción por grupo → **5 raciones** (salen del padrón: 6 personas − 1 baja) | `DEC-2026-0003` | servicio |
 | 1:10 | Foto de boleta → 6 ítems, 2 en **por revisar** por umbral | clasificación con τ=0,69 | comprobante |
 | 1:40 | Confirmar → presupuesto: gastado, disponible, **alerta 80 %** | dinero entero, sin decimales flotantes | presupuesto |
 | 2:10 | Pollo **+12 %** contra la mediana de 7 | serie de precios, no promedio | precios |
