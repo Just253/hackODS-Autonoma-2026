@@ -6,7 +6,7 @@ Vigente: `docs/DECISIONES.md` (D1, D2, D4, D5).
 ```text
 supabase/
   migrations/    YYYYMMDDHHMMSS_slug.sql — solo forward, nunca se edita una aplicada
-  functions/     edge functions (Deno): sync-push, sync-pull
+  functions/     edge functions (Deno): sync-push, sync-pull, sync-apply
   tests/         pruebas SQL de RLS y de constraints
   seed.sql       seed idempotente + fixtures sintéticos
   config.toml    Supabase local
@@ -22,6 +22,9 @@ supabase/
 - Políticas RLS y funciones `security definer` mínimas (`app.mis_ollas`, `app.mi_rol`).
 - Edge Functions de sync (`docs/contracts/sync.md`): lote ≤ 100, `idempotency_key = event_uuid`,
   orden `(lamport, device_id)`. **Sin `service_role`** en la función: RLS con el JWT del cliente.
+- Materializador (`docs/adr/0009-materializador.md`): `app.aplicar_evento(uuid)` aplica un evento y
+  `app.aplicar_pendientes(limite)` recorre los pendientes; `POST /functions/v1/sync-apply` los
+  dispara. Allowlist entidad × rol, conflicto sin abortar y transacción por evento.
 - Seed local reproducible y enteramente ficticio.
 
 ## Qué NO es de este paquete
@@ -40,7 +43,7 @@ pnpm exec supabase start                 # local, Docker
 pnpm exec supabase db reset              # migraciones + seed. Solo local
 pnpm exec supabase db diff -f <slug>     # genera migración desde el remoto local
 pnpm exec supabase test db               # pruebas SQL (pgTAP)
-pnpm exec supabase functions serve       # sync-push / sync-pull en local
+pnpm exec supabase functions serve       # sync-push / sync-pull / sync-apply en local
 ```
 
 `supabase link`, `db push` y `functions deploy` **no los corre un agente**. Los corre una persona, con
