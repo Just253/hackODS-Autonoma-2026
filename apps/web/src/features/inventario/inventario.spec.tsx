@@ -11,7 +11,7 @@ import {
 } from '../../data/inventario.js';
 import { outboxDe } from '../../data/outbox-repo.js';
 import { OLLA_DEMO } from '../../data/repositorio.js';
-import { InventarioPantalla, prepararEntrada, urlDeDictado } from './InventarioPantalla.js';
+import { InventarioPantalla, prepararEntrada } from './InventarioPantalla.js';
 
 /**
  * Issue #69: entrada por texto con revisión previa, dictado solo si hay
@@ -222,30 +222,11 @@ describe('pantalla de despensa', () => {
     expect(await listarLotes(OLLA_DEMO)).toHaveLength(0);
   });
 
-  it('el dictado no configurado deja el botón deshabilitado y lo explica', async () => {
-    expect(urlDeDictado()).toBeNull();
+  it('sin sesión, dictado y foto quedan deshabilitados y se explica', async () => {
     await abrirPantalla();
 
     expect(screen.getByRole('button', { name: 'Dictar' })).toBeDisabled();
-    // Lo que ve la cocinera es "sin dictado", no "dictado no configurado": ese
-    // último describía la falta de una variable del equipo, no la pantalla.
-    expect(screen.getByText(/sin dictado/)).toBeInTheDocument();
-  });
-
-  it('con VITE_COMPUTE_URL, un dictado que falla cae al cuadro de texto sin bloquear', async () => {
-    vi.stubEnv('VITE_COMPUTE_URL', 'https://compute.invalid/');
-    expect(urlDeDictado()).toBe('https://compute.invalid');
-
-    await abrirPantalla();
-    expect(screen.getByRole('button', { name: 'Dictar' })).toBeEnabled();
-
-    const archivo = new File(['sonido'], 'nota.webm', { type: 'audio/webm' });
-    fireEvent.change(screen.getByLabelText('Archivo de audio para dictar'), {
-      target: { files: [archivo] },
-    });
-
-    // `fetch` esta apagado en el setup del paquete: el fallo se maneja, no explota.
-    expect(await screen.findByText(/No se pudo transcribir el audio/)).toBeInTheDocument();
-    expect(screen.getByLabelText('Texto')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Subir foto' })).toBeDisabled();
+    expect(screen.getByText(/iniciá sesión/)).toBeInTheDocument();
   });
 });

@@ -13,6 +13,7 @@ import { BotonGrande, EncabezadoPantalla, EstadoPantalla } from '@hackods/ui';
 
 import { INSUMOS_DEMO, TEXTO_ENTRADA_DEMO } from '../../fixtures/inventario-demo.js';
 import type { Lote } from '../../data/base.js';
+import { capturarConIngest } from '../../data/funciones-supabase.js';
 import {
   listarInsumos,
   listarLotes,
@@ -21,6 +22,7 @@ import {
   sembrarInsumos,
 } from '../../data/inventario.js';
 import { OLLA_DEMO } from '../../data/repositorio.js';
+import { estadoConexion } from '../../data/supabase.js';
 
 /**
  * Despensa (issue #69): stock derivado de movimientos, vencimiento por lote,
@@ -34,8 +36,9 @@ import { OLLA_DEMO } from '../../data/repositorio.js';
  * Tres reglas del producto que se ven en la interfaz:
  * - Nada se edita: lo que esta mal se corrige con otro movimiento (`ajuste`).
  * - Un dato que falta dice `sin dato`; nunca se completa con un promedio.
- * - El dictado es opcional: sin `VITE_COMPUTE_URL` el boton esta deshabilitado
- *   y se escribe a mano. Ninguna clave vive en el cliente.
+ * - El dictado y la foto usan la Edge `ingest` con la sesión de la olla; sin
+ *   sesión quedan deshabilitados y se escribe a mano. Ninguna clave vive en el
+ *   cliente (el `COMPUTE_TOKEN` es un secret de la función).
  */
 
 export type MotivoRegistrable = Extract<MotivoMovimiento, 'entrada' | 'salida' | 'merma' | 'ajuste'>;
@@ -210,16 +213,11 @@ export function prepararEntrada(
 }
 
 /**
- * Endpoint del dictado. Solo la URL publica: el token del compute NO va al
- * cliente (D9). Sin variable, `null` y el boton queda deshabilitado.
+ * Capacidad de captura: la Edge `ingest` exige JWT. Sin sesión, el botón queda
+ * deshabilitado y se escribe a mano; el navegador no conoce el compute.
  */
-export function urlDeDictado(): string | null {
-  const entorno = import.meta.env as unknown as Record<string, string | undefined>;
-  const url = entorno.VITE_COMPUTE_URL?.trim();
-  if (url === undefined || url === '') {
-    return null;
-  }
-  return url.replace(/\/+$/, '');
+export function puedeCapturar(): boolean {
+  return estadoConexion() === 'autenticado';
 }
 
 interface Formulario {
@@ -259,9 +257,11 @@ export function InventarioPantalla({
   const [guardando, setGuardando] = useState(false);
   const [dictado, setDictado] = useState<'inactivo' | 'transcribiendo' | 'error'>('inactivo');
   const entradaAudio = useRef<HTMLInputElement>(null);
+  const entradaFoto = useRef<HTMLInputElement>(null);
+  const [capturaFoto, setCapturaFoto] = useState<'inactivo' | 'subiendo' | 'error'>('inactivo');
 
   const hoy = hoyDelDispositivo();
-  const urlDictado = urlDeDictado();
+  const haySesion = puedeCapturar();
 
   const [formulario, setFormulario] = useState<Formulario>({
     insumoId: '',
@@ -440,42 +440,47 @@ export function InventarioPantalla({
       });
   };
 
-  const transcribir = (evento: ChangeEvent<HTMLInputElement>): void => {
+  /**
+   * Audio o foto -> Edge `ingest` -> ítems -> cuadro de texto. El texto que se
+   * agrega es el `textoCrudo` de cada ítem (lo que la Edge entendió), no una
+   * cifra inventada. Si falla, se avisa y el cuadro queda como estaba.
+   */
+  const capturar = (tipo: 'audio' | 'boleta') => (evento: ChangeEvent<HTMLInputElement>): void => {
     const archivo = evento.target.files?.[0];
     evento.target.value = '';
-    if (archivo === undefined || urlDictado === null) {
-      return;
-    }
-    setDictado('transcribiendo');
+    if (archivo === undefined) return;
+
+    const marcarEnvio = (): void => {
+      if (tipo === 'audio') setDictado('transcribiendo');
+      else setCapturaFoto('subiendo');
+    };
+    const marcarFin = (estado: 'inactivo' | 'error'): void => {
+      if (tipo === 'audio') setDictado(estado);
+      else setCapturaFoto(estado);
+    };
+    marcarEnvio();
     setError(null);
 
-    const enviarAudio = async (): Promise<void> => {
-      const datos = new FormData();
-      datos.append('audio', archivo);
-      const respuesta = await fetch(`${urlDictado}/transcribe`, {
-        method: 'POST',
-        body: datos,
-        // Sin credenciales ni cabecera de autorización: el token es del gateway.
-        credentials: 'omit',
-      });
-      if (!respuesta.ok) {
-        throw new Error(`el servicio respondió ${respuesta.status}`);
+    const enviar = async (): Promise<void> => {
+      const respuesta = await capturarConIngest(archivo, tipo);
+      if (respuesta.datos === null) {
+        throw new Error(respuesta.error ?? 'sin respuesta de la ingesta');
       }
-      const cuerpo: unknown = await respuesta.json();
-      const textoDictado =
-        typeof cuerpo === 'object' && cuerpo !== null && 'texto' in cuerpo
-          ? (cuerpo as { texto: unknown }).texto
-          : null;
-      if (typeof textoDictado !== 'string') {
-        throw new Error('la respuesta no trae texto');
+      const items = respuesta.datos.items ?? [];
+      const textoNuevo =
+        items.length > 0
+          ? items.map((item) => item.textoCrudo).join(', ')
+          : respuesta.datos.texto;
+      if (textoNuevo.trim() === '') {
+        throw new Error('la captura no trae texto');
       }
-      setTexto((previo) => (previo === '' ? textoDictado : `${previo}, ${textoDictado}`));
-      setDictado('inactivo');
+      setTexto((previo) => (previo === '' ? textoNuevo : `${previo}, ${textoNuevo}`));
+      marcarFin('inactivo');
     };
 
-    enviarAudio().catch(() => {
-      // Cae al cuadro de texto: el dictado nunca deja a la cocinera sin salida.
-      setDictado('error');
+    enviar().catch((fallo: unknown) => {
+      marcarFin('error');
+      setError(fallo instanceof Error ? fallo.message : 'no se pudo leer la captura');
     });
   };
 
@@ -802,10 +807,17 @@ export function InventarioPantalla({
 
               <BotonGrande
                 variante="secundario"
-                disabled={urlDictado === null || dictado === 'transcribiendo'}
+                disabled={!haySesion || dictado === 'transcribiendo'}
                 onClick={() => entradaAudio.current?.click()}
               >
                 {dictado === 'transcribiendo' ? 'Transcribiendo…' : 'Dictar'}
+              </BotonGrande>
+              <BotonGrande
+                variante="secundario"
+                disabled={!haySesion || capturaFoto === 'subiendo'}
+                onClick={() => entradaFoto.current?.click()}
+              >
+                {capturaFoto === 'subiendo' ? 'Leyendo foto…' : 'Subir foto'}
               </BotonGrande>
               <input
                 ref={entradaAudio}
@@ -813,25 +825,35 @@ export function InventarioPantalla({
                 accept="audio/*"
                 aria-label="Archivo de audio para dictar"
                 className="hidden"
-                onChange={transcribir}
+                onChange={capturar('audio')}
+              />
+              <input
+                ref={entradaFoto}
+                type="file"
+                accept="image/png,image/jpeg"
+                capture="environment"
+                aria-label="Foto de la boleta"
+                className="hidden"
+                onChange={capturar('boleta')}
               />
             </div>
 
-            {urlDictado === null ? (
+            {!haySesion ? (
               <p className="text-sm text-texto-suave" data-estado="dictado-no-configurado">
-                Dictado: <strong>sin dictado</strong>. Este equipo todavía no tiene la
-                transcripción; mientras tanto, escribe o pega el texto a mano.
+                Dictado y foto: <strong>iniciá sesión</strong> para usarlos. Mientras tanto,
+                escribe o pega el texto a mano.
               </p>
             ) : (
               <p className="text-sm text-texto-suave">
-                El audio se manda al servicio de transcripción del equipo y vuelve como texto. Si
+                El audio o la foto se mandan a la ingesta de tu olla y vuelven como ítems. Si
                 falla, el cuadro de arriba queda como está.
               </p>
             )}
 
-            {dictado === 'error' ? (
+            {dictado === 'error' || capturaFoto === 'error' ? (
               <EstadoPantalla estado="error">
-                No se pudo transcribir el audio. Escribe o pega el texto a mano: no se pierde nada.
+                No se pudo leer la captura{error === null ? '' : `: ${error}`}. Escribe o pega el
+                texto a mano: no se pierde nada.
               </EstadoPantalla>
             ) : null}
 

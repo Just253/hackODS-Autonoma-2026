@@ -19,10 +19,11 @@ con el catálogo; lo que no se entiende (producto fuera del catálogo, sin canti
 equivalencia, monto sin repartir) queda `sin dato` y **no** se registra. El precio se muestra para
 revisar pero no se guarda acá: los precios son de la pantalla de comprobantes.
 
-**Dictado.** El botón solo se habilita con `VITE_COMPUTE_URL`; sin esa variable dice `dictado no
-configurado` y la carga es a mano. Con la variable, manda el audio a `${VITE_COMPUTE_URL}/transcribe`
-sin credenciales (el token es del gateway, nunca del cliente) y, si falla, cae al cuadro de texto.
-El gateway todavía no existe: es un contrato pendiente, no una función rota.
+**Dictado y foto.** Los dos botones usan la Edge `ingest` con el JWT de la sesión: `Dictar` manda el
+audio (`tipo: audio`) y `Subir foto` manda una imagen PNG/JPEG de la boleta (`tipo: boleta`). La
+función guarda el binario en Storage, llama al compute con su `COMPUTE_TOKEN` y devuelve los ítems;
+la pantalla los pega como texto para revisarlos antes de confirmar. Sin sesión, los botones quedan
+deshabilitados y se escribe a mano. El navegador nunca conoce `COMPUTE_URL` ni el token.
 
 **Limitación declarada:** `Movimiento` no modela el lote y `@hackods/sync` no tiene entidad `lotes`,
 así que el vínculo movimiento↔lote y el vencimiento viven **solo en el dispositivo** (`loteId` no

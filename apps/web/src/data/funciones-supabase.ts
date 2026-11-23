@@ -17,11 +17,53 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { EventoSaliente, ResultadoPull, ResultadoPush } from '@hackods/sync';
 
-import { leerConfiguracion } from './supabase.js';
+import { leerConfiguracion, clienteSupabase } from './supabase.js';
 
 export interface RespuestaFuncion<T> {
   readonly datos: T | null;
   readonly error: string | null;
+}
+
+/** Un ítem que devuelve la Edge `ingest` (contrato `docs/contracts/ingesta.md`). */
+export interface ItemIngest {
+  readonly linea: number;
+  readonly textoCrudo: string;
+  readonly cantidad: number | null;
+  readonly unidad: string | null;
+  readonly precioUnitarioMicrocent: number | null;
+}
+
+export interface CapturaIngest {
+  readonly capturaId: string;
+  readonly estado: string;
+  readonly texto: string;
+  readonly categoria: string;
+  readonly items: readonly ItemIngest[];
+}
+
+/**
+ * Manda audio o foto a la Edge `ingest` con el JWT de la sesión. La función
+ * guarda el binario en Storage, llama al compute con SU token y devuelve los
+ * ítems. El navegador nunca ve `COMPUTE_URL` ni `COMPUTE_TOKEN`.
+ */
+export async function capturarConIngest(
+  archivo: File,
+  tipo: 'audio' | 'boleta',
+): Promise<RespuestaFuncion<CapturaIngest>> {
+  const cliente = clienteSupabase();
+  if (cliente === null) return { datos: null, error: 'Supabase no configurado' };
+
+  const formulario = new FormData();
+  formulario.append('archivo', archivo);
+  formulario.append('tipo', tipo);
+
+  try {
+    const { data, error } = await cliente.functions.invoke('ingest', { body: formulario });
+    if (error !== null) return { datos: null, error: await mensajeDeError(error) };
+    return { datos: data as CapturaIngest, error: null };
+  } catch (fallo) {
+    return { datos: null, error: await mensajeDeError(fallo) };
+  }
 }
 
 /** Lo que `SyncRemoto` necesita del backend. Un doble de test implementa esto. */
