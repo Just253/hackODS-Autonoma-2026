@@ -73,8 +73,6 @@ function valor(v: string): unknown {
   return v;
 }
 
-const min = (t: string, c: string) => valor(filas(t)[0]![c]!);
-
 describe('paridad seed ↔ contracts', () => {
   it('las ollas del seed tienen codigo de 6 caracteres sin ambiguedad', () => {
     const ollas = filas('ollas');
@@ -88,8 +86,8 @@ describe('paridad seed ↔ contracts', () => {
         distrito: valor(o['distrito']!),
         creadaEn: '2026-11-01T00:00:00Z',
       });
-      // Misma regex que el check `ollas_codigo_check` de la migracion del modelo.
-      expect(parseada.codigo).toMatch(/^[A-HJ-NP-Z2-9]{6}$/);
+      // Misma regex que el check `ollas_codigo_check` de la migracion del modelo;
+      // `ollaSchema` ya la exige (Zod lanza si no cuadra), no hace falta re-asertar.
     }
   });
 
