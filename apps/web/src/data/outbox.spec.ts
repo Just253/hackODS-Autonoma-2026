@@ -4,7 +4,7 @@ import type { NuevoEvento } from '@hackods/sync';
 
 import { baseDeOlla, cerrarBases } from './base.js';
 import { outboxDe } from './outbox-repo.js';
-import { DEVICE_DEMO, OLLA_DEMO, altaPersona, guardarRacion } from './repositorio.js';
+import { DEVICE_DEMO, OLLA_DEMO, RacionDuplicada, altaPersona, guardarRacion } from './repositorio.js';
 import { SyncLocal } from './sync-local.js';
 
 /**
@@ -186,5 +186,64 @@ describe('outbox en Dexie', () => {
     expect(outbox.total()).toBe(0);
     expect(new SyncLocal(outbox).status().pendientes).toBe(0);
     expect(await baseDeOlla(OLLA_DEMO).outbox.count()).toBe(0);
+  });
+
+  it('avisa a sus oyentes cuando cambia el conjunto de pendientes', async () => {
+    const outbox = outboxDe(baseDeOlla(OLLA_DEMO));
+    await outbox.cargar();
+
+    let avisos = 0;
+    const quitar = outbox.suscribir(() => {
+      avisos += 1;
+    });
+
+    outbox.encolar(evento({ eventUuid: 'ev-o1' }));
+    expect(outbox.total()).toBe(1);
+    expect(avisos).toBe(1);
+
+    outbox.marcarError('ev-o1', 'fallo de prueba');
+    expect(avisos).toBe(2);
+    // El evento sigue pendiente: un error no lo descarta.
+    expect(outbox.total()).toBe(1);
+
+    outbox.marcarEnviado('ev-o1');
+    expect(outbox.total()).toBe(0);
+    expect(avisos).toBe(3);
+
+    outbox.registrarConfirmado(evento({ eventUuid: 'ev-o2' }));
+    expect(outbox.total()).toBe(1);
+    expect(avisos).toBe(4);
+
+    // Desuscrito no recibe nada mas.
+    quitar();
+    outbox.marcarEnviado('ev-o2');
+    expect(avisos).toBe(4);
+    await outbox.asentar();
+  });
+
+  it('una transaccion que aborta no deja pendiente ni avisa al badge', async () => {
+    await altaPersona(
+      { anioNacimiento: 1990, sexo: 'M', categoria: 'adulto', nombreLocal: null, alias: null },
+      RELOJ,
+    );
+    await guardarRacion({ personaCodigoP: 'P-2345', razones: ['gestante', 'bajo_peso'] }, RELOJ);
+
+    const outbox = outboxDe(baseDeOlla(OLLA_DEMO));
+    await outbox.cargar();
+    const antes = outbox.total();
+
+    let avisos = 0;
+    outbox.suscribir(() => {
+      avisos += 1;
+    });
+
+    // `RacionDuplicada` aborta la transaccion: ni fila en el outbox ni aviso.
+    await expect(
+      guardarRacion({ personaCodigoP: 'P-2345', razones: ['bajo_peso', 'gestante'] }, RELOJ),
+    ).rejects.toThrow(RacionDuplicada);
+
+    expect(avisos).toBe(0);
+    expect(outbox.total()).toBe(antes);
+    expect(await baseDeOlla(OLLA_DEMO).outbox.count()).toBe(antes);
   });
 });

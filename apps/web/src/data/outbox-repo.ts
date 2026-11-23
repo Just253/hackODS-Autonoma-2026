@@ -26,6 +26,12 @@ import type { BaseOlla, EventoOutbox } from './base.js';
  *
  * Idempotencia: el `eventUuid` es la clave de la tabla y encolar dos veces el
  * mismo evento deja una sola fila (mismo criterio que `OutboxMemoria`).
+ *
+ * Reactividad: la instancia avisa a sus oyentes (`suscribir`) cada vez que
+ * cambia el conjunto de pendientes, para que el badge del header se actualice
+ * sin recargar y sin `setInterval`. `encolarEnTransaccion` no avisa: la
+ * transaccion del llamador todavia puede abortar. El llamador confirma
+ * despues con `registrarConfirmado`, ya con la fila en disco.
  */
 
 /** Lo que el llamador entrega: el `NuevoEvento` del contrato, sin tocar. */
@@ -55,11 +61,27 @@ export class OutboxDexie implements Outbox {
   private readonly base: BaseOlla;
   private readonly tabla: BaseOlla['outbox'];
   private readonly espejo = new Map<string, EventoOutbox>();
+  private readonly oyentes = new Set<() => void>();
   private cola: Promise<void> = Promise.resolve();
 
   constructor(base: BaseOlla) {
     this.base = base;
     this.tabla = base.outbox;
+  }
+
+  /**
+   * Avisa a quien muestra el badge cuando cambia el conjunto de pendientes.
+   * Devuelve como desuscribirse.
+   *
+   * Es sincrono y no sondea nada: `encolar`, `marcarEnviado`, `marcarError` y
+   * `registrarConfirmado` llaman a `avisar()` en el momento. Nada de
+   * `setInterval` ni de releer Dexie en cada render.
+   */
+  suscribir(oyente: () => void): () => void {
+    this.oyentes.add(oyente);
+    return () => {
+      this.oyentes.delete(oyente);
+    };
   }
 
   /** Trae los pendientes persistidos. Idempotente: se puede llamar otra vez. */
@@ -69,6 +91,7 @@ export class OutboxDexie implements Outbox {
     for (const fila of filas) {
       this.espejo.set(fila.eventUuid, fila);
     }
+    this.avisar();
   }
 
   /**
@@ -90,6 +113,20 @@ export class OutboxDexie implements Outbox {
     return true;
   }
 
+  /**
+   * Da por pendiente un evento que YA quedo confirmado en la transaccion del
+   * llamador (`altaPersona`, `guardarRacion`). Es el aviso que
+   * `encolarEnTransaccion` no puede dar: ahi la transaccion todavia puede
+   * abortar y el badge no debe contar un alta que no ocurrio. Idempotente.
+   */
+  registrarConfirmado(evento: NuevoEvento): void {
+    if (this.espejo.has(evento.eventUuid)) {
+      return;
+    }
+    this.espejo.set(evento.eventUuid, aFila(evento));
+    this.avisar();
+  }
+
   // --- Contrato `Outbox` (sincrono, sobre el espejo) ---
 
   /**
@@ -103,6 +140,7 @@ export class OutboxDexie implements Outbox {
     }
     this.espejo.set(fila.eventUuid, fila);
     this.enCola(() => this.tabla.put(fila));
+    this.avisar();
   }
 
   pendientes(): readonly EventoSaliente[] {
@@ -123,6 +161,7 @@ export class OutboxDexie implements Outbox {
       return;
     }
     this.enCola(() => this.tabla.delete(eventUuid));
+    this.avisar();
   }
 
   marcarError(eventUuid: string, error: string): void {
@@ -137,11 +176,16 @@ export class OutboxDexie implements Outbox {
     };
     this.espejo.set(eventUuid, actualizado);
     this.enCola(() => this.tabla.put(actualizado));
+    this.avisar();
   }
 
   /** Espera a que las escrituras encadenadas toquen disco (tests y cierre). */
   async asentar(): Promise<void> {
     await this.cola;
+  }
+
+  private avisar(): void {
+    for (const oyente of this.oyentes) oyente();
   }
 
   private enCola(tarea: () => Promise<unknown>): void {

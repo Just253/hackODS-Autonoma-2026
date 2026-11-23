@@ -6,13 +6,26 @@ Componentes y tokens. **Presentacional**: recibe props, dibuja, no sabe de ollas
 
 - Tokens (`colors.css`, `spacing.css`, `typography.css`) y el tema claro/oscuro.
 - Primitivos: `Button`, `Field`, `Select`, `Dialog`, `Table`, `Stat`, `EmptyState`, `SyncBadge`.
-- `EstadoSync` (`EstadoSync.tsx`): chip de estado de sincronización. Props `texto: string`
-  (copy ya redactado por la app) y `tono: 'pendiente' | 'local'`; se dibuja como `<p role="status"
-  aria-live="polite">` con las clases `oc-estado oc-estado--<tono>` (tokens en `tokens.css`). El
-  estado se distingue por el **texto**, no solo por el color: `pendiente` agrega borde primario,
-  pero nunca cambia el mensaje. Regla de la ventana offline: el badge dice siempre **"(local)"**
-  ("N cambios pendientes de sincronizar (local)" / "Sincronizado (local)"), nunca "Sincronizado" a
-  secas, porque no hay red que lo respalde.
+- Primitivos del cascarón (PR de interfaz):
+  - `Icono`: SVG inline, sin dependencia. Glifos `padron`, `servicio`, `comprobante`,
+    `presupuesto`, `precios`, `entreOllas`, `reporte`, `mas`. `aria-hidden` por defecto: el texto del
+    enlace ya nombra el destino.
+  - `EncabezadoPantalla`: `h2` + una línea de contexto + un dato opcional a la derecha. Las siete
+    pantallas lo usan para que la jerarquía no dependa de que cada una elija su tamaño de letra; en
+    escritorio el texto se corta en `--ancho-lectura`.
+  - `CifraDestacada`: etiqueta, nota opcional y la cifra ya formateada (no calcula ni formatea). Es la
+    "cifra que manda" en padrón, servicio, comprobante, presupuesto y precios.
+  - `EstadoPantalla`: los tres estados que se dibujan (`cargando` / `error` / `sin-conexion`;
+    `listo` no dibuja nada). Props: `estado`, `children` (qué pasa, se lee primero que el color) y
+    `accion` opcional (qué puede hacer la persona ahora). **Siempre imprime una etiqueta de
+    palabra**, no solo color, porque en una tablet al sol el color no se distingue. El `role` cambia
+    con el estado: `status` para cargando, `alert` para el error.
+- Clases de `tokens.css` compartidas por las pantallas: `.oc-boton`, `.oc-campo` (control de 56 px),
+  `.oc-tarjeta`, `.oc-cifra`, `.oc-pendiente`, `.oc-estado`, `.oc-tabla` (densidad de escritorio y
+  números a la derecha) y `.oc-num`.
+- Medidas del cascarón: `--ancho-lectura` (medida de lectura), `--ancho-contenido` (área de contenido
+  en escritorio), `--ancho-rail` (rail lateral) y `--alto-nav` / `--alto-header`. El foco visible y el
+  hover solo con puntero fino viven acá, no en cada pantalla.
 - Patrones de impresión (`print.css`) que comparten reportes y tickets.
 - Accesibilidad: foco visible, contraste AA, tamaños táctiles ≥ 44 px.
 

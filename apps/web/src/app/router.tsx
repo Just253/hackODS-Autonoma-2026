@@ -1,13 +1,7 @@
 import { createBrowserRouter, createMemoryRouter, Navigate } from 'react-router-dom';
 
 import { CORTE_DEMO, MOVIMIENTOS_DEMO } from '../fixtures/demo.js';
-import {
-  FUENTE_DEMO,
-  POLLO_ACTUAL,
-  POLLO_PREVIA,
-  PRODUCTO_DEMO,
-  UNIDAD_DEMO,
-} from '../fixtures/precios-demo.js';
+import { FUENTE_PRECIOS_DEMO, PRODUCTO_DESTACADO, PRODUCTOS_DEMO } from '../fixtures/precios-productos.js';
 import { PreciosPantalla } from '../features/precios/PreciosPantalla.js';
 import { PresupuestoPantalla } from '../features/presupuesto/PresupuestoPantalla.js';
 import { Shell } from './Shell.js';
@@ -18,7 +12,6 @@ import { SolicitudPantalla } from '../features/solicitud/SolicitudPantalla.js';
 import { AHORA_DEMO, NUEVA_SOLICITUD_DEMO } from '../features/solicitud/fixtures.js';
 import { ReportePantalla } from '../features/reporte/ReportePantalla.js';
 import { MOVIMIENTOS_ENTRE_OLLAS, PERIODO_DEMO } from '../features/reporte/fixtures.js';
-import { RutaVacia } from '../pages/RutaVacia.js';
 
 /**
  * Una ruta por feature, con lazy() cuando exista.
@@ -43,11 +36,9 @@ export const rutas = [
         path: 'precios',
         element: (
           <PreciosPantalla
-            producto={PRODUCTO_DEMO}
-            unidad={UNIDAD_DEMO}
-            fuente={FUENTE_DEMO}
-            ventanaActual={POLLO_ACTUAL}
-            ventanaPrevia={POLLO_PREVIA}
+            productos={PRODUCTOS_DEMO}
+            fuente={FUENTE_PRECIOS_DEMO}
+            productoInicial={PRODUCTO_DESTACADO}
           />
         ),
       },

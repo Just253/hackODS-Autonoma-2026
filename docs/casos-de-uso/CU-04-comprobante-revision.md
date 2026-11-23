@@ -5,7 +5,7 @@
 persona lo confirme**.
 
 **Guion:** 1:10 (foto de boleta → 6 ítems → 2 en "por revisar" por umbral)
-**Área:** `web` + `contracts` · **Estado:** pantalla en `main` (PR #32); falta la captura de 10 s · Issues: #9 (pantalla), #5 (contratos), #6 (compute)
+**Área:** `web` + `contracts` · **Estado:** pantalla en `main` (PR #32), pero pinta 6 de 6 en rojo (#9); falta el enchufe al presupuesto y la captura · Issues: #9 (pantalla), #5 (contratos), #6 (compute)
 
 ## Precondiciones
 

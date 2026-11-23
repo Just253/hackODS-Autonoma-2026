@@ -1,21 +1,33 @@
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { RouterProvider } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { crearRouterDePrueba } from './router.js';
-import { TEXTO_SINCRONIZADO_LOCAL, textoPendientes } from './Shell.js';
+import type { NuevoEvento } from '@hackods/sync';
+
 import { baseDeOlla, cerrarBases } from '../data/base.js';
 import { outboxDe } from '../data/outbox-repo.js';
-import { DEVICE_DEMO, OLLA_DEMO } from '../data/repositorio.js';
+import { altaPersona, DEVICE_DEMO, OLLA_DEMO } from '../data/repositorio.js';
+import { crearRouterDePrueba } from './router.js';
+import { textoPendientes } from './Shell.js';
 
 /**
- * Badge honesto del header (issue #19).
+ * Badge del outbox en el cascaron nuevo (#61) y su reactividad (issue #19).
  *
- * Los textos son exactos a proposito: "N cambios pendientes de sincronizar
- * (local)" y "Sincronizado (local)". Nunca "Sincronizado" a secas: no hay
- * Supabase en la demo y fingir red seria peor que no mostrar nada.
+ * Dos cosas distintas viven en el header y no se pisan:
+ *
+ * - "En este dispositivo" (personas guardadas) lo alimenta `app/sync.ts`;
+ * - "N cambios pendientes de sincronizar (local)" lo alimenta el outbox.
+ *
+ * Cuando hay pendientes manda el outbox; cuando no, el header vuelve a "En este
+ * dispositivo". Nunca un "Sincronizado" a secas: no hay Supabase en la demo.
  * `fetch` esta apagado por `test/setup.ts`, asi que si algo toca la red, rompe.
  */
+
+const RELOJ = {
+  ahora: () => '2026-11-23T10:00:00.000Z',
+  azar: () => 0.1,
+  idEvento: () => 'ev-alta-1',
+} as const;
 
 function borrarBase(): Promise<void> {
   cerrarBases();
@@ -31,6 +43,27 @@ function montar() {
   return render(<RouterProvider router={crearRouterDePrueba('/padron')} />);
 }
 
+/** El header tiene dos distribuciones; el badge vive en el `<header>`. */
+function encabezado(): HTMLElement {
+  return screen.getByRole('banner');
+}
+
+function evento(over: Partial<NuevoEvento> = {}): NuevoEvento {
+  const eventUuid = over.eventUuid ?? 'ev-1';
+  return {
+    eventUuid,
+    idempotencyKey: eventUuid,
+    lamport: 1,
+    deviceId: DEVICE_DEMO,
+    ollaId: OLLA_DEMO,
+    entidad: 'personas',
+    op: 'upsert',
+    payload: { codigoP: 'P-2345' },
+    creadoEn: '2026-11-23T10:00:00.000Z',
+    ...over,
+  };
+}
+
 beforeEach(async () => {
   await borrarBase();
 });
@@ -41,60 +74,85 @@ afterEach(async () => {
   await borrarBase();
 });
 
-describe('badge de sincronizacion local', () => {
-  it('sin pendientes muestra "Sincronizado (local)", nunca "Sincronizado" a secas', async () => {
+describe('badge del outbox', () => {
+  it('sin pendientes el header dice "En este dispositivo" y no ofrece sincronizar', async () => {
     montar();
-    const badge = await screen.findByText(TEXTO_SINCRONIZADO_LOCAL);
-    expect(badge).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(within(encabezado()).getByText('En este dispositivo')).toBeInTheDocument();
+    });
+    expect(within(encabezado()).queryByRole('button', { name: /Sincronizar ahora/i })).toBeNull();
+    // Nunca "Sincronizado" a secas: no hay red que lo respalde.
     expect(screen.queryByText(/^Sincronizado$/)).not.toBeInTheDocument();
   });
 
-  it('con pendientes muestra el conteo exacto con "(local)"', async () => {
+  it('con pendientes previos muestra el conteo exacto con "(local)" y el boton', async () => {
     const outbox = outboxDe(baseDeOlla(OLLA_DEMO));
     await outbox.cargar();
-    outbox.encolar({
-      eventUuid: 'ev-1',
-      idempotencyKey: 'ev-1',
-      lamport: 1,
-      deviceId: DEVICE_DEMO,
-      ollaId: OLLA_DEMO,
-      entidad: 'personas',
-      op: 'upsert',
-      payload: { codigoP: 'P-2345' },
-      creadoEn: '2026-11-23T10:00:00.000Z',
-    });
+    outbox.encolar(evento({ eventUuid: 'ev-1' }));
     await outbox.asentar();
 
     montar();
-    expect(await screen.findByText(textoPendientes(1))).toBeInTheDocument();
-    expect(screen.queryByText(TEXTO_SINCRONIZADO_LOCAL)).not.toBeInTheDocument();
+
+    expect(await within(encabezado()).findByText(textoPendientes(1))).toBeInTheDocument();
+    expect(within(encabezado()).getByRole('button', { name: /Sincronizar ahora/i })).toBeEnabled();
+    expect(within(encabezado()).queryByText('En este dispositivo')).toBeNull();
   });
 
-  it('un push local pasa de "1 cambio pendiente" a "Sincronizado (local)"', async () => {
+  it('un push local vacia el outbox y el header vuelve a "En este dispositivo"', async () => {
     const outbox = outboxDe(baseDeOlla(OLLA_DEMO));
     await outbox.cargar();
-    outbox.encolar({
-      eventUuid: 'ev-2',
-      idempotencyKey: 'ev-2',
-      lamport: 1,
-      deviceId: DEVICE_DEMO,
-      ollaId: OLLA_DEMO,
-      entidad: 'raciones',
-      op: 'upsert',
-      payload: { personaCodigoP: 'P-2345' },
-      creadoEn: '2026-11-23T10:00:00.000Z',
-    });
+    outbox.encolar(evento({ eventUuid: 'ev-2' }));
     await outbox.asentar();
 
     montar();
-    await screen.findByText(textoPendientes(1));
+    await within(encabezado()).findByText(textoPendientes(1));
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /Sincronizar ahora \(local\)/i }));
+      fireEvent.click(within(encabezado()).getByRole('button', { name: /Sincronizar ahora/i }));
     });
 
     await waitFor(() => {
-      expect(screen.getByText(TEXTO_SINCRONIZADO_LOCAL)).toBeInTheDocument();
+      expect(within(encabezado()).getByText('En este dispositivo')).toBeInTheDocument();
     });
+    expect(within(encabezado()).queryByText(textoPendientes(1))).toBeNull();
+    expect(await baseDeOlla(OLLA_DEMO).outbox.count()).toBe(0);
+  });
+
+  it('el badge pasa de 0 a 1 con un alta real y vuelve a 0 al sincronizar, sin recargar', async () => {
+    // El defecto de #45: el conteo se leia una sola vez al montar, asi que
+    // despues de un alta el badge seguia en el estado anterior.
+    montar();
+    await waitFor(() => {
+      expect(within(encabezado()).getByText('En este dispositivo')).toBeInTheDocument();
+    });
+
+    // Alta real: persona + evento en la misma transaccion (`altaPersona`).
+    await act(async () => {
+      await altaPersona(
+        {
+          anioNacimiento: 1958,
+          sexo: 'F',
+          categoria: 'adulto_mayor',
+          nombreLocal: 'NOMBRE-LOCAL',
+          alias: 'ALIAS-PRIVADO',
+        },
+        RELOJ,
+      );
+    });
+
+    // Sin desmontar ni recargar: el outbox aviso y el header ya lo dice.
+    expect(await within(encabezado()).findByText(textoPendientes(1))).toBeInTheDocument();
+    const boton = within(encabezado()).getByRole('button', { name: /Sincronizar ahora/i });
+
+    await act(async () => {
+      fireEvent.click(boton);
+    });
+
+    await waitFor(() => {
+      expect(within(encabezado()).getByText('En este dispositivo')).toBeInTheDocument();
+    });
+    expect(within(encabezado()).queryByText(textoPendientes(1))).toBeNull();
+    expect(await baseDeOlla(OLLA_DEMO).outbox.count()).toBe(0);
   });
 });

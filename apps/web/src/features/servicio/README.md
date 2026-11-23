@@ -27,9 +27,15 @@ dice `sin dato` y nunca dibuja el `0`. Igual `componentes: []`, porque el cálcu
 `packages/nutrition` (DEC-2026-0003).
 
 **Estados:** leyendo el servicio · sin padrón (pedir el alta en Padrón) · contador de raciones del
-dispositivo · ración guardada ("pendiente de sincronizar; la red no hizo falta") · faltan razones
+dispositivo · ración guardada ("guardado en esta tablet; la red no hizo falta") · faltan razones
 (error).
 
-**Qué NO hace:** no calcula peso, nutrientes ni grupo por edad —eso es de `packages/nutrition` y hoy
-dice `sin dato`— y no sincroniza: el envío y el Lamport de la ración corresponden a `packages/sync`
-(DEC-2026-0005).
+**Qué NO hace:** no calcula peso ni nutrientes por persona; la porción por grupo es la del menú
+firmado (`ServicioResumen` con `servirDelDia`) y el resto dice `sin dato`. No sincroniza: el envío y el
+Lamport de la ración corresponden a `packages/sync` (DEC-2026-0005).
+
+**Distribución:** segundo destino de la barra. Las razones van **antes** de la lista de personas porque
+son el requisito de la acción (antes estaban después y el primer toque terminaba en "faltan razones").
+En escritorio la tarjeta de razones queda fija a la derecha mientras se recorre el padrón, y el resumen
+del menú firmado (sello, hash, A/B, porción por grupo y total, con `ServicioResumen`) pasa debajo de la
+lista: es referencia, no la acción.

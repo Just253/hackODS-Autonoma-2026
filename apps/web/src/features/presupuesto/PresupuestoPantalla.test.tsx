@@ -55,10 +55,10 @@ describe('PresupuestoPantalla', () => {
     expect(html).not.toContain('100,00 %');
   });
 
-  it('estado sin conexión avisa "pendiente de sincronizar" sin perder los números', () => {
+  it('estado sin conexión dice "guardado en esta tablet" sin perder los números', () => {
     const html = render({ movimientos: MOVIMIENTOS_DEMO, corte: CORTE_DEMO, estado: 'sin-conexion' });
 
-    expect(html).toContain('pendiente de sincronizar');
+    expect(html).toContain('guardado en esta tablet');
     expect(html).toContain('S/ 1 800,00');
   });
 

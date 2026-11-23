@@ -105,8 +105,10 @@ export async function altaPersona(
 ): Promise<PersonaConIdentidad> {
   const base = baseDeOlla(ollaId);
   const ahora = reloj.ahora();
+  /** El evento que la transaccion deja en disco, si llega a confirmarse. */
+  let confirmado: NuevoEvento | null = null;
 
-  return base.transaction('rw', base.personas, base.identidadLocal, base.meta, base.outbox, async () => {
+  const resultado = await base.transaction('rw', base.personas, base.identidadLocal, base.meta, base.outbox, async () => {
     const ocupados = new Set((await base.personas.toCollection().primaryKeys()) as string[]);
     const codigoP = generarCodigoPLibre(ocupados, reloj.azar);
     const lamport = await siguienteLamport(base);
@@ -158,9 +160,16 @@ export async function altaPersona(
       creadoEn: persona.updatedAt,
     };
     await outboxDe(base).encolarEnTransaccion(evento, base.outbox);
+    confirmado = evento;
 
     return { persona, identidad };
   });
+
+  // La transaccion ya confirmo: recien ahora el evento es un pendiente que el
+  // badge puede contar. Si hubiera abortado, no se llega aca.
+  if (confirmado !== null) outboxDe(base).registrarConfirmado(confirmado);
+
+  return resultado;
 }
 
 /** La identidad local nunca se mezcla con `Persona`: misma base, otra tabla. */
@@ -243,13 +252,14 @@ export async function guardarRacion(
   // Una racion y su evento entran juntos: si el `add` choca con la clave
   // compuesta, la transaccion aborta y el outbox no se queda con un pendiente
   // de una racion que no existe.
+  let evento: NuevoEvento;
   try {
-    await base.transaction('rw', base.raciones, base.meta, base.outbox, async () => {
+    evento = await base.transaction('rw', base.raciones, base.meta, base.outbox, async () => {
       await base.raciones.add(racion);
 
       const lamport = await siguienteLamport(base);
       const eventUuid = idDeEvento(reloj);
-      const evento: NuevoEvento = {
+      const nuevoEvento: NuevoEvento = {
         eventUuid,
         idempotencyKey: eventUuid,
         lamport,
@@ -260,7 +270,8 @@ export async function guardarRacion(
         payload: racion,
         creadoEn: reloj.ahora(),
       };
-      await outboxDe(base).encolarEnTransaccion(evento, base.outbox);
+      await outboxDe(base).encolarEnTransaccion(nuevoEvento, base.outbox);
+      return nuevoEvento;
     });
   } catch (error) {
     if (error instanceof Dexie.ConstraintError) {
@@ -268,6 +279,9 @@ export async function guardarRacion(
     }
     throw error;
   }
+
+  // Confirmado en disco: ahora si es un pendiente para el badge.
+  outboxDe(base).registrarConfirmado(evento);
 
   return racion;
 }

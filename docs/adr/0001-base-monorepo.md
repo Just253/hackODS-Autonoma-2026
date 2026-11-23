@@ -42,14 +42,15 @@ resuelven imports entre paquetes); esas decisiones están abajo.
 9. **Tests:** Vitest. Paquetes sin tests usan `--passWithNoTests` para que
    `pnpm -r test` pase con 0. Hay tests reales en `contracts`, `nutrition` y
    `printing` (validación, reglas incompletas, folio).
-10. **`lint` es hoy un placeholder** (`turbo run lint` no ejecuta tareas): no hay
-    ESLint configurado y agregarlo no era parte del esqueleto. CI corre
-    typecheck/test/build. Queda como pendiente explícito.
+10. **`lint` corre ESLint 9** (issue #7): flat config en la raíz (`eslint.config.js`),
+    aplicado a `apps/**` y `packages/**`, con `typescript-eslint` recomendado y sin
+    reglas de formato. Bloquea variables sin usar y `console.log`; corre en
+    `pnpm verificar` y por lo tanto en el job `ci`.
 11. **Supabase:** `config.toml` mínimo; `migrations/20261123120000_init.sql` vacía y
     comentada; `seed.sql` con datos ficticios **comentados** hasta que exista el
     esquema (el PR de contratos v1). `db:seed` es un wrapper Node porque
     `psql "$VAR"` no funciona en cmd/PowerShell.
-12. **`.github`:** CI (install frozen, typecheck, test, build), plantilla de PR con
+12. **`.github`:** CI (install frozen, typecheck, lint, test, build), plantilla de PR con
     `## Prueba`, issue form, `CODEOWNERS` con un solo owner y `labels.yml`
     declarativo. **No se crearon issues ni labels**: eso se hace después, a mano.
 

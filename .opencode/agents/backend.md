@@ -1,7 +1,7 @@
 ---
 description: Edge functions, auth e integraciones externas de Supabase.
 mode: all
-model: anthropic/claude-sonnet-5-5
+model: mistral/deepseek-v4-1-flash-1017
 steps: 50
 permissions:
   - action: edit
@@ -11,7 +11,13 @@ permissions:
     resource: "supabase/functions/**"
     effect: allow
   - action: edit
+    resource: "**/supabase/functions/**"
+    effect: allow
+  - action: edit
     resource: "docs/guias/api-*.md"
+    effect: allow
+  - action: edit
+    resource: "**/docs/guias/api-*.md"
     effect: allow
   - action: subagent
     resource: "*"
