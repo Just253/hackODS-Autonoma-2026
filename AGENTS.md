@@ -108,9 +108,10 @@ Linux/macOS/Git Bash: `bash scripts/preflight.sh ...`.
 
 Nunca `npm install`, `yarn`, `bun install` ni `pnpm add` en un paquete que no es el tuyo.
 
-**Worktrees de agentes:** van en `.worktrees/<slug>` **dentro** del repo (excluido en
-`.git/info/exclude`), no al lado. Los chequeos (`verificar`, `chequear-ids`) omiten `.worktrees`
-justamente para no escanear una copia del repo como si fuera fuente.
+**Worktrees de agentes:** van en `.worktrees/<slug>` **dentro** del repo, no al lado. Los chequeos
+(`verificar`, `chequear-ids`) omiten `.worktrees` justamente para no escanear una copia del repo como
+si fuera fuente. Ojo: `.git/info/exclude` es local y no viene versionado, así que cada clon agrega la
+línea una vez (`pnpm hooks:install` lo hace) o `git status` va a mostrar el worktree como sin trackear.
 
 ---
 
