@@ -5,7 +5,7 @@
 - **Decisores:** usuario del proyecto (3 PDF, 65 páginas) + ensamblado
 - **Issues:** ninguno todavía
 - **Supersede parcialmente:** ADR-0001 (contratos, nutrición, esquema y alcance)
-- **Fuente:** `docs/DECISIONES.md` (D1–D7), que manda sobre PRD, arquitectura, contrato
+- **Fuente:** `docs/DECISIONES.md` (D1–D9), que manda sobre PRD, arquitectura, contrato
   nutricional y plan.
 
 ## Contexto
@@ -24,7 +24,7 @@ contrato de sync propio. Eso cambia identidad, modelo de datos, nutrición y alc
    el dispositivo en `IdentidadLocal` con `localOnly: true` y no se serializan. El esquema SQL
    no tiene identidad personal, documento, teléfono ni dirección.
 3. **Nutrición:** menú semanal firmado por nutricionista (2 perfiles × 2 opciones, 7 días,
-   almuerzo y cena) + porción por grupo. Se retira `calcularRacion(persona)` y todo
+   almuerzo y cena) + porción por grupo. Se retira el cálculo de ración por persona y todo
    requerimiento individual. El paquete expone `validarMenu`, `porcionParaGrupo`,
    `sustituirInsumo`, `explicar`; un umbral faltante lanza `ContratoInvalido`.
 4. **Modelo:** `Olla.tipo ∈ {comun, comedor_pca}`; `Precio` como serie (canal, unidad, fecha,
@@ -46,7 +46,7 @@ contrato de sync propio. Eso cambia identidad, modelo de datos, nutrición y alc
 ## Consecuencias
 
 - `packages/contracts` cambia: `codigoP`, `tipo` de olla, `Precio`, familia de menú, `EventoSync`.
-- `packages/domain` pierde `calcularRacion`; `packages/nutrition` reemplaza su contrato.
+- `packages/domain` pierde el cálculo de ración por persona; `packages/nutrition` reemplaza su contrato.
 - `packages/sync` ordena por `(lamport, deviceId)` y limita el lote a 100.
 - Migración nueva `20261123150000_modelo_base.sql`; la `0001` queda como marcador (nunca aplicada).
 - Edge Functions en Deno, fuera del `tsc` del monorepo: se verifican con `supabase functions serve`.

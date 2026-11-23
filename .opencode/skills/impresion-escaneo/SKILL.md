@@ -29,7 +29,7 @@ probado y un ADR.
 
 ## Reporte imprimible
 
-- Un solo componente de reporte por tipo (`cierre-jornada`, `aporte-mensual`, `receta`), con datos ya
+- Un solo componente de reporte por tipo (`cierre-servicio`, `gasto-mensual`, `receta`), con datos ya
   calculados: la plantilla **no** calcula nada.
 - `@media print`: ocultar navegación y botones, blanco y negro legible, sin fondos que se coman la tinta,
   números alineados, `break-inside: avoid` en filas.

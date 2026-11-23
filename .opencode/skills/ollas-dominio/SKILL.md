@@ -7,80 +7,79 @@ description: Glosario, actores y reglas de negocio de una olla común peruana. C
 
 ## Cuándo se carga
 
-- Vas a crear o cambiar una entidad (`Jornada`, `Ración`, `Aporte`, `Socia`, `Insumo`).
+- Vas a crear o cambiar una entidad (`Persona`, `Olla`, `Insumo`, `Receta`, `Servicio`,
+  `Movimiento`, `Comprobante`, `Presupuesto`, `Captura`).
 - Una pantalla necesita saber **quién** puede hacer algo.
 - Alguien propone guardar un dato nuevo de una persona.
-- Hay que decidir qué cuenta como "ración" o "costo".
+- Hay que decidir qué cuenta como "ración", "menú" o "gasto".
 
 ## Glosario
 
-| Término | Definición operativa | Estado |
+| Término | Definición operativa | Fuente |
 |---|---|---|
-| **Olla común** | Organización vecinal autogestionada que cocina y reparte comida a bajo costo o gratis en su zona. No es un restaurante ni una ONG. | base |
-| **Socia / socio** | Persona que aporta una cuota y recibe ración. Es la unidad del padrón. | base |
-| **Ración** | Porción de comida servida en una jornada. **Es la unidad de conteo y de costo.** | base |
-| **Cuota** | Aporte monetario periódico de una socia (diario o semanal, según la olla). | base |
-| **Jornada** | Un día de cocina: menú, raciones preparadas, raciones servidas, quiénes cocinaron. | base |
-| **Padrón** | Lista de socias/familias beneficiarias de esa olla. | base |
-| **Despensa** | Insumos disponibles, valorizados o no según la olla. | base |
-| **Donación** | Aporte en especie o dinero de un tercero, con o sin contraparte. | base |
-| **Comité directivo** | Cargos de conducción (presidencia, secretaría, tesorería). Los nombres exactos varían por olla. | **A CONFIRMAR** |
-| **PCA / MIDIS** | Programa estatal de complementación alimentaria que provee alimentos a comedores y ollas. El detalle de elegibilidad y entrega se documenta aparte. | **A CONFIRMAR** |
-| **Municipalidad** | Puede proveer alimentos, agua, infraestructura o apoyo puntual. No es un rol único. | **A CONFIRMAR** |
+| **Olla común** | Organización vecinal autogestionada que cocina y reparte comida a bajo costo o gratis. No es un restaurante ni una ONG. | D4 |
+| **Comedor PCA** | Comedor del programa de complementación alimentaria. **No es lo mismo** que olla común: cambia subsidio, cuota y defaults. | D4 (`Olla.tipo`) |
+| **Persona** | Unidad del padrón. En la nube solo existe como `codigoP` `P-XXXX`; el nombre vive en el celular. | D2 |
+| **Ración** | Porción servida en un servicio. **Es la unidad de conteo**; se anula, no se edita. | D3/D4 |
+| **Menú firmado** | Menú semanal (2 perfiles × 2 opciones, 7 días, almuerzo y cena) aprobado por nutricionista con CNP y hash. | D3 |
+| **Servicio** | Una comida servida: fecha, tipo, receta, comensales (`P-XXXX`), inocuidad. | D4 |
+| **Movimiento** | Entrada, salida, merma, ajuste o transferencia de un insumo. Append-only; el saldo se deriva. | D4 |
+| **Insumo** | Alimento o producto de despensa, con unidad base (`g`, `ml`, `unidad`) y equivalencia declarada. | D4 |
+| **Receta** | Preparación con ingredientes, porciones base, técnicas y versión/hash. | D4 |
+| **Comprobante** | Boleta, factura, declaración o captura manual/voz; ítems con revisión humana obligatoria. | D8/D9 |
+| **Presupuesto** | Asignado, gastado, comprometido, disponible y proyección de una olla por período. | D8 |
+| **Captura** | Ítems propuestos desde texto o voz, con montos ambiguos marcados para confirmar. | D9 |
+| **Padrón** | Lista de personas de esa olla, identificadas por `P-XXXX`. | D2 |
 
-Nunca uses "cliente", "usuario final", "beneficiario" como término de pantalla: se dice **socia**,
-**cocinera**, **tesorera**.
+Nunca uses "cliente", "usuario final" ni "beneficiario" como término de pantalla: se dice
+**persona**, **cocinera**, **organizadora**, **nutricionista**.
 
-## Actores y permisos (propuesta de la app)
+## Actores y permisos
 
-| Actor | Puede | No puede |
+| Rol | Puede | No puede |
 |---|---|---|
-| Cocinera / presidenta | abrir jornada, registrar menú y raciones, ver reportes de su olla | ver otra olla, cambiar precios del sistema |
-| Tesorera | registrar aportes, compras y donaciones, cerrar caja | borrar movimientos (se compensan) |
-| Socia | ver su estado de aportes y el menú del día | ver aportes de otras socias |
-| Voluntaria | cargar raciones servidas de la jornada | editar el padrón |
-| Donante | (fuera de la app, o portal aparte) | ver padrón ni montos individuales |
+| Organizadora / admin | padrón, presupuesto, confirmar ítems de dinero | diagnosticar, cambiar un menú firmado |
+| Cocinera | capturar ítems, movimientos, servir raciones | confirmar dinero ni leer flags de salud |
+| Nutricionista | firmar el menú, definir porciones y sustituciones | editar el padrón ni el presupuesto |
+| Voluntaria | cargar movimientos y raciones del servicio | editar el padrón |
+| Donante | (fuera de la app) | ver padrón ni montos individuales |
 | Soporte | leer metadatos, nunca datos personales | editar datos de una olla |
 
-## Reglas de negocio v0
-
-Son **decisiones de diseño del equipo**, no hechos sobre todas las ollas. Si una entrevista las
-contradice, se cambia la regla y se anota en `docs/dominio/`.
+## Reglas de negocio
 
 - **R1 — Una olla, un espacio.** Todo dato cuelga de `olla_id`. No hay consultas "globales" en la app.
-- **R2 — La ración manda.** Todo se mide en raciones servidas y costo por ración; no en "platos" ni
-  "porciones" sueltas.
-- **R3 — El historial no se edita.** Aportes, compras y donaciones son **eventos**. Un error se corrige
-  con un evento contrario (`ajuste`), no borrando.
-- **R4 — Los totales se derivan.** El total del mes, el saldo de despensa y el costo por ración se
-  calculan de los eventos. Si un total está guardado y se puede desincronizar, es un bug.
-- **R5 — Sin datos personales innecesarios.** `codigoP` (P-XXXX) en el servidor; la etiqueta local
-  (`nombreLocal`/`alias`) vive solo en el dispositivo con `localOnly: true`. Sin documento, sin
-  dirección, sin teléfono.
-  sin diagnóstico, sin foto de personas.
-- **R6 — Sin dato no es cero.** Si falta el precio o la cantidad, el resultado es `sin_dato` y se
-  muestra como tal.
-- **R7 — El libro manda.** La app digitaliza el control; si discrepa del cuaderno de la tesorera, gana
-  el cuaderno hasta conciliar. La app no acusa a nadie.
+- **R2 — La ración manda.** El conteo y el costo se expresan en raciones servidas, no en "platos".
+- **R3 — El historial no se edita.** Movimientos, raciones y precios observados son **eventos**. Un
+  error se corrige con un evento contrario (`ajuste`), no borrando.
+- **R4 — Los totales se derivan.** El saldo de despensa, el gastado y el costo se calculan de los
+  eventos. Un total guardado que se puede desincronizar es un bug.
+- **R5 — Identidad mínima.** `codigoP` (`P-XXXX`) en el servidor; `nombreLocal`/`alias` solo en el
+  dispositivo con `localOnly: true`. Sin documento, dirección, teléfono ni foto de personas.
+- **R6 — Sin dato no es cero.** Si falta precio, cantidad o composición, el resultado es `sin_dato` y
+  se muestra como tal.
+- **R7 — El libro manda.** Si la app discrepa del cuaderno de la olla, gana el cuaderno hasta conciliar.
 - **R8 — Funciona sin internet.** Toda escritura va al outbox; la UI nunca bloquea por red.
+- **R9 — Conflicto de sync (D5).** Gana el cierre válido más antiguo por `(lamport, device_id)`; el
+  otro queda visible. Nunca `Date.now()` para ordenar ni "el último gana".
 
 ## Lo que la app NO decide
 
 - Quién recibe ración (lo decide la asamblea de la olla).
 - El precio de la cuota.
-- Un diagnóstico nutricional o una dieta.
+- Un diagnóstico nutricional, una dieta o un requerimiento individual.
 - Si una persona "merece" el apoyo.
 
 ## Errores de modelado frecuentes
 
-1. Guardar `total_raciones` en la jornada **y** las raciones individuales → se desincroniza.
+1. Guardar `total_raciones` en el servicio **y** las raciones individuales → se desincroniza.
 2. Usar la identidad como clave de una persona → PII y duplicados. La clave es `P-XXXX`.
-3. Modelar la donación como ingreso de caja sin distinguir especie de dinero.
+3. Modelar una donación como ingreso de caja sin distinguir especie de dinero.
 4. Un `olla_id` que llega por query string y se usa sin comprobar membresía → fuga entre ollas.
+5. Tratar `comedor_pca` como una olla común: los defaults y el régimen son distintos.
 
 ## Fuente
 
-- `docs/dominio/` (entrevistas y observación del equipo) — **es la fuente de verdad**.
-- Este skill fija vocabulario y forma del modelo, **no cifras**. Cuotas, raciones típicas y precios
-  viven en `docs/dominio/cifras.md` con fuente y fecha.
-- Lo marcado `A CONFIRMAR` no se usa para tomar decisiones: se pregunta primero.
+- `docs/DECISIONES.md` D2/D3/D4/D5/D8/D9 — manda sobre este glosario.
+- `docs/contracts/comprobantes.md` y `docs/contracts/sync.md` — tablas y fórmulas.
+- Este skill fija vocabulario y forma del modelo, **no cifras**. Cuotas, precios y raciones típicas
+  necesitan fuente o quedan `A CONFIRMAR`.

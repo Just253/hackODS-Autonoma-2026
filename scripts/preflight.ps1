@@ -791,7 +791,7 @@ function Invoke-SelfTest {
     Assert-Equal $theClaim.area 'api' 'area del claim'
     Assert-Equal $theClaim.fingerprint 'fp_api_auth_login_timeout' 'huella del claim'
     Assert-Equal $theClaim.branch 'feat/api-142-oauth-refresh' 'rama del claim'
-    Assert-Equal $theClaim.files 'services/api/src/auth/**' 'files del claim'
+    Assert-Equal $theClaim.files 'apps/web/src/sync/**' 'files del claim'
     Assert-Equal $theClaim.ttlHours 24 'ttl del claim'
     Assert-Equal $theClaim.issue '142' 'issue del claim'
 

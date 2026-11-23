@@ -41,8 +41,8 @@ La pirámide se respeta: si un caso se puede probar en unidad, no se prueba en e
 ```text
 fixtures/canonico.json
   ollas:      2  (una con datos completos, una casi vacía para estados vacíos)
-  socias:     8  (codigoP P-XXXX, sin identidad)
-  jornadas:   30 (fechas fijas desde 2026-11-01)
+  personas:   8  (codigoP P-XXXX, sin identidad)
+  servicios:  30 (fechas fijas desde 2026-11-01)
   recetas:    5  (una con ingrediente faltante a propósito → sin_dato)
   conflicto:  1  (mismo insumo editado en dos "dispositivos")
 ```
@@ -55,7 +55,7 @@ estables. El seed SQL usa los mismos ids; un test verifica que los conteos coinc
 | Se finge | No se finge |
 |---|---|
 | Reloj (`now`) | El cálculo de una ración |
-| Generador de ids | La suma de aportes |
+| Generador de ids | La suma de movimientos |
 | Red (MSW) | El esquema Zod |
 | IndexedDB (`fake-indexeddb`) | Las reglas de dominio |
 | Cámara / archivos | El redondeo |

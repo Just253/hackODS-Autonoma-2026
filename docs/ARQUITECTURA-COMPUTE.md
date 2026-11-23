@@ -251,7 +251,7 @@ Devuelve lo mínimo para decidir si enrutar. **No** expone rutas, versiones de S
 
 | | |
 |---|---|
-| Body | `{ "items": [...], "catalogo_version": "catalogo.v1#sha256:7d1a…", "umbrales": {"tau":0.69,"margen":0.04,"piso":0.45} }` |
+| Body | `{ "items": [...], "catalogo_version": "catalogo.v1#sha256:7d1a…", "umbrales": {…leídos de `packages/domain/src/clasificacion/config.ts`} }` |
 | Límite | ≤ 100 ítems, ≤ 128 KB |
 | Timeout | 15 s |
 | Respuesta | `ClasificacionProducto[]` de `08` §1.3 |

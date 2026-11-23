@@ -121,7 +121,7 @@ selftest() {
     check "handle" "@ana" "$(printf '%s' "$out" | jq -r .by)"
     check "huella" "fp_api_auth_login_timeout" "$(printf '%s' "$out" | jq -r .fp)"
     check "rama" "feat/api-142-oauth-refresh" "$(printf '%s' "$out" | jq -r .branch)"
-    check "files" "services/api/src/auth/**" "$(printf '%s' "$out" | jq -r .files)"
+    check "files" "apps/web/src/sync/**" "$(printf '%s' "$out" | jq -r .files)"
     check "ttl del claim" "24" "$(printf '%s' "$out" | jq -r .ttlHours)"
     check "con heartbeat reciente" "active" "$(printf '%s' "$out" | jq -r .state)"
 

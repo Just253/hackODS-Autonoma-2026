@@ -110,7 +110,7 @@ body:
     attributes:
       label: Archivos / carpetas que toca
       description: Globs, separados por coma. Es lo que se pone en `files:` del claim.
-      placeholder: services/api/src/auth/**,packages/contracts/auth.ts
+      placeholder: apps/web/src/sync/**,packages/contracts/domain.ts
     validations:
       required: false
 

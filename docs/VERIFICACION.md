@@ -530,7 +530,7 @@ Una línea, `clave:valor` separados por espacio, sin espacios dentro de los valo
 Después de una línea en blanco va lo humano y el parser lo ignora.
 
 ```text
-claim/v1 issue:142 by:@ana agent:ana-lead-3f2a area:api branch:feat/api-142-oauth-refresh started:2026-11-23T14:02Z ttl:24h searched:2026-11-23 files:services/api/src/auth/** fp:fp_api_auth_login_timeout
+claim/v1 issue:142 by:@ana agent:ana-lead-3f2a area:api branch:feat/api-142-oauth-refresh started:2026-11-23T14:02Z ttl:24h searched:2026-11-23 files:apps/web/src/sync/** fp:fp_api_auth_login_timeout
 ```
 
 ```text

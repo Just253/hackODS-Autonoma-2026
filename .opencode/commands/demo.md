@@ -10,10 +10,10 @@ arregla lo que rompe la demo, en ramas `fix/demo-*`, y se avisa en `coordination
 
 1. `/seed demo` en local y verificación de que la app arranca sin red (DevTools → Offline → recargar).
 2. Guion de 5 escenas, con una frase por escena y el clic exacto:
-   a. Registrar una jornada sin conexión (se ve el badge "pendiente").
+   a. Registrar una captura sin conexión (se ve el badge "pendiente").
    b. Volver online y ver la sincronización.
    c. Ver el costo por ración calculado desde eventos (no tecleado).
-   d. Ver el aporte nutricional de la receta con su fuente.
+   d. Ver la composición nutricional de la receta con su fuente.
    e. Imprimir/compartir el reporte del día (PDF A4 u 80 mm).
 3. Ensayo cronometrado, dos veces: una con red y una con la red apagada al inicio. Anotá el tiempo
    real de cada escena.

@@ -13,7 +13,7 @@ Checklist, en orden; si algo falla, se corta:
 4. `pnpm lint && pnpm typecheck && pnpm test && pnpm build` y `pnpm test:e2e` en el commit del tag.
 5. Migraciones: ¿hay alguna nueva? ¿Su marcha atrás está escrita? Si no, **no se deploya**.
 6. Tag anotado y push: `git tag -a vX.Y.Z -m "..."` + `git push origin vX.Y.Z`.
-7. Deploy **solo** a staging/preview. Smoke: login, registrar jornada, sincronizar, abrir un reporte.
+7. Deploy **solo** a staging/preview. Smoke: login, registrar una captura, sincronizar, abrir un reporte.
 8. Producción: la corre una persona, con el smoke de staging pegado y el plan de rollback a mano.
 
 **Prohibido:** releasear desde una rama que no es `main`; deployar con CI rojo; deployar sin

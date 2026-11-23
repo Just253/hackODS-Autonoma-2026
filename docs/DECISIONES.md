@@ -25,7 +25,7 @@
 - Estados: `borrador → en_revision → aprobado → publicado → retirado`. Sello obligatorio: nombre, colegiatura CNP, fecha, versión y **hash SHA-256** del contenido.
 - El sistema **no prescribe dietas ni calcula requerimientos individuales**. Valida que el menú cumpla sus restricciones, ajusta **porción por grupo** (edad/condición) y explica.
 - Sustituciones: solo las aprobadas en la plantilla, con factor. Nada de inventar equivalencias.
-- `packages/nutrition` expone: `validarMenu`, `porcionParaGrupo`, `sustituirInsumo`, `explicar`. Se retira `calcularRacion(persona)`.
+- `packages/nutrition` expone: `validarMenu`, `porcionParaGrupo`, `sustituirInsumo`, `explicar`. Se retira el cálculo de una ración por persona.
 - El badge de origen sigue: `sugerencia_sistema | validado_nutricionista | ajustado_organizadora | sin_revisar`.
 
 ## D4 · Modelo de datos (correcciones)
@@ -69,7 +69,7 @@ Requisito nuevo del usuario: cada olla **sube sus facturas/boletas**, el sistema
 - **Presupuesto**: por olla y período (`monto_asignado`, `gastado`, `comprometido`, `disponible`, `proyección al cierre`, `alertas al 80 % y 100 %`). Compras compartidas y donaciones en especie se registran aparte, con origen explícito.
 - **Reporte entre ollas**: agregados por período y categoría, sin identidad de personas ni de proveedores; cada olla ve su detalle, las demás solo el agregado.
 - **Deduplicación**: mismo comprobante subido dos veces → se detecta por hash de imagen + proveedor + folio + total; no se suma dos veces.
-- **Umbral calibrado (medido, no estimado)**: `τ=0,69`, `margen=0,04`, `piso=0,45`, normalización **nivel 3**. Con `bge-m3` en Ollama: acc@1 100 % en 45 ítems (9 con ruido OCR). Con τ=0,62 el sistema auto-confirmaba `POLLO VIVO KG` → `pollo_beneficiado`. La normalización bajó la revisión de 31,2 % a 6,2 % sin perder accuracy. Fuente: `docs/research/11-ollama-embeddings.md`.
+- **Umbral calibrado (medido, no estimado)**: `τ=0,69`, `margen=0,04`, `piso=0,45`, normalización **nivel 3**. Con `bge-m3` en Ollama: acc@1 100 % en 45 ítems (9 con ruido OCR). Con el umbral de arranque (más bajo) el sistema auto-confirmaba `POLLO VIVO KG` → `pollo_beneficiado`; por eso el vigente es el calibrado. La normalización bajó la revisión de 31,2 % a 6,2 % sin perder accuracy. Fuente: `docs/research/11-ollama-embeddings.md`.
 
 **Referencia implementable (D8):**
 
@@ -97,11 +97,11 @@ Requisito nuevo: la persona puede **escribir o dictar** cuánto gastó en cada c
 | Antes | Ahora |
 |---|---|
 | Supabase sin endpoint de sync | Supabase + `POST /sync/push` y `/sync/pull` como funciones |
-| `personas.nombre` sincronizado e impreso | nombre solo local; nube con `P-XXXX` |
-| `calcularRacion(persona)` con tabla v0 | menú semanal firmado + porción por grupo |
+| nombre de la persona sincronizado e impreso | nombre solo local; nube con `P-XXXX` |
+| cálculo de ración por persona con tabla v0 | menú semanal firmado + porción por grupo |
 | `olla` única | `olla.tipo` con defaults y régimen distintos |
 | precios sueltos | serie de precios con canal, fecha y fuente |
-| demo 5–7 min | demo 3 min + anexo |
+| demo de más de 5 min | demo 3 min + anexo de 2 |
 | 75 °C fuera de alcance | checklist de inocuidad en el servicio |
 | facturas fuera de alcance | módulo de comprobantes con clasificación y revisión |
 | sin reporte entre ollas | agregado comparable por período y categoría |

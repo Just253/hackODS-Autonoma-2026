@@ -10,8 +10,8 @@ export class OllaCerrada extends ErrorDominio {
   override name = 'OllaCerrada';
 }
 
-export class JornadaDuplicada extends ErrorDominio {
-  override name = 'JornadaDuplicada';
+export class ServicioDuplicado extends ErrorDominio {
+  override name = 'ServicioDuplicado';
 }
 
 export class DatoFaltante extends ErrorDominio {

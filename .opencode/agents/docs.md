@@ -38,7 +38,7 @@ Reglas:
 3. **Un ADR no se edita.** Si la decisión cambió, escribís uno nuevo que supersede al anterior y lo
    marcás.
 4. **Sin PII**: alias, no nombres; sin DNI, sin direcciones, sin teléfonos, sin capturas con personas.
-5. **Español peruano**: "olla común", "ración", "socia", "jornada", "despensa". Nada de sinónimos
+5. **Español peruano**: "olla común", "persona", "ración", "servicio", "despensa". Nada de sinónimos
    importados.
 6. No inventás cifras de nutrición, costos ni impacto social. Si el número no está, se escribe el
    hueco, no un aproximado.

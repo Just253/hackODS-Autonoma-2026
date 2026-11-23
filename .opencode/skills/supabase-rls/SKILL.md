@@ -58,19 +58,19 @@ $$;
 Patrón por tabla (las cuatro operaciones, no solo `select`):
 
 ```sql
-alter table public.jornadas enable row level security;
+alter table public.servicios enable row level security;
 
-create policy "jornadas_select" on public.jornadas
+create policy "servicios_select" on public.servicios
   for select using (public.is_member(olla_id));
 
-create policy "jornadas_insert" on public.jornadas
+create policy "servicios_insert" on public.servicios
   for insert with check (public.is_member(olla_id));
 
-create policy "jornadas_update" on public.jornadas
+create policy "servicios_update" on public.servicios
   for update using (public.is_member(olla_id))
   with check (public.is_member(olla_id));   -- impide mover el registro a otra olla
 
-create policy "jornadas_delete" on public.jornadas
+create policy "servicios_delete" on public.servicios
   for delete using (public.is_member(olla_id));
 ```
 
@@ -105,8 +105,8 @@ Reglas:
 -- como usuario de la olla A
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"<uuid-user-a>","role":"authenticated"}';
-select count(*) from public.jornadas;            -- > 0
-select count(*) from public.jornadas
+select count(*) from public.servicios;           -- > 0
+select count(*) from public.servicios
  where olla_id = '<uuid-olla-b>';                -- 0
 ```
 
