@@ -1,5 +1,6 @@
 import { type FormEvent, useEffect, useState } from 'react';
 
+import { personaSchema } from '@hackods/contracts';
 import { BotonGrande } from '@hackods/ui';
 
 import { OLLA_DEMO, altaPersona, contarPersonas } from '../../data/repositorio.js';
@@ -31,8 +32,21 @@ const FORMULARIO_VACIO: Formulario = {
   nombreLocal: '',
 };
 
-const ANIO_MINIMO = 1900;
-const ANIO_MAXIMO_AL_NACER = 2026;
+/**
+ * El rango válido es el del contrato (`personaSchema.anioNacimiento`), no una
+ * copia en la pantalla: un año hardcodeado caduca solo y la pantalla empieza a
+ * rechazar a quien el contrato acepta. El chequeo lo hace el propio schema; los
+ * límites se leen de él únicamente para el texto del error.
+ */
+const ANIO_NACIMIENTO = personaSchema.shape.anioNacimiento;
+const ANIO_MINIMO = ANIO_NACIMIENTO.minValue;
+const ANIO_MAXIMO_AL_NACER = ANIO_NACIMIENTO.maxValue;
+
+function mensajeDeAnioInvalido(): string {
+  return ANIO_MINIMO !== null && ANIO_MAXIMO_AL_NACER !== null
+    ? `Año de nacimiento: un año entre ${ANIO_MINIMO} y ${ANIO_MAXIMO_AL_NACER}.`
+    : 'Año de nacimiento: el contrato no lo acepta.';
+}
 
 export function PadronPage() {
   const [cantidad, setCantidad] = useState<number | null>(null);
@@ -64,8 +78,8 @@ export function PadronPage() {
     setError(null);
 
     const anio = Number(formulario.anioNacimiento);
-    if (!Number.isInteger(anio) || anio < ANIO_MINIMO || anio > ANIO_MAXIMO_AL_NACER) {
-      setError(`Año de nacimiento: un año entre ${ANIO_MINIMO} y ${ANIO_MAXIMO_AL_NACER}.`);
+    if (!ANIO_NACIMIENTO.safeParse(anio).success) {
+      setError(mensajeDeAnioInvalido());
       return;
     }
 
