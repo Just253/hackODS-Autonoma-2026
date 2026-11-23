@@ -69,6 +69,24 @@ no está probando lo que importa.
 6. **Bundle**: una dependencia nueva en `apps/web` se justifica en el issue (peso y por qué).
 7. **Sin `dangerouslySetInnerHTML`** con texto que venga de OCR, importación o usuario.
 
+## Supabase: lectura y sincronización
+
+- **Config**: `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` (o
+  `VITE_SUPABASE_PUBLISHABLE_KEY`) viven en el `.env` de la **raíz** del monorepo; `envDir` del
+  `vite.config` apunta ahí. Nunca se commitean. Sin las dos variables no hay cliente y las pantallas
+  dicen "no configurado" en vez de inventar datos.
+- **Local y remoto, el mismo código**: el destino sale del host de la URL (`127.0.0.1`/`localhost`
+  = local). El panel de cuenta muestra cuál está en uso. En local no existen las cuentas demo: se
+  entra con `app.enroll` (Edge `enroll`, código de olla + PIN).
+- **Lecturas**: `src/data/remoto.ts` (un solo lugar). La pantalla no conoce tablas ni columnas. Si
+  no hay sesión, `AvisoSinSesion`; si hay error, estado de error con reintento. Nunca fixtures.
+- **Escrituras**: siguen yendo al outbox (`data/repositorio.ts`); jamás directo a Supabase. El envío
+  es `data/sync-remoto.ts` (`SyncRemoto`) sobre `sync-push`/`sync-pull`; `sync-local.ts` queda solo
+  como doble de tests.
+- **Honestidad del badge**: `marcarEnviado` solo cuando el servidor confirma; un fallo deja el
+  evento pendiente con `intentos + 1`. `Sincronizado` no se pinta por haber tocado un botón.
+- **Clave**: solo la publicable/anon. `service_role` no entra al bundle (`docs/adr/0008-enrolamiento.md`).
+
 ## Dueño y revisión
 
 Dueño: **A** (`area:web`). Revisa **B**. Toca `packages/ui` solo si A lo declaró en el claim.

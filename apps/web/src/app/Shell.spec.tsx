@@ -8,7 +8,9 @@ import { baseDeOlla, cerrarBases } from '../data/base.js';
 import { outboxDe } from '../data/outbox-repo.js';
 import { altaPersona, DEVICE_DEMO, OLLA_DEMO } from '../data/repositorio.js';
 import { crearRouterDePrueba } from './router.js';
-import { textoPendientes } from './Shell.js';
+import { pildoraDeSync, textoPendientes } from './Shell.js';
+import { reiniciarEstadoSync } from './sync.js';
+import type { EstadoSync } from './sync.js';
 
 /**
  * Badge del outbox en el cascaron nuevo (#61) y su reactividad (issue #19).
@@ -65,6 +67,8 @@ function evento(over: Partial<NuevoEvento> = {}): NuevoEvento {
 }
 
 beforeEach(async () => {
+  reiniciarEstadoSync();
+  window.localStorage.clear();
   await borrarBase();
 });
 
@@ -99,7 +103,7 @@ describe('badge del outbox', () => {
     expect(within(encabezado()).queryByText('En este dispositivo')).toBeNull();
   });
 
-  it('un push local vacia el outbox y el header vuelve a "En este dispositivo"', async () => {
+  it('sin backend configurado el boton no marca nada como enviado', async () => {
     const outbox = outboxDe(baseDeOlla(OLLA_DEMO));
     await outbox.cargar();
     outbox.encolar(evento({ eventUuid: 'ev-2' }));
@@ -112,14 +116,12 @@ describe('badge del outbox', () => {
       fireEvent.click(within(encabezado()).getByRole('button', { name: /Guardar ahora/i }));
     });
 
-    await waitFor(() => {
-      expect(within(encabezado()).getByText('En este dispositivo')).toBeInTheDocument();
-    });
-    expect(within(encabezado()).queryByText(textoPendientes(1))).toBeNull();
-    expect(await baseDeOlla(OLLA_DEMO).outbox.count()).toBe(0);
+    // No hubo servidor que confirme: el evento sigue pendiente y el outbox en 1.
+    expect(within(encabezado()).getByText(textoPendientes(1))).toBeInTheDocument();
+    expect(await baseDeOlla(OLLA_DEMO).outbox.count()).toBe(1);
   });
 
-  it('el badge pasa de 0 a 1 con un alta real y vuelve a 0 al sincronizar, sin recargar', async () => {
+  it('el badge pasa de 0 a 1 con un alta real y no se vacia sin backend', async () => {
     // El defecto de #45: el conteo se leia una sola vez al montar, asi que
     // despues de un alta el badge seguia en el estado anterior.
     montar();
@@ -149,10 +151,76 @@ describe('badge del outbox', () => {
       fireEvent.click(boton);
     });
 
-    await waitFor(() => {
-      expect(within(encabezado()).getByText('En este dispositivo')).toBeInTheDocument();
+    // Sin backend no hay confirmacion: el pendiente sigue a la vista.
+    expect(await within(encabezado()).findByText(textoPendientes(1))).toBeInTheDocument();
+    expect(await baseDeOlla(OLLA_DEMO).outbox.count()).toBe(1);
+  });
+});
+
+/**
+ * Contrato de la pastilla, sin DOM ni backend. Lo importante: `Sincronizado`
+ * SOLO aparece cuando el servidor confirmo. Un error no se muestra como exito.
+ */
+describe('pastilla del sync (contrato)', () => {
+  const base: EstadoSync = {
+    tono: 'local',
+    texto: 'En este dispositivo',
+    detalle: null,
+    resultado: null,
+  };
+
+  it('sin intento de sync dice "En este dispositivo"', () => {
+    expect(pildoraDeSync(0, base)).toMatchObject({
+      tono: 'local',
+      texto: 'En este dispositivo',
     });
-    expect(within(encabezado()).queryByText(textoPendientes(1))).toBeNull();
-    expect(await baseDeOlla(OLLA_DEMO).outbox.count()).toBe(0);
+  });
+
+  it('con el servidor confirmando dice "Sincronizado" y el detalle real', () => {
+    expect(
+      pildoraDeSync(0, {
+        ...base,
+        resultado: { tono: 'enviado', detalle: '2 enviado(s) · 1 recibido(s)' },
+      }),
+    ).toMatchObject({ texto: 'Sincronizado', detalle: '2 enviado(s) · 1 recibido(s)' });
+  });
+
+  it('un error dice "Sin confirmar", nunca "Sincronizado"', () => {
+    const pildora = pildoraDeSync(0, {
+      ...base,
+      resultado: { tono: 'error', detalle: 'No se pudo enviar' },
+    });
+
+    expect(pildora).toMatchObject({ tono: 'pendiente', texto: 'Sin confirmar' });
+    expect(pildora.texto).not.toMatch(/sincronizado/i);
+  });
+
+  it('un rechazo del servidor se lee como conflicto', () => {
+    expect(
+      pildoraDeSync(0, {
+        ...base,
+        resultado: { tono: 'conflicto', detalle: '1 cambio(s) rechazado(s)' },
+      }),
+    ).toMatchObject({ tono: 'pendiente', texto: 'Cambios con conflicto' });
+  });
+
+  it('con pendientes manda el conteo, aunque el ultimo intento haya fallado', () => {
+    expect(
+      pildoraDeSync(3, {
+        ...base,
+        resultado: { tono: 'error', detalle: 'No se pudo enviar' },
+      }),
+    ).toMatchObject({ tono: 'pendiente', texto: textoPendientes(3) });
+  });
+
+  it('sin red se dice antes que cualquier resultado', () => {
+    expect(
+      pildoraDeSync(0, {
+        tono: 'sin-conexion',
+        texto: 'Sin conexión',
+        detalle: 'Se guarda en este dispositivo',
+        resultado: { tono: 'enviado', detalle: '2 enviado(s)' },
+      }),
+    ).toMatchObject({ tono: 'sin-conexion', texto: 'Sin conexión' });
   });
 });

@@ -11,8 +11,9 @@
  * detalle es la cifra que se viene a ver. En el teléfono van uno debajo del
  * otro; en escritorio, la lista a la izquierda y el detalle fijo a la derecha.
  *
- * Honestidad: los datos son un fixture de demo cargado a mano. No hay OCR, ni
- * voz, ni embeddings acá, y la pantalla no insinúa que los haya.
+ * Honestidad: la pantalla recibe las series ya resueltas (de Supabase en la app,
+ * de un doble en los tests). No hay OCR, ni voz, ni embeddings acá, y la
+ * pantalla no insinúa que los haya. Si falta una ventana, dice "sin dato".
  */
 import { useMemo, useState } from 'react';
 
@@ -169,8 +170,7 @@ export function PreciosPantalla({
         titulo="Precio de los insumos"
         descripcion={
           <>
-            Los precios se cargan a mano. El precio típico de esta quincena se
-            compara con el de la anterior. Fuente: {fuente}.
+            El precio típico de esta quincena se compara con el de la anterior. Fuente: {fuente}.
           </>
         }
       />
@@ -285,7 +285,7 @@ export function PreciosPantalla({
               )}
 
               <p className="mt-auto border-t border-borde pt-3 text-xs text-texto-suave">
-                Los precios que ves son de ejemplo.
+                Precios registrados en la olla. Sin escaneo de boletas ni dictado.
               </p>
             </>
           )}

@@ -1,98 +1,105 @@
-import Dexie from 'dexie';
-import { act } from 'react';
-import { createRoot, type Root } from 'react-dom/client';
-import { waitFor } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it } from 'vitest';
 
-import { OLLA_DEMO, altaPersona, contarPersonas } from '../../data/repositorio.js';
-import { nombreBase } from '../../data/base.js';
-import { PadronPage } from './PadronPage';
+import { guardarSesion } from '../../app/sesion.js';
+import { ProveedorRemoto } from '../../data/ProveedorRemoto.js';
+import type { ClienteDatos } from '../../data/cliente-remoto.js';
+import { clienteFalso } from '../../test/cliente-falso.js';
+import { PadronPage } from './PadronPage.js';
 
 /**
- * Tests de la pantalla real (`PadronPage`), no de una copia.
+ * Padrón contra Supabase (doble de cliente, sin red).
  *
- * El conteo llega en un efecto, asi que el render estatico no lo ve: se monta
- * con `createRoot` y se deja correr el efecto con `await act`. IndexedDB es
- * `fake-indexeddb` (ver `src/test/setup.ts`) y la red no participa.
+ * Lo que importa: sin sesión NO hay datos de ejemplo; con sesión se listan las
+ * filas reales de ESA olla y el conteo sale de la misma lista; un error se dice
+ * como error y no se disfraza de padrón vacío.
  */
 
-let contenedor: HTMLDivElement;
-let raiz: Root;
+const OLLA = '00000000-0000-4000-8000-000000000001';
 
-/** `act` de React 19 fuera de jsdom requiere esta bandera. */
-beforeEach(async () => {
-  (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
-  await Dexie.delete(nombreBase(OLLA_DEMO));
-  contenedor = document.createElement('div');
-  document.body.append(contenedor);
-});
+function conSesionNube(): void {
+  guardarSesion({
+    memberId: 'member-1',
+    ollaId: OLLA,
+    nombreOlla: 'Demo Ate',
+    rol: 'organizadora',
+    modo: 'cloud',
+  });
+}
+
+function montar(cliente: ClienteDatos | null) {
+  return render(
+    <ProveedorRemoto cliente={cliente}>
+      <PadronPage />
+    </ProveedorRemoto>,
+  );
+}
 
 afterEach(() => {
-  if (raiz !== undefined) act(() => raiz.unmount());
-  contenedor.remove();
-  vi.unstubAllGlobals();
+  cleanup();
+  window.localStorage.clear();
 });
 
-async function montar(): Promise<void> {
-  raiz = createRoot(contenedor);
-  await act(async () => {
-    raiz.render(<PadronPage />);
-  });
-  // El efecto abre Dexie y cuenta. En vez de dormir un tiempo fijo (que se
-  // rompe en una maquina lenta o sobra en una rapida), se espera a que la
-  // pantalla deje de estar "cargando": ese es el contrato, no el reloj.
-  await waitFor(() => {
-    expect(contenedor.textContent).not.toContain('Leyendo el padrón guardado');
-  });
-}
+describe('PadronPage (datos remotos)', () => {
+  it('sin sesión pide conectar Supabase y no muestra ninguna persona de ejemplo', () => {
+    montar(clienteFalso({}).cliente);
 
-async function altaDeUnaPersona(): Promise<void> {
-  await altaPersona({
-    anioNacimiento: 1958,
-    sexo: 'F',
-    categoria: 'adulto_mayor',
-    nombreLocal: null,
-    alias: null,
-  });
-}
-
-describe('PadronPage', () => {
-  it('padrón vacío: dice que todavía no hay personas, sin cifra', async () => {
-    await montar();
-
-    expect(contenedor.querySelector('[data-estado="vacio"]')).not.toBeNull();
-    expect(contenedor.querySelector('[aria-label$="en el padrón"]')).toBeNull();
+    expect(screen.getByText('Conectá Supabase para ver el padrón')).toBeInTheDocument();
+    expect(screen.queryByText(/^P-[A-Z0-9]{4}$/)).toBeNull();
+    expect(screen.queryByLabelText(/en el padrón/)).toBeNull();
   });
 
-  it('una sola persona se anuncia en singular: "1 persona", no "1 personas"', async () => {
-    await altaDeUnaPersona();
-    await montar();
-
-    const cifra = contenedor.querySelector('[aria-label$="en el padrón"]');
-    expect(cifra?.getAttribute('aria-label')).toBe('1 persona en el padrón');
-    expect(cifra?.textContent).toBe('1');
-    expect(contenedor.textContent).not.toContain('1 personas');
-  });
-
-  it('dos personas siguen en plural', async () => {
-    await altaDeUnaPersona();
-    await altaDeUnaPersona();
-    await montar();
-
-    expect(
-      contenedor.querySelector('[aria-label="2 personas en el padrón"]')?.textContent,
-    ).toBe('2');
-  });
-
-  it('sin red, el alta real se guarda en el dispositivo y no hace fetch', async () => {
-    const fetchFalso = vi.fn(() => {
-      throw new Error('sin red: no debería haber fetch');
+  it('con sesión lista las personas de la olla y cuenta la misma lista', async () => {
+    conSesionNube();
+    const { cliente } = clienteFalso({
+      personas: [
+        { codigo_p: 'P-0001', categoria: 'gestante', olla_id: OLLA },
+        { codigo_p: 'P-0002', categoria: 'adulto_mayor', olla_id: OLLA },
+      ],
     });
-    vi.stubGlobal('fetch', fetchFalso);
 
-    await altaDeUnaPersona();
+    montar(cliente);
 
-    expect(await contarPersonas()).toBe(1);
-    expect(fetchFalso).not.toHaveBeenCalled();
+    expect(await screen.findByText('P-0001')).toBeInTheDocument();
+    expect(screen.getByText('P-0002')).toBeInTheDocument();
+    expect(screen.getByText('Gestante')).toBeInTheDocument();
+    expect(screen.getByText('Adulto mayor')).toBeInTheDocument();
+    expect(screen.getByLabelText('2 personas en el padrón')).toHaveTextContent('2');
+  });
+
+  it('una sola persona se anuncia en singular', async () => {
+    conSesionNube();
+    const { cliente } = clienteFalso({
+      personas: [{ codigo_p: 'P-0001', categoria: 'adulto', olla_id: OLLA }],
+    });
+
+    montar(cliente);
+
+    expect(await screen.findByLabelText('1 persona en el padrón')).toHaveTextContent('1');
+    expect(screen.queryByText('1 personas')).toBeNull();
+  });
+
+  it('un error de red/RLS se dice como error y no cae a datos de ejemplo', async () => {
+    conSesionNube();
+    const { cliente } = clienteFalso({ personas: { error: 'permission denied' } });
+
+    montar(cliente);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'No se pudieron leer las personas de la olla.',
+    );
+    expect(screen.queryByText(/^P-[A-Z0-9]{4}$/)).toBeNull();
+    // El reintento existe: el error no es un callejon.
+    expect(screen.getByRole('button', { name: 'Reintentar' })).toBeInTheDocument();
+  });
+
+  it('una olla sin personas lo dice vacío, sin inventar filas', async () => {
+    conSesionNube();
+    const { cliente } = clienteFalso({ personas: [] });
+
+    montar(cliente);
+
+    expect(await screen.findByText(/Todavía no hay personas cargadas en esta olla/i)).toBeInTheDocument();
+    expect(screen.queryByText(/^P-[A-Z0-9]{4}$/)).toBeNull();
   });
 });

@@ -75,27 +75,25 @@ afterEach(async () => {
 
 describe('esqueleto offline', () => {
   it('alta P-XXXX -> desmontar -> remontar -> la racion sigue en pantalla', async () => {
-    // 1. Alta de una persona ficticia desde el padron, sin red.
-    // El padron es de la organizadora desde FE-02.
+    // 1. Alta de una persona ficticia en el dispositivo, sin red. El alta ya no
+    // vive en el padrón (esa pantalla lee Supabase); el repositorio local sigue
+    // siendo el camino offline y es lo que este test cubre.
     entrarComo('organizadora');
     const { unmount } = montarApp('/padron');
-    await screen.findByText(/Todavía no hay personas/i);
+    await screen.findByText('Conectá Supabase para ver el padrón');
 
-    fireEvent.change(screen.getByLabelText(/Año de nacimiento/i), {
-      target: { value: '1958' },
-    });
-    fireEvent.change(screen.getByLabelText(/Apodo/i), {
-      target: { value: 'Alias ficticio' },
-    });
-
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /Guardar alta/i }));
-    });
-
-    const avisoAlta = await screen.findByText(/Alta guardada: P-/i);
-    const codigoP = avisoAlta.textContent?.match(/P-[A-Z0-9]{4}/)?.[0];
+    const alta = await altaPersona(
+      {
+        anioNacimiento: 1958,
+        sexo: 'F',
+        categoria: 'adulto_mayor',
+        nombreLocal: 'Alias ficticio',
+        alias: 'Alias ficticio',
+      },
+      RELOJ_FIJO,
+    );
+    const codigoP = alta.persona.codigoP;
     expect(codigoP).toBe('P-DDDD');
-    expect(screen.getByText(/Guardado en esta tablet/i)).toBeInTheDocument();
 
     // 2. Racion con dos razones.
     // Servir es tarea de la cocinera: se cambia el rol como lo haria una persona

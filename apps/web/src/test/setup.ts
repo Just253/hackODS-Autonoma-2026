@@ -15,10 +15,15 @@ const sinRed = (): never => {
 };
 
 beforeEach(() => {
+  // Supabase apagado por defecto: un `.env` en la raiz no puede cambiar el
+  // resultado de los tests. Cada test que necesite configuracion la stubea.
+  vi.stubEnv('VITE_SUPABASE_URL', '');
+  vi.stubEnv('VITE_SUPABASE_ANON_KEY', '');
   vi.stubGlobal('fetch', vi.fn(sinRed));
 });
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
   vi.restoreAllMocks();
 });

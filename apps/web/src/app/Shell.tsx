@@ -1,16 +1,36 @@
-import { useEffect, useState } from 'react';
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import { Icono } from '@hackods/ui';
 
 import { baseDeOlla } from '../data/base.js';
-import { outboxDe } from '../data/outbox-repo.js';
-import { contarPersonas, OLLA_DEMO } from '../data/repositorio.js';
-import { SyncLocal } from '../data/sync-local.js';
-import { destinoDeRuta, destinosDeBarra, destinosDeMas, seccionesDe } from './navegacion.js';
+import { aplicarEventos } from '../data/aplicar-pull.js';
+import { cursorDeOlla } from '../data/cursor-sync.js';
+import { funcionesSupabase } from '../data/funciones-supabase.js';
+import { outboxDe, type OutboxDexie } from '../data/outbox-repo.js';
+import { contarPersonas } from '../data/repositorio.js';
+import { clienteSupabase } from '../data/supabase.js';
+import { SyncRemoto } from '../data/sync-remoto.js';
+import { useCuenta } from './cuenta.js';
+import { CuentaSupabase } from './CuentaSupabase.js';
+import {
+  destinoDeRuta,
+  destinosDeBarra,
+  destinosDeMas,
+  rolPuedeEntrar,
+  rutaInicial,
+  seccionesDe,
+} from './navegacion.js';
 import { ETIQUETA_ROL, OLLAS_DEMO, ROLES, textoDivisor, useSesion } from './sesion.js';
 import type { ControlSesion } from './sesion.js';
-import { fijarPersonasGuardadas, useEstadoSync, alAvisarCambio } from './sync.js';
+import {
+  alAvisarCambio,
+  avisarCambioLocal,
+  fijarPersonasGuardadas,
+  fijarResultadoSync,
+  useEstadoSync,
+} from './sync.js';
+import type { EstadoSync } from './sync.js';
 import { type TamanoTexto, useTexto } from './texto.js';
 
 /**
@@ -56,22 +76,68 @@ export function textoPendientes(cantidad: number): string {
   return `${cantidad} ${sustantivo} de sincronizar (local)`;
 }
 
+export interface Pildora {
+  readonly tono: 'local' | 'sin-conexion' | 'pendiente';
+  readonly texto: string;
+  readonly detalle: string | null;
+}
+
 /**
- * Cuenta los pendientes del outbox y los empuja con `SyncLocal`.
+ * La pastilla del header: una sola, y la verdad mas urgente primero.
+ *
+ * 1. Hay cambios sin enviar -> el conteo del outbox (y "Sin conexión" si no
+ *    hay red).
+ * 2. El navegador dice que no hay red -> se dice.
+ * 3. Hay un resultado de la ultima sincronizacion -> se muestra SOLO si el
+ *    servidor confirmo (`Sincronizado`), o el conflicto/error real. Nunca se
+ *    pinta "Sincronizado" por haber tocado un boton.
+ * 4. Sin nada de eso -> "En este dispositivo", que es lo unico cierto.
+ *
+ * Es una funcion pura para poder probar el contrato sin backend ni DOM.
+ */
+export function pildoraDeSync(pendientes: number, sync: EstadoSync): Pildora {
+  if (pendientes > 0) {
+    return {
+      tono: 'pendiente',
+      texto: textoPendientes(pendientes),
+      detalle: sync.tono === 'sin-conexion' ? 'Sin conexión' : null,
+    };
+  }
+  if (sync.tono === 'sin-conexion') {
+    return { tono: sync.tono, texto: sync.texto, detalle: sync.detalle };
+  }
+  if (sync.resultado === null) {
+    return { tono: sync.tono, texto: sync.texto, detalle: sync.detalle };
+  }
+  if (sync.resultado.tono === 'enviado') {
+    return { tono: 'local', texto: 'Sincronizado', detalle: sync.resultado.detalle };
+  }
+  return {
+    tono: 'pendiente',
+    texto: sync.resultado.tono === 'conflicto' ? 'Cambios con conflicto' : 'Sin confirmar',
+    detalle: sync.resultado.detalle,
+  };
+}
+
+/**
+ * Cuenta los pendientes del outbox y los manda con `SyncRemoto`.
  *
  * El conteo NO se lee una sola vez: `OutboxDexie` mantiene un espejo en
  * memoria y avisa a sus oyentes en `encolar`, `marcarEnviado`, `marcarError` y
  * cuando una transaccion confirma su evento. Asi, dos altas seguidas suben el
  * badge de 1 a 2 sin recargar, y el push lo baja a cero en el acto.
+ *
+ * La base (y su outbox) es la de la OLLA DE LA SESION, no una constante: en
+ * modo cloud la olla es un uuid y sus cambios pendientes no pueden mezclarse
+ * con los de la demo.
  */
-function useOutbox(): {
+function useOutbox(ollaId: string): {
   readonly pendientes: number;
-  readonly empujar: () => Promise<void>;
+  readonly sincronizar: () => Promise<void>;
+  readonly outbox: OutboxDexie;
 } {
   const [pendientes, setPendientes] = useState(0);
-  // Una instancia por montaje: si la base se cerro (tests, recarga) la
-  // proxima lectura toma la conexion nueva y su outbox.
-  const [outbox] = useState(() => outboxDe(baseDeOlla(OLLA_DEMO)));
+  const outbox = useMemo(() => outboxDe(baseDeOlla(ollaId)), [ollaId]);
 
   useEffect(() => {
     let vigente = true;
@@ -93,12 +159,63 @@ function useOutbox(): {
     };
   }, [outbox]);
 
-  const empujar = async (): Promise<void> => {
-    // `marcarEnviado` avisa a los oyentes: no hace falta refrescar a mano.
-    await new SyncLocal(outbox).push();
+  /**
+   * Push + pull contra el backend. Si no hay configuracion no se marca NADA
+   * como enviado: los eventos siguen pendientes y la pastilla lo dice.
+   */
+  const sincronizar = async (): Promise<void> => {
+    const cliente = clienteSupabase();
+    if (cliente === null) {
+      fijarResultadoSync({ tono: 'error', detalle: 'Supabase no configurado' });
+      return;
+    }
+
+    const sync = new SyncRemoto(
+      outbox,
+      funcionesSupabase(cliente),
+      cursorDeOlla(ollaId),
+    );
+
+    const enviado = await sync.push();
+    if (enviado.error !== undefined) {
+      fijarResultadoSync({ tono: 'error', detalle: 'No se pudo enviar: se reintenta' });
+      return;
+    }
+    if (enviado.rechazados.length > 0) {
+      fijarResultadoSync({
+        tono: 'conflicto',
+        detalle: `${enviado.rechazados.length} cambio(s) rechazado(s)`,
+      });
+      return;
+    }
+
+    // Drenar: `push` manda un lote (<=100). Se repite con tope para no quedarse
+    // en un bucle si el servidor no avanza.
+    let aceptados = enviado.aceptados.length + enviado.duplicados.length;
+    let pendientesTrasPush = enviado.pendientes;
+    for (let vuelta = 1; vuelta < 10 && pendientesTrasPush > 0; vuelta += 1) {
+      const siguiente = await sync.push();
+      if (siguiente.error !== undefined || siguiente.rechazados.length > 0) break;
+      aceptados += siguiente.aceptados.length + siguiente.duplicados.length;
+      if (siguiente.pendientes >= pendientesTrasPush) break;
+      pendientesTrasPush = siguiente.pendientes;
+    }
+
+    const recibido = await sync.pull();
+    if (recibido.error !== undefined) {
+      fijarResultadoSync({ tono: 'error', detalle: 'Se envió, no se pudo leer' });
+      return;
+    }
+
+    const resumen = await aplicarEventos(baseDeOlla(ollaId), ollaId, recibido.eventos);
+    avisarCambioLocal();
+    fijarResultadoSync({
+      tono: 'enviado',
+      detalle: `${aceptados} enviado(s) · ${resumen.aplicados} recibido(s)`,
+    });
   };
 
-  return { pendientes, empujar };
+  return { pendientes, sincronizar, outbox };
 }
 
 export function Shell() {
@@ -106,9 +223,11 @@ export function Shell() {
   const [tamano, cambiarTamano] = useTexto();
   const controlSesion = useSesion();
   const { sesion } = controlSesion;
+  const cuenta = useCuenta();
   const sync = useEstadoSync();
-  const { pendientes, empujar } = useOutbox();
+  const { pendientes, sincronizar, outbox } = useOutbox(sesion.ollaId);
   const ubicacion = useLocation();
+  const navegar = useNavigate();
 
   const barra = destinosDeBarra(sesion);
   const mas = destinosDeMas(sesion);
@@ -127,18 +246,10 @@ export function Shell() {
       : null;
 
   /**
-   * La pastilla del header: una sola, y la verdad mas urgente primero. Con
-   * cambios sin enviar manda el outbox; si ademas no hay red, se dice en el
-   * detalle en vez de esconderlo.
+   * La pastilla del header: una sola, y la verdad mas urgente primero. Ver
+   * `pildoraDeSync` (funcion pura, con su test).
    */
-  const pildora =
-    pendientes > 0
-      ? {
-          tono: 'pendiente' as const,
-          texto: textoPendientes(pendientes),
-          detalle: sync.tono === 'sin-conexion' ? 'Sin conexión' : null,
-        }
-      : sync;
+  const pildora = pildoraDeSync(pendientes, sync);
 
   // Alimenta la pastilla del header sin que el header abra Dexie por su lado.
   // Sin red y sin base, se queda en cero: no se inventa un numero. Se repite
@@ -146,7 +257,7 @@ export function Shell() {
   useEffect(() => {
     let vigente = true;
     const contar = (): void => {
-      contarPersonas()
+      contarPersonas(sesion.ollaId)
         .then((n) => {
           if (vigente) fijarPersonasGuardadas(n);
         })
@@ -160,12 +271,56 @@ export function Shell() {
       vigente = false;
       quitar();
     };
-  }, [ubicacion.pathname]);
+  }, [ubicacion.pathname, sesion.ollaId]);
+
+  /**
+   * Con sesion y backend, al abrir (o al entrar) se trae lo que falte: el pull
+   * aplica personas/movimientos/precios a Dexie y avisa para que el conteo se
+   * refresque. Sin red no bloquea nada: se reintenta con el boton.
+   */
+  useEffect(() => {
+    if (sesion.modo !== 'cloud') return;
+    const cliente = clienteSupabase();
+    if (cliente === null) return;
+    let vigente = true;
+    const sync = new SyncRemoto(outbox, funcionesSupabase(cliente), cursorDeOlla(sesion.ollaId));
+    void sync
+      .pull()
+      .then(async (recibido) => {
+        if (!vigente) return;
+        if (recibido.error !== undefined) {
+          fijarResultadoSync({ tono: 'error', detalle: 'No se pudo leer del servidor' });
+          return;
+        }
+        await aplicarEventos(baseDeOlla(sesion.ollaId), sesion.ollaId, recibido.eventos);
+        if (!vigente) return;
+        avisarCambioLocal();
+      })
+      .catch(() => {
+        if (vigente) fijarResultadoSync({ tono: 'error', detalle: 'No se pudo leer del servidor' });
+      });
+    return () => {
+      vigente = false;
+    };
+  }, [sesion.modo, sesion.ollaId, outbox]);
 
   // Al cambiar de pantalla se cierra la hoja: no queda tapando la accion.
   useEffect(() => {
     setAbiertoMas(false);
   }, [ubicacion.pathname]);
+
+  /**
+   * Entrar o salir puede cambiar el rol y la olla (modo cloud). La guarda de
+   * `router.tsx` lee el almacen en cada render, pero no se vuelve a disparar
+   * sola: si la ruta actual dejo de ser del rol, se manda a la inicial de ese
+   * rol. Solo en cloud: en demo el selector ya obliga a navegar para ver el
+   * efecto y no queremos mover a nadie de su pantalla.
+   */
+  useEffect(() => {
+    if (sesion.modo !== 'cloud') return;
+    if (rolPuedeEntrar(sesion, ubicacion.pathname)) return;
+    navegar(rutaInicial(sesion), { replace: true });
+  }, [sesion, ubicacion.pathname, navegar]);
 
   // Escape cierra la hoja. Sin esto, en un telefono con teclado externo la
   // unica salida es tocar "Cerrar".
@@ -237,6 +392,9 @@ export function Shell() {
           <div className="mt-3 border-t border-borde pt-3">
             <SelectorSesion control={controlSesion} />
           </div>
+          <div className="mt-3 border-t border-borde pt-3">
+            <CuentaSupabase cuenta={cuenta} />
+          </div>
         </div>
       </aside>
 
@@ -271,7 +429,7 @@ export function Shell() {
             {pendientes > 0 ? (
               <button
                 type="button"
-                onClick={() => void empujar()}
+                onClick={() => void sincronizar()}
                 className="oc-boton oc-boton--primario hidden lg:inline-flex"
               >
                 Guardar ahora
@@ -338,7 +496,7 @@ export function Shell() {
             <div className="mx-auto w-full max-w-[var(--ancho-lectura)] border-t border-borde py-3">
               <button
                 type="button"
-                onClick={() => void empujar()}
+                onClick={() => void sincronizar()}
                 className="oc-boton oc-boton--primario w-full"
               >
                 Guardar ahora
@@ -359,6 +517,9 @@ export function Shell() {
 
           <div className="mx-auto w-full max-w-[var(--ancho-lectura)] border-t border-borde py-3 lg:hidden">
             <SelectorSesion control={controlSesion} />
+            <div className="mt-3 border-t border-borde pt-3">
+              <CuentaSupabase cuenta={cuenta} />
+            </div>
           </div>
         </nav>
       ) : null}

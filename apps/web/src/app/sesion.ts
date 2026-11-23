@@ -151,6 +151,51 @@ export function guardarSesion(
   }
 }
 
+/* --- Sesion remota: la escribe `app/cuenta.ts`, no la UI ------------------ */
+
+/**
+ * Avisos de cambio de sesion. `useCuenta` resuelve la sesion de Supabase y la
+ * guarda aca; el `Shell` y las pantallas se enteran por este canal, sin
+ * recargar la pagina. Es el mismo patron que `app/sync.ts`.
+ */
+const oyentesSesion = new Set<() => void>();
+
+function avisarSesion(): void {
+  for (const oyente of oyentesSesion) oyente();
+}
+
+/** Desuscribirse. Solo lo usan `useSesion` y los tests. */
+export function suscribirSesion(oyente: () => void): () => void {
+  oyentesSesion.add(oyente);
+  return () => {
+    oyentesSesion.delete(oyente);
+  };
+}
+
+/**
+ * Fija la sesion que resolvio el servidor (`olla_members` + `ollas`) y la
+ * persiste: al recargar, la app abre ya en la olla y el rol reales. La sesion
+ * cloud manda sobre la demo: `cambiarRol`/`cambiarOlla` no la tocan.
+ */
+export function fijarSesionRemota(sesion: Sesion): void {
+  guardarSesion(sesion);
+  avisarSesion();
+}
+
+/**
+ * Vuelve al punto de partida demo: borra la sesion guardada (no la pisa con un
+ * rol inventado) y avisa. Lo llama `salir` y el caso "cuenta sin olla".
+ */
+export function volverASesionDemo(): void {
+  const almacen = almacenSeguro();
+  try {
+    almacen?.removeItem(CLAVE_SESION);
+  } catch {
+    /* modo privado o cuota: igual se avisa y se relee */
+  }
+  avisarSesion();
+}
+
 /**
  * Cambia el rol. En `cloud` no se toca: la sesion la decide el servidor y la UI
  * no puede "ascender" a nadie. Devuelve la sesion resultante (la misma si el
@@ -201,6 +246,13 @@ export function useSesion(): ControlSesion {
   useEffect(() => {
     setGuardada(guardarSesion(sesion));
   }, [sesion]);
+
+  // La sesion tambien cambia por fuera de este hook: `app/cuenta.ts` la resuelve
+  // de Supabase y avisa. Se relee del almacen (una sola fuente) en vez de
+  // duplicar el estado en dos lugares.
+  useEffect(() => {
+    return suscribirSesion(() => setSesion(leerSesion()));
+  }, []);
 
   const cambiarRolFn = useCallback((rol: Rol) => {
     setSesion((anterior) => cambiarRol(anterior, rol));

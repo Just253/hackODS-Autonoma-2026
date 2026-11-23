@@ -7,8 +7,7 @@ import {
 } from 'react-router-dom';
 
 import { CORTE_DEMO, MOVIMIENTOS_DEMO } from '../fixtures/demo.js';
-import { FUENTE_PRECIOS_DEMO, PRODUCTO_DESTACADO, PRODUCTOS_DEMO } from '../fixtures/precios-productos.js';
-import { PreciosPantalla } from '../features/precios/PreciosPantalla.js';
+import { PreciosDeLaOlla } from '../features/precios/PreciosDeLaOlla.js';
 import { PresupuestoPantalla } from '../features/presupuesto/PresupuestoPantalla.js';
 import { Shell } from './Shell.js';
 import { ComprobantePage } from '../features/comprobante/ComprobantePage.js';
@@ -109,16 +108,7 @@ export const rutas = [
           // Track A · comprobante (lo tomó A al quedar libre el issue #9)
           { path: 'comprobante', element: <ComprobantePage /> },
           { path: 'presupuesto', element: <PresupuestoPantalla movimientos={MOVIMIENTOS_DEMO} corte={CORTE_DEMO} /> },
-          {
-            path: 'precios',
-            element: (
-              <PreciosPantalla
-                productos={PRODUCTOS_DEMO}
-                fuente={FUENTE_PRECIOS_DEMO}
-                productoInicial={PRODUCTO_DESTACADO}
-              />
-            ),
-          },
+          { path: 'precios', element: <PreciosDeLaOlla /> },
           // Track C · entre ollas y folio
           { path: 'solicitud', element: <SolicitudPantalla nueva={NUEVA_SOLICITUD_DEMO} ahora={AHORA_DEMO} /> },
           { path: 'reporte', element: <ReportePantalla movimientos={MOVIMIENTOS_ENTRE_OLLAS} periodo={PERIODO_DEMO} /> },
