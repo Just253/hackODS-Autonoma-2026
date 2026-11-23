@@ -89,6 +89,8 @@ pnpm build                       # build de todos los paquetes + app
 pnpm test                        # Vitest, todos los paquetes (turbo run test)
 pnpm typecheck                   # TypeScript en todos los paquetes
 pnpm verificar                   # la puerta completa (lo mismo que CI); --rapido saltea el build
+                                 # si el diff no trae código (sólo docs), typecheck/tests/build se
+                                 # omiten solos: el check `ci` corre igual y reporta verde
 pnpm docs:chequear               # ¿el diff trae la doc que le corresponde? (PROCESO-DOCS.md §2)
 pnpm hooks:install               # una vez por máquina: activa .githooks (pre-commit y pre-push)
 pnpm --filter @hackods/nutrition test   # un paquete concreto
