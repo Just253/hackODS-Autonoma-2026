@@ -5,7 +5,7 @@
 no prescribe dietas, no guarda nombres en la nube.
 
 **Guion:** 3:00 (cierre de la demo)
-**Área:** ninguna (copy + criterio) · **Estado:** copy escrito en el README; falta en la app
+**Área:** ninguna (copy + criterio) · **Estado:** el pie del Shell dice «datos simulados / no es un diagnóstico»; faltan las otras dos frases
 
 ## Precondiciones
 

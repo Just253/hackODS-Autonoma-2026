@@ -66,6 +66,13 @@ pnpm --filter @hackods/domain typecheck
 5. Fechas en ISO 8601 con zona explícita; el día operativo de una olla es `America/Lima`.
 6. Los nombres de campos y errores van en español peruano, como todo el repo.
 7. Identidad: `codigoP` es la clave; ningún campo de nombre, DNI, teléfono o dirección entra acá (D2).
+8. Solicitud entre ollas: transiciones `borrador→enviada→aceptada→entregada|cancelada` sin saltos
+   (`TransicionInvalida` con estado e intento); entregar devuelve el **par** de movimientos
+   `transferencia` (origen negativo, destino positivo, conservación a 0 — una solicitud nunca
+   crea stock); unidades estrictas (`kg`→g; otra unidad → `UnidadNoSoportada`).
+9. Reporte entre ollas: agrega **volumen movido** (`Math.abs(delta)`, no saldo ni neto) por
+   categoría; la única puerta por donde sale un texto de categoría es `categoriaSegura` —
+   `codigoP`, alias y proveedores no salen (test que se pone rojo si se anula).
 
 ## Dueño y revisión
 
