@@ -70,6 +70,8 @@ puede crear sesiones lead ni worktrees. **Las tres personas usan la misma versiÃ
 `coordination` antes de empezar).
 
 ```text
+0. pnpm arranque
+   -> GO o NO-GO con el comando exacto que falta. Si dice NO-GO, no se reclama nada.
 1. Instalar OpenChamber Desktop (misma version en las 3 PCs) y autenticar con TU cuenta de GitHub.
 2. Abrir como directorio de trabajo:
    C:\Users\<usuario>\FilesForDev\Github\hackODS-Autonoma-2026

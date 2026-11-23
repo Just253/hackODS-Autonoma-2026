@@ -83,6 +83,7 @@ es el único que aprueba y el que decide ante conflicto.
 
 ```bash
 pnpm install                     # una vez por máquina; avisá en coordination si cambia el lockfile
+pnpm arranque                    # ¿esta máquina puede delegar? GO/NO-GO con el comando de arreglo
 pnpm dev                         # web en http://localhost:5173
 pnpm build                       # build de todos los paquetes + app
 pnpm test                        # Vitest, todos los paquetes (turbo run test)
