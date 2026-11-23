@@ -1,25 +1,34 @@
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 
-import { FUENTE_DEMO, POLLO_ACTUAL, POLLO_PREVIA, PRODUCTO_DEMO, UNIDAD_DEMO } from '../../fixtures/precios-demo';
+import type { Microcentesimos } from '@hackods/contracts';
+
+import { POLLO_ACTUAL, POLLO_PREVIA } from '../../fixtures/precios-demo';
+import { FUENTE_PRECIOS_DEMO, type ProductoPrecioDemo } from '../../fixtures/precios-productos';
 import { PreciosPantalla } from './PreciosPantalla';
 import { calcularTendencia } from './tendencia';
-
-import type { Microcentesimos } from '@hackods/contracts';
 
 /** Marca de microcentesimos: el contrato no acepta un `number` suelto. */
 const micro = (valor: number): Microcentesimos => valor as Microcentesimos;
 
-const base = {
-  producto: PRODUCTO_DEMO,
-  unidad: UNIDAD_DEMO,
-  fuente: FUENTE_DEMO,
+/** El pollo con la ventana que cada caso necesita. */
+const pollo = (cambio: Partial<ProductoPrecioDemo> = {}): ProductoPrecioDemo => ({
+  id: 'pollo',
+  nombre: 'pollo',
+  unidad: 'kg',
   ventanaActual: POLLO_ACTUAL,
   ventanaPrevia: POLLO_PREVIA,
-};
+  ...cambio,
+});
 
-const render = (props: Partial<typeof base> = {}): string =>
-  renderToStaticMarkup(<PreciosPantalla {...base} {...props} />);
+const render = (producto: ProductoPrecioDemo): string =>
+  renderToStaticMarkup(
+    <PreciosPantalla
+      productos={[producto]}
+      fuente={FUENTE_PRECIOS_DEMO}
+      productoInicial={producto.id}
+    />,
+  );
 
 const obs = (lista: readonly { id: string; valor: number; fecha: string }[]) =>
   lista.map((o) => ({ id: o.id, valor: o.valor as never, fecha: o.fecha }));
@@ -61,7 +70,7 @@ describe('PreciosPantalla · outlier en la ventana PREVIA', () => {
   });
 
   it('la pantalla avisa del outlier previo y mantiene +12,00 %', () => {
-    const html = render({ ventanaPrevia: previaConOutlier });
+    const html = render(pollo({ ventanaPrevia: previaConOutlier }));
     expect(html).toContain('data-estado="outlier-previo"');
     expect(html).toContain('+12,00 %');
   });
@@ -93,7 +102,7 @@ describe('PreciosPantalla · variación negativa menor a 1 % (MEDIA 7)', () => {
     });
     expect(t.variacionBp).toBe(-50);
 
-    const html = render({ ventanaActual: actualBaja });
+    const html = render(pollo({ ventanaActual: actualBaja }));
     expect(html).toContain('\u22120,50 %');
     // El texto sin signo no debe aparecer como variación.
     expect(html).not.toMatch(/[^−]0,50 %/);

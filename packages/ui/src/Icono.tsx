@@ -5,7 +5,15 @@
  */
 import type { ReactNode } from 'react';
 
-export type NombreIcono = 'padron' | 'servicio' | 'comprobante' | 'presupuesto' | 'precios' | 'mas';
+export type NombreIcono =
+  | 'padron'
+  | 'servicio'
+  | 'comprobante'
+  | 'presupuesto'
+  | 'precios'
+  | 'entreOllas'
+  | 'reporte'
+  | 'mas';
 
 const TRAZOS: Readonly<Record<NombreIcono, ReactNode>> = {
   // Personas del padron: un grupo, no un usuario con nombre.
@@ -50,6 +58,24 @@ const TRAZOS: Readonly<Record<NombreIcono, ReactNode>> = {
       <path d="M3 20h18" />
       <path d="M6 15l4-5 3 3 5-7" />
       <path d="M18 6h.01" />
+    </>
+  ),
+  // Entre ollas: dos flechas que se cruzan, no una caja de regalo.
+  entreOllas: (
+    <>
+      <path d="M3 8h15" />
+      <path d="M15 5l3 3-3 3" />
+      <path d="M21 16H6" />
+      <path d="M9 13l-3 3 3 3" />
+    </>
+  ),
+  // Reporte: barras comparables, sin ejes decorativos.
+  reporte: (
+    <>
+      <path d="M4 20h16" />
+      <path d="M7 20v-6" />
+      <path d="M12 20V8" />
+      <path d="M17 20v-9" />
     </>
   ),
   // Menú secundario: más opciones, sin una hamburguesa genérica.

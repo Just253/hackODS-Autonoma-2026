@@ -19,11 +19,11 @@ describe('ReportePantalla', () => {
     expect(html).toContain('data-reporte="entre-ollas"');
   });
 
-  it('muestra el volumen movido por categoria (granos: 20000 y 5000)', () => {
+  it('muestra el volumen movido por categoría en kg (granos: 20 kg y 5 kg)', () => {
     const html = render();
-    expect(html).toContain('granos');
-    expect(html).toContain('20000');
-    expect(html).toContain('5000');
+    expect(html).toContain('Granos');
+    expect(html).toContain('20 kg');
+    expect(html).toContain('5 kg');
   });
 
   it('el encabezado dice "volumen movido", no un saldo/total', () => {
@@ -47,8 +47,8 @@ describe('ReportePantalla', () => {
       lamport: 1,
     };
     const html = render({ movimientos: [salida] });
-    expect(html).toContain('15000');
-    expect(html).not.toContain('-15000');
+    expect(html).toContain('15 kg');
+    expect(html).not.toContain('-15 kg');
   });
 
   it('la pantalla NO contiene codigoP ni alias del fixture', () => {

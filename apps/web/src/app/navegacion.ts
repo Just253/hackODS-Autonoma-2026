@@ -1,30 +1,39 @@
 import type { NombreIcono } from '@hackods/ui';
 
-import type { Modo } from './modo.js';
-
 /**
  * Modelo de navegacion. Un solo lugar decide que destinos existen y en que
- * orden, para que la barra, el menu secundario y el modo no se contradigan.
+ * orden, para que la barra del telefono, el rail de escritorio y el titulo del
+ * header no se contradigan.
  *
- * Regla del modo `simple`: la barra inferior tiene **como maximo 3 destinos**.
- * Todo lo demas vive en "Mas". Si un dia se quiere agregar un cuarto destino a
- * `simple`, se saca otro; la barra no crece.
+ * Dos grupos, no dos modos:
+ *
+ * - `DIARIOS`: lo que se hace todos los dias, en el orden en que se usa.
+ * - `SECUNDARIOS`: entre ollas. No se toca a cada rato, pero tampoco se
+ *   esconde: en el telefono vive en "Más", en escritorio esta siempre a la
+ *   vista en el rail.
+ *
+ * La barra inferior del telefono muestra los cuatro diarios (cuatro es el
+ * maximo que se lee de pie sin apretar) y "Más" abre el resto. Antes habia un
+ * modo `simple` que bajaba la barra a tres y escondia "Plata" en "Más": el
+ * numero que mas se mira quedaba a dos toques. Se fue.
  */
 export interface Destino {
   readonly a: string;
   /** Texto de la barra. Corto: se lee de pie. */
   readonly texto: string;
-  /** Titulo largo para el menu "Mas" y el lector de pantalla. */
+  /** Titulo largo para el rail, el menu "Más" y el lector de pantalla. */
   readonly descripcion: string;
   readonly icono: NombreIcono;
-  /** Que resuelve, en palabras de la cocinera. Se usa en Ajustes. */
+  /** Que resuelve, en palabras de la cocinera. */
   readonly tarea: string;
 }
 
-/**
- * Destinos diarios, en el orden en que se usan: se da de alta a la persona,
- * se sirve, se revisa la boleta y se mira cuanto queda.
- */
+export interface Seccion {
+  /** Titulo del grupo en el rail de escritorio y en la hoja "Más". */
+  readonly titulo: string;
+  readonly destinos: readonly Destino[];
+}
+
 export const DIARIOS: readonly Destino[] = [
   {
     a: '/padron',
@@ -50,45 +59,50 @@ export const DIARIOS: readonly Destino[] = [
   {
     a: '/presupuesto',
     texto: 'Plata',
-    descripcion: 'Presupuesto de la olla',
+    descripcion: 'Presupuesto',
     icono: 'presupuesto',
     tarea: 'Ver cuánto hay, cuánto se gastó y cuánto queda.',
   },
 ] as const;
 
-/** Lo que no se toca todos los dias. */
 export const SECUNDARIOS: readonly Destino[] = [
   {
     a: '/precios',
     texto: 'Precios',
-    descripcion: 'Precio del pollo',
+    descripcion: 'Precios de insumos',
     icono: 'precios',
-    tarea: 'Ver la mediana del precio y si subió o bajó.',
+    tarea: 'Ver el precio típico de cada insumo y si subió o bajó.',
   },
   {
     a: '/solicitud',
     texto: 'Entre ollas',
     descripcion: 'Entre ollas',
-    icono: 'mas',
+    icono: 'entreOllas',
     tarea: 'Pedir o entregar insumos a otra olla.',
   },
   {
     a: '/reporte',
     texto: 'Reporte',
     descripcion: 'Reporte entre ollas',
-    icono: 'precios',
+    icono: 'reporte',
     tarea: 'Ver el volumen movido por categoría.',
   },
 ] as const;
 
-/** Destinos de la barra inferior. `simple` nunca pasa de tres. */
-export function destinosDeBarra(modo: Modo): readonly Destino[] {
-  return modo === 'simple' ? DIARIOS.slice(0, 3) : DIARIOS;
+/** Los grupos, en el orden del rail. */
+export const SECCIONES: readonly Seccion[] = [
+  { titulo: 'Día a día', destinos: DIARIOS },
+  { titulo: 'Otros', destinos: SECUNDARIOS },
+] as const;
+
+/** Destinos de la barra inferior del telefono. */
+export function destinosDeBarra(): readonly Destino[] {
+  return DIARIOS;
 }
 
-/** Lo que `simple` esconde en "Mas", en el mismo orden. */
-export function destinosDeMas(modo: Modo): readonly Destino[] {
-  return modo === 'simple' ? [...DIARIOS.slice(3), ...SECUNDARIOS] : SECUNDARIOS;
+/** Lo que la barra del telefono deja en "Más". */
+export function destinosDeMas(): readonly Destino[] {
+  return SECUNDARIOS;
 }
 
 /** Todos los destinos, para resolver el titulo del header por ruta. */
