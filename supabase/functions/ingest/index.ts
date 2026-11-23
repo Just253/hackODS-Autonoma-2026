@@ -19,6 +19,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 import { json, preflight } from '../_shared/http.ts';
+import { parsearDictado } from './dictado.ts';
 
 const MAX_BYTES = 10 * 1024 * 1024;
 const MS_COMPUTE = 30_000;
@@ -186,7 +187,15 @@ async function transcribir(bytes: ArrayBuffer, mime: string, token: string, url:
   }
   const cuerpo = (await respuesta.json()) as { texto?: string };
   const texto = typeof cuerpo.texto === 'string' ? cuerpo.texto.trim() : '';
-  return { texto, items: [], estado: 'transcrita' };
+  // Dictado -> items (parser tolerante a ASR, copia Deno de packages/domain).
+  const dictado = parsearDictado(texto).map((it, i) => ({
+    linea: i + 1,
+    textoCrudo: `${it.insumoTexto}${it.cantidad === null ? '' : ` ${it.cantidad}`}${it.unidad === null ? '' : ` ${it.unidad}`}`.trim(),
+    cantidad: it.cantidad,
+    unidad: it.unidad,
+    precioUnitarioMicrocent: null,
+  }));
+  return { texto, items: dictado, estado: 'transcrita' };
 }
 
 async function extraer(bytes: ArrayBuffer, mime: string, token: string, url: string): Promise<ResultadoExtract> {
