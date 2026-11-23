@@ -7,7 +7,7 @@
  * - Un menu sin sello, sin publicar o con hash que no corresponde NO se sirve: se
  *   rechaza con `MenuNoServible` y el mensaje dice que campo falla.
  * - El padron son solo registros vigentes (`deletedAt === null`); una baja logica no come.
- * - Las dos opciones (A y B) se sirven completas: mismo padron, mismo conteo por grupo.
+ * - Todas las opciones (A y B) se sirven: mismo padron, una `RacionOpcion` por plantilla.
  */
 import type {
   Categoria,
@@ -32,13 +32,17 @@ export interface PlatoServicio {
   readonly porciones: readonly Portion[];
 }
 
-export interface MenuDelDia {
+/** Una plantilla firmada con SU contenido: platos del dia y sustituciones de la plantilla. */
+export interface MenuOpcion {
   /** La plantilla firmada (`menu_template`): estado, sello y hash. */
   readonly template: MenuTemplate;
   readonly platos: readonly PlatoServicio[];
   /** Filas `substitution` de esta plantilla. Solo las que estan aca son validas. */
   readonly sustituciones: readonly Substitution[];
 }
+
+/** @deprecated alias de `MenuOpcion`; conservado para no romper imports previos. */
+export type MenuDelDia = MenuOpcion;
 
 export interface RacionPorGrupo {
   readonly grupo: GrupoEtario;
@@ -54,9 +58,12 @@ export interface RacionPorGrupo {
 
 export interface RacionOpcion {
   readonly opcion: MenuTemplate['opcion'];
+  readonly perfil: MenuTemplate['perfil'];
+  readonly templateId: string;
   readonly porGrupo: readonly RacionPorGrupo[];
   /** El padron completo oficial del dia: `personas`. La suma en gramos es informativa. */
   readonly total: number;
+  /** Suma de porciones de TODOS los platos (almuerzo + cena), no solo una comida. */
   readonly totalGramos: number;
   readonly gruposSinPorcion: readonly GrupoEtario[];
 }
@@ -76,7 +83,7 @@ export interface SustitucionFaltante {
 }
 
 export interface ResultadoServicio {
-  readonly menuId: string;
+  /** Una opcion por plantilla servida (A y B, o las que lleguen). */
   readonly opciones: readonly RacionOpcion[];
   readonly sustituciones: {
     readonly aprobadas: readonly SustitucionAplicada[];
@@ -150,20 +157,27 @@ function exigirFirma(template: MenuTemplate): NonNullable<MenuTemplate['sello']>
 }
 
 /**
- * Raciones del dia para un menu firmado y un padron.
+ * Raciones del dia para las plantillas firmadas y un padron.
  *
- * @param menu menu firmado del dia (plantilla + platos + sustituciones)
+ * @param menus las opciones firmadas del dia (una por plantilla: A, B, ...)
  * @param personas padron vigente; las bajas logicas se filtran aca
+ *
+ * Valida TODAS las plantillas antes de tocar el padron: si una no es servible, no
+ * se sirve ninguna (un servicio a medias es peor que un error claro).
  */
 export function servirDelDia(
-  menu: MenuDelDia,
+  menus: readonly MenuOpcion[],
   personas: readonly Persona[],
 ): ResultadoServicio {
-  // Puerto 1: sello y estado. Este reentra por `esMenuServible`.
-  exigirFirma(menu.template);
+  if (menus.length === 0) {
+    throw new MenuNoServible('(sin menu)', 'menu', 'no hay ninguna plantilla que servir');
+  }
 
-  // Puerto 2: hash contra el contenido del dia. Se lanza antes de tocar el padron.
-  esMenuServible(menu.template, menu.platos);
+  // Puertos 1 y 2: estado + sello y hash contra el contenido, por cada plantilla.
+  for (const menu of menus) {
+    exigirFirma(menu.template);
+    esMenuServible(menu.template, menu.platos);
+  }
 
   const vigentes = personas.filter((persona) => persona.deletedAt === null);
 
@@ -176,7 +190,7 @@ export function servirDelDia(
       // Enum cerrado: hoy no ocurre. La guarda evita inflar un grupo fantasma si
       // llega una categoria nueva sin grupo asignado.
       rechazar(
-        menu.template,
+        menus[0]!.template,
         'categoria',
         `la categoria "${persona.categoria}" del padron no tiene grupo etario`,
       );
@@ -184,6 +198,25 @@ export function servirDelDia(
     conteo.set(grupo, (conteo.get(grupo) ?? 0) + 1);
   }
 
+  const opciones = menus.map((menu) => racionDeOpcion(menu, conteo, vigentes.length));
+
+  const aprobadas: SustitucionAplicada[] = [];
+  const sinSustituto: SustitucionFaltante[] = [];
+  for (const menu of menus) {
+    const resuelto = resolverSustituciones(menu);
+    aprobadas.push(...resuelto.aprobadas);
+    sinSustituto.push(...resuelto.sinSustituto);
+  }
+
+  return { opciones, sustituciones: { aprobadas, sinSustituto } };
+}
+
+/** Una `RacionOpcion` a partir de una plantilla y el conteo por grupo del padron. */
+function racionDeOpcion(
+  menu: MenuOpcion,
+  conteo: ReadonlyMap<GrupoEtario, number>,
+  totalPersonas: number,
+): RacionOpcion {
   // Porcion por grupo: se toma del primer plato que la declare. Si dos platos del
   // mismo grupo declaran gramos distintos, el menu no es servible: no se elige uno.
   const porcionPorGrupo = new Map<GrupoEtario, Portion>();
@@ -230,20 +263,24 @@ export function servirDelDia(
     });
   }
 
-  const totalGramos = porGrupo.reduce((suma, fila) => suma + fila.raciones, 0);
-
-  const opcion: RacionOpcion = {
-    opcion: menu.template.opcion,
-    porGrupo,
-    total: vigentes.length,
-    totalGramos,
-    gruposSinPorcion,
-  };
+  // El total en gramos suma CADA plato con sus porciones (almuerzo + cena). Un grupo
+  // sin porcion no aporta al plato que no la declara.
+  let totalGramos = 0;
+  for (const plato of menu.platos) {
+    for (const porcion of plato.porciones) {
+      const personasGrupo = conteo.get(porcion.grupo) ?? 0;
+      totalGramos += personasGrupo * porcion.cantidad;
+    }
+  }
 
   return {
-    menuId: menu.template.id,
-    opciones: [opcion],
-    sustituciones: resolverSustituciones(menu),
+    opcion: menu.template.opcion,
+    perfil: menu.template.perfil,
+    templateId: menu.template.id,
+    porGrupo,
+    total: totalPersonas,
+    totalGramos,
+    gruposSinPorcion,
   };
 }
 
