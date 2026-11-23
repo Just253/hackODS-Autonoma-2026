@@ -25,24 +25,38 @@
 
 ## 2. Reparto de las 6 horas
 
-Cada persona corre su orquestador y trabaja en paralelo. **No hay dependencias entre tracks**: si
-necesitás algo del otro, lo simulás con un stub y seguís.
+Se reparte **por paso de la demo**, no por carpeta del monorepo: la demo son pantallas, y las pantallas
+no existen todavía. Cada dueño tiene su carpeta de feature y nadie más la toca.
 
-| Track | Dueño | Entrega visible en la demo | Empieza por |
+| Track | Dueño | Carpetas propias | Entrega visible en la demo |
 |---|---|---|---|
-| **A · PWA y pantallas** | A | Las 4 pantallas navegables, en modo avión | issue #1 |
-| **B · datos y sync** | B | Boleta → ítems → presupuesto con series; badge de sync | issue #2 |
-| **C · dominio, folio e impresión** | C | Menú firmado sirviendo raciones, folio impreso, CI verde | issue #7 |
+| **A · esqueleto y offline** | A | `apps/web/src/app`, `features/padron`, `features/servicio`, `packages/ui`, PWA y service worker | pasos 1–3 del guion: abre en modo avión, alta `P-0471`, servicio sirviendo raciones |
+| **B · comprobante y dinero** | B | `apps/web/src/features/{comprobante,presupuesto,precios}`, `apps/web/src/fixtures` | pasos 4–6: boleta con 2 ítems por revisar, presupuesto con alerta, serie de precios |
+| **C · entre ollas y folio** | C | `apps/web/src/features/{solicitud,reporte}`, `packages/{domain,nutrition,printing,sync}`, `docs/`, `.github/` | pasos 7–8: solicitud entre ollas, agregado de 3 ollas, folio imprimible |
+
+Tres reglas para que esto no se pise:
+
+1. **`apps/web/src/app/router.tsx` es de A.** Los demás agregan su ruta con un PR de una línea o le
+   piden a A que la agregue; no lo editan en paralelo.
+2. **Los fixtures son de B**, en `apps/web/src/fixtures/`. Nadie más inventa datos: si te falta un
+   número, lo pedís o lo marcás `sin dato`.
+3. **Un archivo, un dueño.** Si necesitás otro, se pide en el issue `coordination` con una línea y se
+   sigue con un stub.
+
+**No hay base de datos en esta ventana.** Docker/podman no está corriendo y el CLI de Supabase no está
+instalado: `pnpm db:start` no funciona hoy y arreglarlo cuesta más que la demo entera. Todo el demo
+corre en el navegador (IndexedDB) y el badge de sync se muestra local. Supabase se conecta después, con
+la ventana cerrada.
 
 ## 3. El reloj
 
 | Hora | Qué tiene que existir | Si no está |
 |---|---|---|
-| **H0–H0:30** | Cada uno con `pnpm i` + `pnpm dev` corriendo y su primer commit. A: router con 4 rutas vacías. C: CI con ESLint verde. | Se pide ayuda en el chat, no se investiga solo. |
+| **H0–H0:30** | Cada uno con `pnpm i` + `pnpm dev` corriendo y su primer commit. A: router con 4 rutas vacías y `features/` creadas. B: `fixtures/` con 3 ollas ficticias y 1 boleta de 6 ítems. C: CI con ESLint verde. | Se pide ayuda en el chat, no se investiga solo. |
 | **H0:30–H1:30** | A: padrón P-XXXX (alta + lista, IndexedDB). C: `servirDelDia()` devolviendo raciones por grupo desde el menú firmado. | Se baja el alcance: padrón sin búsqueda; menú con 1 perfil. |
-| **H1:30–H2:30** | A: pantalla de servicio (raciones + sustituciones). B: seed ficticio de 3 ollas + 1 comprobante con 6 ítems. | B entrega sólo la tabla de presupuesto calculada, sin UI. |
-| **H2:30–H3:30** | **Integración 1:** A enchufa dominio real; C entrega folio imprimible; B el badge "N pendientes". | Se muestra la impresión con datos fijos. |
-| **H3:30–H4:30** | **Integración 2:** modo avión de punta a punta (recarga incluida), presupuesto con alerta al 80 %, serie de precios con MAD. | Se cae la serie de precios; queda el presupuesto. |
+| **H1:30–H2:30** | A: pantalla de servicio (raciones + sustituciones). B: pantalla de comprobante con los 6 ítems y `por_revisar` en 2. | B muestra la tabla calculada, sin pantalla. |
+| **H2:30–H3:30** | B: presupuesto con gastado/disponible y alerta al 80 %, más la serie de precios contra la mediana de 7. C: folio imprimible con `@media print`. | Se cae la serie de precios; queda el presupuesto. |
+| **H3:30–H4:30** | **Integración:** A enchufa dominio real y el service worker (modo avión + recarga). C: solicitud entre ollas y reporte agregado. B: badge "N pendientes". | Se cae el reporte entre ollas; quedan 5 pasos. |
 | **H4:30–H5:15** | **Congelar.** Sólo bugs que rompen la demo. Guion ensayado 3 veces con cronómetro. Video de respaldo grabado. | Si el ensayo pasa de 3:30, se recorta un paso, no se acelera. |
 | **H5:15–H6:00** | Demo. Nada de código. | — |
 

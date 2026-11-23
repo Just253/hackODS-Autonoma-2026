@@ -8,6 +8,10 @@ Si algo de acá contradice `docs/PROTOCOL.md`, gana `PROTOCOL.md` y se corrige e
 > workflows mergeados. **No hay issues de feature abiertos antes de esta guía**; los 8 de arranque ya
 > están en `status:ready`.
 
+> ⏱ **Si el reloj está en la ventana de 6 horas, esta guía no se usa para reclamar.** Manda
+> `docs/MODO-6H.md`: cada persona pushea directo a `main` en su carpeta, sin claim, sin worktree y sin
+> PR (salvo contratos). De este documento sirven §0 (reparto), §2 (arranque técnico) y §3 (brief).
+
 ---
 
 ## 0. Reparto (una carpeta, un dueño)
@@ -32,6 +36,13 @@ Reglas del reparto que no se negocian:
 ---
 
 ## 1. Cada persona necesita su propia cuenta de GitHub
+
+> Estado: las **tres cuentas existen**. Falta que las otras dos tengan permiso **write** en
+> `Just253/hackODS-Autonoma-2026`. Sin eso no pueden pushear y el reparto de 6 horas se cae.
+>
+> ```bash
+> gh api -X PUT repos/Just253/hackODS-Autonoma-2026/collaborators/<usuario> -f permission=push
+> ```
 
 Requisito técnico, no preferencia. Con una sola cuenta:
 
@@ -79,18 +90,25 @@ Si el smoke falla, **no se reclama nada**: se avisa en el issue `coordination` y
 
 ## 3. Brief para pegar en la sesión lead
 
+Una sola versión, seis horas de reloj. Reemplazá `<A|B|C>` y pegá el bloque completo; el resto lo lee
+el agente por su cuenta.
+
 ```text
-ROL: orquestador lead del area <web|api|contracts> de hackODS-Autonoma-2026.
-RESULTADO: integrar y mergear los PRs de mi area; no escribo codigo de feature.
-PRUEBA: gh pr checks <n> --required verde + ## Prueba con rojo->verde pegado.
-WRITE-SET: mi area segun docs/ORQUESTACION.md §0. Todo lo demas es lectura.
-LIMITES: no toco main a mano, no instalo dependencias sin avisar en el issue, no edito fuera del
-  write-set del claim, no apruebo mis propios PRs.
-RETORNO: por tarea -> numero de issue, numero de PR, comando de prueba y salida; por cierre de dia ->
-  lineas doing/next/blocked/risk en el issue coordination.
-Lectura obligatoria antes de tocar nada: AGENTS.md, docs/DECISIONES.md, docs/PROTOCOL.md,
-  docs/ORQUESTACION.md, el AGENTS.md de mi paquete.
+ROL: lead de mi area en hackODS-Autonoma-2026 durante 6 horas de hackathon.
+DUEÑO DE: (A) apps/web + packages/ui | (B) supabase/ + scripts/seed* | (C) packages/* + docs/ + .github/.
+ANTES DE NADA: leer docs/MODO-6H.md (manda sobre el protocolo hoy), AGENTS.md §5 y docs/DECISIONES.md.
+FORMA DE TRABAJO: push directo a main en mi carpeta, sin claim, sin worktree, sin PR. PR solo si toco
+  la carpeta de otro, y ahi alcanza 1 revision del dueno.
+CADA TAREA: 45 minutos. Si no termina, se corta, se anota en el issue y se sigue con la siguiente.
+ANTES DE CADA PUSH: pnpm test && pnpm typecheck. Rojo no se pushea.
+PRUEBA: lo que digo que funciona, lo muestro con el comando y su salida. Sin salida, no paso.
+LIMITES: cero datos personales reales, cero secretos, nada de refactors de docs, nada de android ni
+  RLS productiva.
+RETORNO: una linea en el issue coordination al empezar y al cerrar; y el paso de la demo que quedo
+  andando (docs/MODO-6H.md §4).
 ```
+
+Los limites completos del area y lo que revisa cada una estan en §0 y §6 de este documento.
 
 ---
 
@@ -119,6 +137,10 @@ implementar.
 ---
 
 ## 5. Reparto de los primeros issues
+
+> **En la ventana de 6 horas no se reclama.** Los issues son la lista de qué falta, no un turno que se
+> pide: se trabaja y se pushea (`docs/MODO-6H.md` §1). Lo de abajo se usa si el hackathon se extiende o
+> después de la demo, cuando vuelva `docs/PROTOCOL.md`.
 
 Los issues de arranque están en `status:ready`, con criterio de una línea, prueba exigida y
 `blocked_by` en el cuerpo. **Los números y títulos reales se leen en GitHub**, no de esta tabla:
