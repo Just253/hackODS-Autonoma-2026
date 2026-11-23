@@ -1,5 +1,5 @@
 import Dexie, { type EntityTable, type Table } from 'dexie';
-import type { IdentidadLocal, Persona, Racion } from '@hackods/contracts';
+import type { IdentidadLocal, Insumo, Movimiento, Persona, Racion } from '@hackods/contracts';
 import type { EventoSaliente } from '@hackods/sync';
 
 /**
@@ -13,6 +13,9 @@ import type { EventoSaliente } from '@hackods/sync';
  * - `identidadLocal` NO es sincronizable: `nombreLocal` y `alias` viven aca,
  *   marcados `localOnly: true` (DEC-2026-0002). Ningun serializador del outbox
  *   lee esta tabla.
+ * - la despensa (v5): `insumos` es el catalogo local, `movimientos` es
+ *   append-only y `lotes` guarda el vencimiento. `lotes` tambien es localOnly:
+ *   el contrato no lo modela todavia (issue #69).
  *
  * `meta` guarda el contador de Lamport del dispositivo (nunca `Date.now()`).
  */
@@ -30,7 +33,7 @@ import type { EventoSaliente } from '@hackods/sync';
  * pre-release y esas filas ni siquiera pueden formar la clave compuesta, porque
  * `null` no es un componente valido en IndexedDB.
  */
-export const VERSION_ESQUEMA = 4;
+export const VERSION_ESQUEMA = 5;
 
 export interface RegistroLamport {
   readonly clave: 'lamport';
@@ -48,11 +51,51 @@ export interface RegistroLamport {
  * "El esquema del outbox: packages/sync").
  */
 export type EventoOutbox = EventoSaliente & { estado: 'pendiente' };
+
+/**
+ * Estado de un lote de despensa. `disponible` es el unico que cuenta para las
+ * alertas de vencimiento; los otros dos son el final del lote, no un borrado.
+ */
+export type EstadoLote = 'disponible' | 'agotado' | 'retirado';
+
+/**
+ * Lote con vencimiento (issue #69). Vive SOLO en el dispositivo: el contrato
+ * `Movimiento` todavia no modela el lote y `@hackods/sync` no tiene una entidad
+ * `lotes`, asi que esta tabla no entra al outbox (ver `data/inventario.ts`).
+ * Cuando el contrato lo modele, esto pasa a ser una entidad sincronizable.
+ */
+export interface Lote {
+  readonly loteId: string;
+  readonly ollaId: string;
+  readonly insumoId: string;
+  /** Cantidad con la que entro, en la unidad base del insumo. */
+  readonly cantidadInicial: number;
+  /** ISO `YYYY-MM-DD`. `null` = sin dato: no se supone que dure para siempre. */
+  readonly fechaVencimiento: string | null;
+  readonly estado: EstadoLote;
+  readonly createdAt: string;
+  readonly deviceId: string;
+  readonly lamport: number;
+}
+
+/**
+ * Fila de `movimientos`: el contrato `Movimiento` mas el vinculo local al lote.
+ * `loteId` queda fuera del evento del outbox a proposito; el payload que viaja
+ * es el `Movimiento` puro, porque es lo que el servidor sabe leer.
+ */
+export type MovimientoLocal = Movimiento & { readonly loteId: string | null };
+
 export type BaseOlla = Dexie & {
   personas: EntityTable<Persona, 'codigoP'>;
   /** Clave compuesta: `EntityTable` solo admite una propiedad, asi que va `Table`. */
   raciones: Table<Racion, [string, string]>;
   identidadLocal: EntityTable<IdentidadLocal, 'codigoP'>;
+  /** Catalogo de insumos de esta olla (seed local, marcado como ficticio). */
+  insumos: EntityTable<Insumo, 'id'>;
+  /** Append-only: se agrega, nunca se actualiza ni se borra. */
+  movimientos: EntityTable<MovimientoLocal, 'id'>;
+  /** Vencimiento por lote; local-only, no viaja al servidor. */
+  lotes: EntityTable<Lote, 'loteId'>;
   meta: EntityTable<RegistroLamport, 'clave'>;
   /**
    * `eventUuid` como clave = idempotencia gratis: guardar el mismo evento no
@@ -97,6 +140,16 @@ export function baseDeOlla(ollaId: string): BaseOlla {
   // las bases v3 quedan con el outbox vacio, que es la verdad (nada pendiente).
   base.version(4).stores({
     outbox: 'eventUuid, [lamport+deviceId], estado',
+  });
+
+  // v5: despensa (issue #69). Aditiva tambien: las bases v4 abren con las tres
+  // tablas vacias y el catalogo se siembra desde el fixture al entrar a la
+  // pantalla. `movimientos` es append-only; `lotes` guarda el vencimiento y es
+  // local-only (no tiene entidad en el outbox).
+  base.version(5).stores({
+    insumos: 'id, denominacion',
+    movimientos: 'id, insumoId, at',
+    lotes: 'loteId, insumoId, fechaVencimiento, estado',
   });
 
   abiertas.set(ollaId, base);

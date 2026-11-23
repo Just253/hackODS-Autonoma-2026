@@ -87,6 +87,16 @@ export const SECUNDARIOS: readonly Destino[] = [
     icono: 'reporte',
     tarea: 'Ver el volumen movido por categoría.',
   },
+  {
+    a: '/inventario',
+    texto: 'Despensa',
+    descripcion: 'Despensa',
+    // Glifo reutilizado: `packages/ui` no tiene uno de despensa todavia
+    // (agregarlo es de su duenio). Las flechas de entrada/salida son lo mas
+    // cercano al movimiento de stock.
+    icono: 'entreOllas',
+    tarea: 'Ver el stock, cargar lo que entró y anotar el vencimiento.',
+  },
 ] as const;
 
 /** Los grupos, en el orden del rail. */
