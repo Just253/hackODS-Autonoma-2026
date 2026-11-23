@@ -37,12 +37,11 @@ Reglas del reparto que no se negocian:
 
 ## 1. Cada persona necesita su propia cuenta de GitHub
 
-> Estado: las **tres cuentas existen**. Falta que las otras dos tengan permiso **write** en
-> `Just253/hackODS-Autonoma-2026`. Sin eso no pueden pushear y el reparto de 6 horas se cae.
+> Estado: las **tres cuentas existen y las tres tienen `write`** en `Just253/hackODS-Autonoma-2026`
+> (`@Just253` admin, `@ImBoolean-2` y `@Hansnahu` con push). Ya pueden abrir rama, pushear y aprobar
+> el PR de otra persona. Nada más que hacer de este lado.
 >
-> ```bash
-> gh api -X PUT repos/Just253/hackODS-Autonoma-2026/collaborators/<usuario> -f permission=push
-> ```
+> Si alguna vez hay que sumar a otra: `gh api -X PUT repos/Just253/hackODS-Autonoma-2026/collaborators/<usuario> -f permission=push`
 
 Requisito técnico, no preferencia. Con una sola cuenta:
 
@@ -50,13 +49,16 @@ Requisito técnico, no preferencia. Con una sola cuenta:
 - la protección de `main` con 1 aprobación deja los PRs sin salida;
 - `CODEOWNERS` no dispara review de nadie.
 
-Hoy existe **una** cuenta (`@Just253`, admin). Mientras no estén las otras dos:
+Hoy existen **tres** cuentas con `write`: `@Just253` (admin), `@ImBoolean-2` y `@Hansnahu`. Ya pueden
+abrir rama, pushear y aprobar el PR de otra persona; lo que no pueden es pushear directo a `main`
+(protegida: rama + PR + `ci` verde).
 
-- `main` está protegida con **`enforce_admins: false`**: el admin puede mergear sin aprobación.
+- `main` está protegida con **`enforce_admins: false`**: sólo el admin puede mergear sin aprobación.
   Eso es **bootstrap temporal**, no una licencia. El gate de `docs/PROTOCOL.md` §6 se sigue
-  completando en `## Prueba`; lo que falta es la firma de otra persona.
-- Primera tarea del día 0: invitar a las otras dos cuentas con permiso **write** al repo y que cada
-  una acepte. Recién entonces se abre el primer PR de feature.
+  completando en `## Prueba`; lo que faltaba, la firma de otra persona, ya es posible.
+- El PR de A lo aprueba B o C; el de B, A o C; el de C, A o B. `CODEOWNERS` todavía apunta todo a
+  `@Just253`, así que la revisión es por convención, no por bloqueo.
+
 
 Cada agente se identifica con un token de sesión en el claim y en el trailer del commit:
 `Agent: a-lead-3f2a`, `b-sub-api-91c0`, `c-sub-nutricion-77c1`.
@@ -88,6 +90,12 @@ puede crear sesiones lead ni worktrees. **Las tres personas usan la misma versi�
 Si el smoke falla, **no se reclama nada**: se avisa en el issue `coordination` y se arregla primero
 (cuesta minutos; sin esto se pierden días).
 
+**Nadie reclama sin `arranque/v1`.** Después del paso 0, pegá como comentario en el issue
+`coordination` (fijado, `#11`) la cabecera `arranque/v1 persona:<A|B|C> agent:<token>` y la salida de
+`pnpm arranque` **tal cual**, sin editarla. Si dice `NO-GO`, va también el comando `→` que imprime.
+Sirve para dos cosas: se ve quién está listo sin preguntar por chat, y un `NO-GO` queda con su arreglo
+al lado en vez de convertirse en "en mi PC anda".
+
 ---
 
 ## 3. Brief para pegar en la sesión lead
@@ -97,12 +105,15 @@ el agente por su cuenta.
 
 ```text
 ROL: lead de mi area en hackODS-Autonoma-2026 durante 6 horas de hackathon.
-DUEÑO DE: (A) apps/web + packages/ui | (B) supabase/ + scripts/seed* | (C) packages/* + docs/ + .github/.
+DUEÑO DE: (A) apps/web/src/app + features/{padron,servicio} + packages/ui | (B) features/{comprobante,
+  presupuesto,precios} + apps/web/src/fixtures | (C) features/{solicitud,reporte} + packages/{domain,
+  nutrition,printing,sync} + docs/ + .github/. Nadie escribe en la carpeta de otro.
 ANTES DE NADA: leer docs/MODO-6H.md (manda sobre el protocolo hoy), AGENTS.md §5 y docs/DECISIONES.md.
-FORMA DE TRABAJO: push directo a main en mi carpeta, sin claim, sin worktree, sin PR. PR solo si toco
-  la carpeta de otro, y ahi alcanza 1 revision del dueno.
+ANTES DE RECLAMAR: pnpm arranque y su salida, tal cual, como comentario en el issue coordination (#11).
+FORMA DE TRABAJO: rama propia + PR por issue (main esta protegida: nadie pushea directo). Sin claim ni
+  worktree obligatorio; rama de 90 minutos; squash al mergear.
 CADA TAREA: 45 minutos. Si no termina, se corta, se anota en el issue y se sigue con la siguiente.
-ANTES DE CADA PUSH: pnpm test && pnpm typecheck. Rojo no se pushea.
+ANTES DE CADA PUSH: pnpm verificar (es lo mismo que corre CI). Rojo no se pushea.
 PRUEBA: lo que digo que funciona, lo muestro con el comando y su salida. Sin salida, no paso.
 LIMITES: cero datos personales reales, cero secretos, nada de refactors de docs, nada de android ni
   RLS productiva.
