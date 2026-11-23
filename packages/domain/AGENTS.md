@@ -81,3 +81,6 @@ romper: una regla mal pensada bloquea a las otras dos personas.
 10. Lint desde #7: sin variables sin usar (`^_` para ignorar deliberadamente) y sin
     `console.log`; el gate `pnpm lint`/`pnpm verificar` lo exige. El borrado de código
     muerto (`captura/parser.ts: siguienteMonto` en #7) es consecuencia de esta regla.
+11. Métricas del producto (#55): `metricas.ts` **compone** las salidas de `servirDelDia` y
+    `agregadoEntreOllas` — raciones, gramos y volumen nunca se recalculan; solo el padrón
+    por categoría cuenta personas vigentes por sí mismo.
