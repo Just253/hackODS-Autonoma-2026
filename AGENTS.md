@@ -99,7 +99,7 @@ pnpm db:start                    # Postgres + API local (Docker o Podman)
 pnpm db:reset                    # migraciones + seed local. SOLO local
 pnpm db:test                     # suite pgTAP; copia el seed junto a los tests y lo borra al final
 pnpm db:seed                     # seed contra SUPABASE_DB_URL (requiere psql)
-pnpm db:demo-usuarios            # crea/actualiza las 4 cuentas demo del remoto (SUPABASE_URL + SERVICE_ROLE por env; solo demo)
+pnpm db:demo-usuarios            # crea/actualiza las 4 cuentas demo del remoto (SUPABASE_URL + SERVICE_ROLE por env; admin queda en las 8 ollas; solo demo)
 pnpm db:types                    # tipos desde la base local
 pnpm exec supabase db diff -f <slug>    # nueva migración
 ```
