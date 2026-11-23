@@ -16,6 +16,7 @@
     "db:start": "supabase start",
     "db:reset": "supabase db reset",
     "db:seed": "node scripts/seed-local.mjs",
+    "db:test": "node scripts/db-test.mjs",
     "db:types": "supabase gen types typescript --local > packages/contracts/src/db.types.ts",
     "ids:nuevo": "node scripts/nuevo-id.mjs",
     "ids:chequear": "node scripts/chequear-ids.mjs",
