@@ -1,6 +1,7 @@
 import {
   identidadLocalSchema,
   MENU_VERSION,
+  nutrienteIdSchema,
   personaSchema,
   racionSchema,
   type Categoria,
@@ -32,17 +33,14 @@ export const DEVICE_DEMO = 'dispositivo-demo-01' as const;
  * conectado (DEC-2026-0003): cero de cada nutriente significa "sin calculo",
  * no "cero nutrientes". El contrato exige la clave de cada nutriente, asi que
  * omitirla no es opcion; dibujar el 0 seria mentir.
+ *
+ * Las claves salen de `nutrienteIdSchema.options`, no de una lista copiada:
+ * agregar un nutriente al contrato no puede romper en runtime con un
+ * `cobertura` incompleto.
  */
-const COBERTURA_SIN_CALCULO: Record<NutrienteId, number> = {
-  energia: 0,
-  proteina: 0,
-  hierro: 0,
-  zinc: 0,
-  vitaminaA: 0,
-  folato: 0,
-  vitaminaB12: 0,
-  calcio: 0,
-};
+const COBERTURA_SIN_CALCULO: Record<NutrienteId, number> = Object.fromEntries(
+  nutrienteIdSchema.options.map((id) => [id, 0]),
+) as Record<NutrienteId, number>;
 
 /** Reloj y azar inyectables: el test no depende de la hora ni del azar reales. */
 export interface Reloj {
