@@ -8,9 +8,21 @@
  *
  * El total de raciones NO es una constante: sale de `opcion.total`, que el
  * dominio deriva del padron vigente. Si cambia el padron, cambia el numero.
+ *
+ * Sustituciones (criterio 4 de #17): se muestran SOLO las que `servirDelDia`
+ * devuelve en `sustituciones.aprobadas` —las aprobadas en la plantilla, con su
+ * factor— y los insumos que quedaron `sinSustituto` se dicen "sin sustituto" con
+ * el plato donde aparecen. La pantalla no infiere equivalencias: si el dominio no
+ * manda sustituto, no se dibuja ninguno (DEC-2026-0003).
  */
 import type { Persona } from '@hackods/contracts';
-import { MenuNoServible, servirDelDia, type MenuOpcion, type RacionOpcion } from '@hackods/domain';
+import {
+  MenuNoServible,
+  servirDelDia,
+  type MenuOpcion,
+  type RacionOpcion,
+  type ResultadoServicio,
+} from '@hackods/domain';
 
 export interface ServicioResumenProps {
   readonly menus: readonly MenuOpcion[];
@@ -50,9 +62,11 @@ function Hash({ valor }: { readonly valor: string }) {
 function TarjetaOpcion({
   opcion,
   menus,
+  sustituciones,
 }: {
   readonly opcion: RacionOpcion;
   readonly menus: readonly MenuOpcion[];
+  readonly sustituciones: ResultadoServicio['sustituciones'];
 }) {
   const menu = menus.find((m) => m.template.id === opcion.templateId);
   const sello = menu?.template.sello ?? null;
@@ -117,14 +131,77 @@ function TarjetaOpcion({
           porcion.
         </p>
       ) : null}
+
+      {menu !== undefined ? (
+        <Sustituciones
+          menu={menu}
+          sinSustitutoDelDominio={sustituciones.sinSustituto}
+        />
+      ) : null}
     </article>
   );
 }
 
+/**
+ * Sustituciones de una opcion, tal como las devuelve el dominio.
+ *
+ * `servirDelDia` aplana las sustituciones aprobadas de TODAS las plantillas y
+ * `SustitucionAplicada` no trae `templateId`, asi que para no atribuirle a esta
+ * tarjeta una aprobacion ajena se listan las de esta plantilla
+ * (`menu.sustituciones` filtrado por `templateId`, que es la misma seleccion que
+ * el dominio hace con `substitution.template_id`): lo aprobado, con su factor, es
+ * lo que la plantilla firmo. Los `sinSustituto` vienen atribuidos por `platoId` y
+ * se filtran por los platos de esta opcion.
+ *
+ * `aprobadaPor` no se dibuja: es la colegiatura del nutricionista y el sello de la
+ * cabecera ya dice quien firma. El factor se muestra como lo manda el dominio, sin
+ * calcular ni redondear: si no hay sustituto aprobado, se dice "sin sustituto" y
+ * no se inventa una equivalencia (DEC-2026-0003).
+ */
+function Sustituciones({
+  menu,
+  sinSustitutoDelDominio,
+}: {
+  readonly menu: MenuOpcion;
+  readonly sinSustitutoDelDominio: ResultadoServicio['sustituciones']['sinSustituto'];
+}) {
+  const idsPlato = new Set(menu.platos.map((plato) => plato.id));
+  const aprobadas = menu.sustituciones.filter((s) => s.templateId === menu.template.id);
+  const sinSustituto = sinSustitutoDelDominio.filter((f) => idsPlato.has(f.platoId));
+
+  if (aprobadas.length === 0 && sinSustituto.length === 0) return null;
+
+  return (
+    <section className="flex flex-col gap-1 border-t border-gray-300 pt-2" data-testid="sustituciones">
+      <h4 className="font-semibold">Sustituciones</h4>
+      {aprobadas.length > 0 ? (
+        <ul className="flex flex-col gap-1" data-estado="sustituciones-aprobadas">
+          {aprobadas.map((s) => (
+            <li key={`${s.insumoOrigenId}->${s.insumoDestinoId}`}>
+              Sustitucion aprobada: <strong>{s.insumoOrigenId}</strong> por{' '}
+              <strong>{s.insumoDestinoId}</strong>, factor {s.factor}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {sinSustituto.length > 0 ? (
+        <ul className="flex flex-col gap-1" data-estado="sin-sustituto">
+          {sinSustituto.map((f) => (
+            <li key={`${f.platoId}-${f.insumoOrigenId}`}>
+              <strong>{f.insumoOrigenId}</strong>: sin sustituto - el plato {f.platoId} lo pide y
+              no hay sustituto aprobado en la plantilla.
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </section>
+  );
+}
+
 export function ServicioResumen({ menus, personas }: ServicioResumenProps) {
-  let opciones: ReturnType<typeof servirDelDia>['opciones'];
+  let servicio: ResultadoServicio;
   try {
-    opciones = servirDelDia(menus, personas).opciones;
+    servicio = servirDelDia(menus, personas);
   } catch (error: unknown) {
     if (error instanceof MenuNoServible) {
       return (
@@ -144,8 +221,13 @@ export function ServicioResumen({ menus, personas }: ServicioResumenProps) {
 
   return (
     <div className="flex flex-col gap-3" aria-label="Servicio del dia">
-      {opciones.map((opcion) => (
-        <TarjetaOpcion key={opcion.templateId} opcion={opcion} menus={menus} />
+      {servicio.opciones.map((opcion) => (
+        <TarjetaOpcion
+          key={opcion.templateId}
+          opcion={opcion}
+          menus={menus}
+          sustituciones={servicio.sustituciones}
+        />
       ))}
     </div>
   );

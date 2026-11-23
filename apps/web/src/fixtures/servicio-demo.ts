@@ -173,7 +173,8 @@ export function persona(
 
 /**
  * Padron de DEMO: 5 personas vigentes (una por categoria) y una baja logica
- * (P-0006). El total de raciones sale de aca, no de una constante.
+ * (P-0006, con `deletedAt`), o sea 6 filas en total. El total de raciones sale de
+ * aca —el dominio descarta la baja—, no de una constante.
  */
 export function padronDemo(): readonly Persona[] {
   return [
