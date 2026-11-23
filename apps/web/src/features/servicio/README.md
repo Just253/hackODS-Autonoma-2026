@@ -17,6 +17,11 @@ misma transacción. La clave es compuesta `[personaCodigoP + servicioId]`: si ya
 `RacionDuplicada` y la pantalla lo dice —no se reemplaza nada en silencio—. Todo se resuelve sin
 red: la pantalla avisa "guardado en esta tablet; la red no hizo falta".
 
+**Límite conocido (issue #90):** hoy la ración se guarda con `servicioId: null`, porque no hay menú
+firmado persistido, y el resumen del menú se pinta aparte desde `menusDelDiaDemo()`. Son dos
+fuentes: la ración **no queda ligada** al menú que se mostró. No lo tapes: si un menú llegara a
+existir, tiene que ser el mismo id en los dos lados.
+
 **Qué NO hace:** no calcula peso ni nutrientes por persona. `componentes` queda vacío y
 `cobertura` en `COBERTURA_SIN_CALCULO` ("sin cálculo", no "cero nutrientes"): la pantalla dice "sin
 dato" y nunca dibuja el 0. La porción por grupo es del menú firmado (`packages/nutrition`,
