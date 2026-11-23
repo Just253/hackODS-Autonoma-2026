@@ -51,6 +51,20 @@ docs/AGENTS.md                     DECISIONES.md, PROTOCOL.md, ADRs, contratos, 
   docs.md                          docs/, ADRs, README
   seguridad-privacidad.md          read-only: audita RLS, PII, secretos
 
+### Permisos de un agente: dos trampas que ya costaron una tarde
+
+Cada `.md` de `.opencode/agents/` empieza con un frontmatter `permissions:` que se evalúa con el
+`edit: *` en `deny` y `allow` solo en las carpetas del área. Dos detalles que no se ven leyendo:
+
+1. **`model:` tiene que existir.** Si el proveedor no está disponible, el agente muere al despachar
+   con `Model unavailable` y no escribe una línea: parece un fallo del trabajo, no de la config.
+   Hoy todos apuntan a `mistral/deepseek-v4-1-flash-1017`.
+2. **La ruta que llega al permiso no es la misma según dónde trabaje el agente.** En el root llega
+   relativa (`apps/web/src`); en un worktree llega completa (`.../.worktrees/x/apps/web/src`). Con
+   `apps/web/**` solo funcionaba el root; con `**/apps/web/**`, solo el worktree. Hacen falta **las
+   dos formas** declaradas, si no cae en el `deny` global y solo le queda `shell` — que es como se
+   escriben los BOM de PowerShell.
+
 .opencode/commands/
   preflight.md  claim.md  verify.md  seed.md  demo.md  release.md
 
