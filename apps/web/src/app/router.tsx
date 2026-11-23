@@ -19,6 +19,7 @@ import { AHORA_DEMO, NUEVA_SOLICITUD_DEMO } from '../features/solicitud/fixtures
 import { ReportePantalla } from '../features/reporte/ReportePantalla.js';
 import { MOVIMIENTOS_ENTRE_OLLAS, PERIODO_DEMO } from '../features/reporte/fixtures.js';
 import { RecetasPage } from '../features/recetas/RecetasPage.js';
+import { ConsentimientoPage } from '../features/consentimiento/ConsentimientoPage.js';
 import { destinoDeRuta, rutaInicial } from './navegacion.js';
 import { leerSesion } from './sesion.js';
 
@@ -122,6 +123,8 @@ export const rutas = [
           { path: 'reporte', element: <ReportePantalla movimientos={MOVIMIENTOS_ENTRE_OLLAS} periodo={PERIODO_DEMO} /> },
           // Recetario: producir descuenta despensa (#72).
           { path: 'recetas', element: <RecetasPage /> },
+          // #74 · consentimiento: dos permisos separados del plato.
+          { path: 'consentimiento', element: <ConsentimientoPage /> },
         ],
       },
     ],

@@ -67,8 +67,7 @@ describe('cascaron', () => {
     const nombres = within(hoja)
       .getAllByRole('link')
       .map((a) => a.textContent ?? '');
-    // Cada enlace concatena `descripcion` + `tarea` sin espacio entre ambos:
-    // "RecetarioElegir un plato...". Por eso se compara con includes.
+    // Cada enlace concatena `descripcion` + `tarea` sin espacio entre ambos.
     // La cocinera solo tiene Recetario en "Más"; lo demas es de otros roles.
     expect(nombres).toHaveLength(1);
     expect(nombres[0]).toContain('Recetario');
@@ -95,7 +94,7 @@ describe('cascaron', () => {
   });
 
   it('el rail de escritorio lista las secciones del rol, en dos grupos', () => {
-    // Organizadora: es el rol con mas destinos (6 de 8) y prueba el agrupado.
+    // Organizadora: 7 de 9 destinos (recetas + permisos incluidos) y agrupado.
     window.localStorage.setItem(
       CLAVE_SESION,
       JSON.stringify({ ...SESION_INICIAL, rol: 'organizadora' }),
@@ -103,7 +102,7 @@ describe('cascaron', () => {
     montarApp('/padron');
 
     const rail = enlacesDelRail();
-    expect(rail).toHaveLength(6);
+    expect(rail).toHaveLength(7);
     expect(rail.map((a) => a.textContent)).toEqual([
       'Padrón',
       'Presupuesto',
@@ -111,6 +110,7 @@ describe('cascaron', () => {
       'Entre ollas',
       'Reporte entre ollas',
       'Recetario',
+      'Consentimiento',
     ]);
 
     // El rail agrupa en "Día a día" y "Otros"; "Entre ollas" es ademas una pantalla.
@@ -193,9 +193,9 @@ describe('cascaron', () => {
     );
     // Barra + hoja es exactamente lo que el rol puede ver, sin faltar ni sobrar.
     expect([...barraDeAdmin, ...hojaDeAdmin]).toEqual([...DIARIOS, ...SECUNDARIOS].map((d) => d.a));
-    // Admin: los cuatro diarios y los cuatro secundarios.
+    // Admin: los cuatro diarios y los cinco secundarios (recetas + permisos).
     expect(barraDeAdmin).toHaveLength(4);
-    expect(hojaDeAdmin).toHaveLength(4);
+    expect(hojaDeAdmin).toHaveLength(5);
     expect(TEXTO_INICIAL).toBe('normal');
   });
 });

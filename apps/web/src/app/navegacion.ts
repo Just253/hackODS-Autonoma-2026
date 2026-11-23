@@ -100,9 +100,9 @@ export interface Seccion {
  */
 export const MATRIZ_ROL: Readonly<Record<Rol, readonly string[]>> = {
   cocinera: ['/servicio', '/comprobante', '/recetas'],
-  organizadora: ['/padron', '/presupuesto', '/precios', '/solicitud', '/reporte', '/recetas'],
+  organizadora: ['/padron', '/presupuesto', '/precios', '/solicitud', '/reporte', '/recetas', '/consentimiento'],
   nutricionista: ['/servicio'],
-  admin: ['/padron', '/servicio', '/comprobante', '/presupuesto', '/precios', '/solicitud', '/reporte', '/recetas'],
+  admin: ['/padron', '/servicio', '/comprobante', '/presupuesto', '/precios', '/solicitud', '/reporte', '/recetas', '/consentimiento'],
 } as const;
 
 export const DIARIOS: readonly Destino[] = [
@@ -172,6 +172,16 @@ export const SECUNDARIOS: readonly Destino[] = [
     icono: 'servicio',
     tarea: 'Elegir un plato, contar comensales y registrar que se cocinó.',
     roles: ['cocinera', 'organizadora', 'admin'],
+  },
+  {
+    a: '/consentimiento',
+    texto: 'Permisos',
+    descripcion: 'Consentimiento',
+    // Se reusa el icono del padrón: los permisos son de personas y `packages/ui`
+    // (area:web, otro write-set) no tiene un glifo propio todavía.
+    icono: 'padron',
+    tarea: 'Dar o retirar el permiso de seguimiento y de estadísticas.',
+    roles: ['organizadora', 'admin'],
   },
 ] as const;
 

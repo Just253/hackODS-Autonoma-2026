@@ -9,7 +9,8 @@ export type EntidadSync =
   | 'movimientos'
   | 'solicitudes'
   | 'precios'
-  | 'menus';
+  | 'menus'
+  | 'consentimiento';
 
 export interface EventoPush {
   readonly eventUuid: string;
@@ -37,6 +38,7 @@ const ENTIDADES: readonly EntidadSync[] = [
   'solicitudes',
   'precios',
   'menus',
+  'consentimiento',
 ];
 
 function texto(valor: unknown): valor is string {

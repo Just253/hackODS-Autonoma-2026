@@ -19,6 +19,7 @@ import { generarCodigoPLibre, type Azar } from './codigos.js';
 import { siguienteLamport } from './lamport.js';
 import { outboxDe } from './outbox-repo.js';
 import type { NuevoEvento } from '@hackods/sync';
+import { estaVigente } from '@hackods/domain';
 
 /**
  * Repositorio local del padron y del servicio.
@@ -47,6 +48,18 @@ const COBERTURA_SIN_CALCULO: Record<NutrienteId, number> = Object.fromEntries(
 ) as Record<NutrienteId, number>;
 
 /**
+ * Estado del consentimiento de seguimiento en el alta (#74).
+ *
+ * Antes el alta escribía `consentimientoSeguimiento: false` a mano, como si el
+ * booleano fuera la verdad. Ya no: la verdad es la tabla `consentimiento`
+ * (append-only) y este booleano del contrato se **deriva** de ella. En el alta
+ * todavía no hay ninguna firma, y `estaVigente([], 'seguimiento')` es `false`:
+ * "sin registro", no un "no" que alguien haya dado. La pantalla de
+ * `features/consentimiento` es la que agrega la firma.
+ */
+const SIN_CONSENTIMIENTO_AL_ALTA = estaVigente([], 'seguimiento');
+
+/**
  * Reloj y azar inyectables: el test no depende de la hora ni del azar reales.
  *
  * `idEvento` es el `eventUuid` del outbox. Se inyecta para que dos corridas del
@@ -65,7 +78,7 @@ const relojGlobal: Reloj = {
 };
 
 /** `eventUuid` = `idempotencyKey` (contrato de `@hackods/sync`). */
-function idDeEvento(reloj: Reloj): string {
+export function idDeEvento(reloj: Reloj): string {
   return (reloj.idEvento ?? (() => crypto.randomUUID()))();
 }
 
@@ -123,7 +136,7 @@ export async function altaPersona(
       anemia: 'sin_dato',
       pesoKg: null,
       tallaCm: null,
-      consentimientoSeguimiento: false,
+      consentimientoSeguimiento: SIN_CONSENTIMIENTO_AL_ALTA,
       notas: null,
       createdAt: ahora,
       updatedAt: ahora,
