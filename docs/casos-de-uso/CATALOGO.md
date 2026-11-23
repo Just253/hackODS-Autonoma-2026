@@ -121,7 +121,7 @@ resuelve sembrando el menú publicado en `seed.sql`, no construyendo CU-17 antes
 | `hecho` | PR mergeado y issue cerrado. | El merge (keyword de cierre) o el orquestador. |
 | `descartado` | Se decidió no hacerlo: issue cerrado como *not planned* con motivo. | El orquestador o quien tenga el alcance. |
 
-Estado actual de `CU-01`…`CU-09`, verificado contra `main` en `02837c0` y con `gh issue list --state all`:
+Estado actual de `CU-01`…`CU-09`, verificado contra `main` en `377bff1` y con `gh issue list --state all`:
 
 | CU | estado | evidencia |
 |---|---|---|
@@ -131,7 +131,7 @@ Estado actual de `CU-01`…`CU-09`, verificado contra `main` en `02837c0` y con 
 | CU-04 | `en_curso` | Pantalla en `main` (#32); falta el enchufe al presupuesto y la captura (#9). |
 | CU-05 | `en_curso` | Pantalla en `main` (#31) sobre fixture; confirmar no mueve el presupuesto (#9). |
 | CU-06 | `en_curso` | Pantalla en `main` (#31); mediana sobre fixture, sin serie cargada. |
-| CU-07 | `en_revision` | PR #37 abierto; bloqueado por los ids UUID de los movimientos. |
+| CU-07 | `hecho` | PR #37 mergeado (`377bff1`): dominio, pantallas y agregado sin identidades en `main`. |
 | CU-08 | `listo` | Issue #19; no hay outbox en `apps/web` ni badge. |
 | CU-09 | `en_curso` | Pie del Shell con «datos simulados / no es un diagnóstico»; faltan dos de las tres frases. |
 
