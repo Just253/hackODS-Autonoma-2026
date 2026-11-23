@@ -8,9 +8,9 @@
 --   * Los valores de salud son ficticios y estan declarados aca como tales.
 
 insert into ollas (id, titulo, codigo, tipo, distrito) values
-  ('00000000-0000-4000-8000-000000000001', 'Olla Demo Villa El Salvador', 'DEMO01', 'comun', 'Villa El Salvador'),
-  ('00000000-0000-4000-8000-000000000002', 'Olla Demo San Juan de Lurigancho', 'DEMO02', 'comun', 'San Juan de Lurigancho'),
-  ('00000000-0000-4000-8000-000000000003', 'Comedor Demo Comas', 'DEMO03', 'comedor_pca', 'Comas')
+  ('00000000-0000-4000-8000-000000000001', 'Olla Demo Villa El Salvador', 'DEMHAA', 'comun', 'Villa El Salvador'),
+  ('00000000-0000-4000-8000-000000000002', 'Olla Demo San Juan de Lurigancho', 'DEMHBB', 'comun', 'San Juan de Lurigancho'),
+  ('00000000-0000-4000-8000-000000000003', 'Comedor Demo Comas', 'DEMHCC', 'comedor_pca', 'Comas')
 on conflict (id) do nothing;
 
 -- Hashes de PIN ficticios (no son credenciales utiles).
@@ -57,12 +57,12 @@ values
 on conflict (id) do nothing;
 
 insert into precios (id, olla_id, insumo_id, canal, unidad, precio, fecha, fuente, url) values
-  ('00000000-0000-4000-8000-000000000201', '00000000-0000-4000-8000-000000000001', 'arroz', 'mayorista', 'kg', 4.20, '2026-11-01', 'demo-ficticio', null),
-  ('00000000-0000-4000-8000-000000000202', '00000000-0000-4000-8000-000000000001', 'arroz', 'minorista', 'kg', 5.10, '2026-11-01', 'demo-ficticio', null),
-  ('00000000-0000-4000-8000-000000000203', '00000000-0000-4000-8000-000000000001', 'lentejas', 'mayorista', 'kg', 7.80, '2026-11-01', 'demo-ficticio', null),
-  ('00000000-0000-4000-8000-000000000204', '00000000-0000-4000-8000-000000000001', 'papa', 'minorista', 'kg', 2.30, '2026-11-01', 'demo-ficticio', null),
+  ('00000000-0000-4000-8000-000000000201', '00000000-0000-4000-8000-000000000001', 'arroz', 'mayorista', 'g', 0.0042, '2026-11-01', 'demo-ficticio', null),
+  ('00000000-0000-4000-8000-000000000202', '00000000-0000-4000-8000-000000000001', 'arroz', 'minorista', 'g', 0.0051, '2026-11-01', 'demo-ficticio', null),
+  ('00000000-0000-4000-8000-000000000203', '00000000-0000-4000-8000-000000000001', 'lentejas', 'mayorista', 'g', 0.0078, '2026-11-01', 'demo-ficticio', null),
+  ('00000000-0000-4000-8000-000000000204', '00000000-0000-4000-8000-000000000001', 'papa', 'minorista', 'g', 0.0023, '2026-11-01', 'demo-ficticio', null),
   ('00000000-0000-4000-8000-000000000205', '00000000-0000-4000-8000-000000000002', 'huevo', 'minorista', 'unidad', 0.55, '2026-11-01', 'demo-ficticio', null),
-  ('00000000-0000-4000-8000-000000000206', '00000000-0000-4000-8000-000000000003', 'quinua', 'mayorista', 'kg', 9.40, '2026-11-01', 'demo-ficticio', null)
+  ('00000000-0000-4000-8000-000000000206', '00000000-0000-4000-8000-000000000003', 'quinua', 'mayorista', 'g', 0.0094, '2026-11-01', 'demo-ficticio', null)
 on conflict (id) do nothing;
 
 -- Menu demo firmado (hash calculado sobre un literal de demo, no es un menu clinico).
@@ -114,7 +114,7 @@ insert into menu_constraint (id, olla_id, template_id, tipo, valor, motivo, vers
   ('00000000-0000-4000-8000-000000000801', '00000000-0000-4000-8000-000000000001',
    '00000000-0000-4000-8000-000000000302', 'alergia', 'huevo', 'Restriccion demo', 1,
    encode(digest('constraint-demo-huevo', 'sha256'), 'hex')),
-  ('00000000-0000-4000-8000-000000000802', '00000000-0000-4000-8000-000000000301',
+  ('00000000-0000-4000-8000-000000000802', '00000000-0000-4000-8000-000000000001',
    '00000000-0000-4000-8000-000000000301', 'inocuidad', '75C', 'Checklist de coccion', 1,
    encode(digest('constraint-demo-75c', 'sha256'), 'hex'))
 on conflict (id) do nothing;

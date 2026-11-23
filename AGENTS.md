@@ -96,6 +96,7 @@ pnpm db:start                    # Postgres + API local (Docker)
 pnpm db:reset                    # migraciones + seed local. SOLO local
 pnpm db:seed                     # seed contra SUPABASE_DB_URL (requiere psql)
 pnpm db:types                    # tipos desde la base local
+pnpm db:test                    # pgTAP local: scripts/db-test.mjs copia el seed a tests/fixtures (el mount de test db no lo ve) y corre supabase test db
 pnpm exec supabase db diff -f <slug>    # nueva migración
 ```
 
