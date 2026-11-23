@@ -88,6 +88,7 @@ pnpm dev                         # web en http://localhost:5173
 pnpm build                       # build de todos los paquetes + app
 pnpm test                        # Vitest, todos los paquetes (turbo run test)
 pnpm typecheck                   # TypeScript en todos los paquetes
+pnpm lint                        # ESLint 9 (flat config, raíz): variables sin usar y console.log
 pnpm verificar                   # la puerta completa (lo mismo que CI); --rapido saltea el build
                                  # si el diff no trae código (sólo docs), typecheck/tests/build se
                                  # omiten solos: el check `ci` corre igual y reporta verde
@@ -102,8 +103,9 @@ pnpm db:types                    # tipos desde la base local
 pnpm exec supabase db diff -f <slug>    # nueva migración
 ```
 
-`pnpm lint` todavía no corre: ningún paquete tiene script `lint` (issue #7, ESLint pendiente).
-No hay `test:e2e` en el repo: Playwright aún no está instalado.
+`pnpm lint` corre ESLint 9 con flat config (`eslint.config.js`, issue #7): `apps/**` y `packages/**`, con
+`no-unused-vars` (tolerante a prefijo `_`) y `no-console` (`warn`/`error` permitidos). Sin reglas de
+formato. Un tercer paso del gate `verificar`/CI. No hay `test:e2e` en el repo: Playwright aún no está instalado.
 
 Windows: los scripts de coordinación corren con
 `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/preflight.ps1 ...`.
@@ -137,7 +139,7 @@ línea una vez (`pnpm hooks:install` lo hace) o `git status` va a mostrar el wor
 9. **No se declara un bug sin reproducción** ni se cierra sin prueba rojo→verde.
 10. **El chat es rumor.** Si no está en GitHub, no pasó.
 11. **Nada se pushea sin `pnpm verificar` en verde.** Es la misma puerta que CI: entorno, ids, tipos,
-    tests, build, términos muertos, links y secretos. Verde local = verde remoto.
+    lint, tests, build, términos muertos, links y secretos. Verde local = verde remoto.
 12. **Cada cambio trae su doc en el mismo PR.** Contrato primero, interior junto
     (`docs/PROCESO-DOCS.md`). `pnpm docs:chequear` lo verifica sobre el diff; el hook de pre-commit
     ataja ids, términos retirados y secretos. Una sola vez por máquina: `pnpm hooks:install`.

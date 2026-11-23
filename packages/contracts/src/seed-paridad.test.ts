@@ -73,8 +73,6 @@ function valor(v: string): unknown {
   return v;
 }
 
-const min = (t: string, c: string) => valor(filas(t)[0]![c]!);
-
 describe('paridad seed ↔ contracts', () => {
   it('las ollas del seed tienen codigo de 6 caracteres sin ambiguedad', () => {
     const ollas = filas('ollas');
