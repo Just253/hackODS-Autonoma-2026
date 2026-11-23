@@ -1,7 +1,7 @@
 # Contrato — Serie de precios (`public.precios`)
 
 > Tabla: `supabase/migrations/20261123150000_modelo_base.sql`, unidad de dinero en
-> `20261123160000_precios_escala.sql` (ADR-0004). Canónico de tipos:
+> `20261123180000_precios_escala.sql` (ADR-0004). Canónico de tipos:
 > `packages/contracts/src/domain.ts` (`precioSchema`, `unidadBaseSchema`).
 
 ## Qué guarda

@@ -56,9 +56,9 @@ values
   ('quinua', '00000000-0000-4000-8000-000000000003', 'Quinua demo', 'cereal', 'g', null, 2000, false, '{}', 'device_demo_03')
 on conflict (id) do nothing;
 
+-- precio: bigint en microcentesimos por unidad base (ADR-0004; comprobantes.md:1231).
+-- S/4,20/kg por gramo = 420000. 1 = 10^-6 centimo.
 insert into precios (id, olla_id, insumo_id, canal, unidad, precio, fecha, fuente, url) values
-  -- precio: bigint en microcentesimos por unidad base (ADR-0004; comprobantes.md:1231).
-  -- S/4,20/kg por gramo = 420000. 1 = 10^-6 centimo.
   ('00000000-0000-4000-8000-000000000201', '00000000-0000-4000-8000-000000000001', 'arroz', 'mayorista', 'g', 420000, '2026-11-01', 'demo-ficticio', null),
   ('00000000-0000-4000-8000-000000000202', '00000000-0000-4000-8000-000000000001', 'arroz', 'minorista', 'g', 510000, '2026-11-01', 'demo-ficticio', null),
   ('00000000-0000-4000-8000-000000000203', '00000000-0000-4000-8000-000000000001', 'lentejas', 'mayorista', 'g', 780000, '2026-11-01', 'demo-ficticio', null),

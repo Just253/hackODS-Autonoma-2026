@@ -240,7 +240,7 @@ export const precioSchema = z.object({
   insumoId: z.string().min(1),
   canal: canalPrecioSchema,
   unidad: unidadBaseSchema,
-  precio: z.number().min(0),
+  precio: z.number().int().min(0),
   fecha: isoFecha,
   fuente: z.string().min(1),
   url: z.string().url().nullable(),

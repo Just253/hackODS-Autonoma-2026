@@ -19,7 +19,8 @@ microcentésimos") y la pantalla de precios fusionada
 
 ## Decisión
 
-`alter table precios alter column precio type bigint` con `using round(precio * 1000000)`:
+`alter table precios alter column precio type bigint` con `using round(precio * 100000000)`
+(conversión de escala de dinero: S/ → µ¢ es ×10⁸; la semántica por-unidad corresponde al seed):
 la serie guarda **microcentésimos por unidad base** (S/ 4,20/kg = `420000` por g),
 conforme al canónico. El seed se re-siembra en enteros (420000, 510000, 780000, 230000,
 550000, 940000). `precioSchema` (Zod) sigue siendo `z.number()`; su unidad queda
