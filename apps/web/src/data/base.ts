@@ -1,5 +1,6 @@
 import Dexie, { type EntityTable, type Table } from 'dexie';
 import type { IdentidadLocal, Persona, Racion } from '@hackods/contracts';
+import type { EventoSaliente } from '@hackods/sync';
 
 /**
  * Persistencia local de la olla (`pwa-offline`: una base por olla).
@@ -29,19 +30,36 @@ import type { IdentidadLocal, Persona, Racion } from '@hackods/contracts';
  * pre-release y esas filas ni siquiera pueden formar la clave compuesta, porque
  * `null` no es un componente valido en IndexedDB.
  */
-export const VERSION_ESQUEMA = 3;
+export const VERSION_ESQUEMA = 4;
 
 export interface RegistroLamport {
   readonly clave: 'lamport';
   readonly valor: number;
 }
 
+/**
+ * Fila del outbox tal como vive en Dexie.
+ *
+ * El contrato de este registro es `EventoSaliente` de `@hackods/sync`; aca
+ * solo se le agrega lo que el contrato no modela y Dexie necesita: `estado`
+ * ("pendiente" hasta que el `SyncPort` lo confirma), para filtrar sin releer
+ * todo en cada arranque y poder mostrar el badge sin la red. No hay una segunda
+ * definicion del esquema: es `EventoSaliente & { estado }` (apps/web/AGENTS.md,
+ * "El esquema del outbox: packages/sync").
+ */
+export type EventoOutbox = EventoSaliente & { estado: 'pendiente' };
 export type BaseOlla = Dexie & {
   personas: EntityTable<Persona, 'codigoP'>;
   /** Clave compuesta: `EntityTable` solo admite una propiedad, asi que va `Table`. */
   raciones: Table<Racion, [string, string]>;
   identidadLocal: EntityTable<IdentidadLocal, 'codigoP'>;
   meta: EntityTable<RegistroLamport, 'clave'>;
+  /**
+   * `eventUuid` como clave = idempotencia gratis: guardar el mismo evento no
+   * crea una fila nueva. El indice compuesto `[lamport+deviceId]` es el orden
+   * contractual de envio (nunca `creadoEn`); `estado` filtra los pendientes.
+   */
+  outbox: Table<EventoOutbox, string>;
 };
 
 export function nombreBase(ollaId: string): string {
@@ -72,6 +90,13 @@ export function baseDeOlla(ollaId: string): BaseOlla {
   // v3: la vuelve a crear, ya con la clave compuesta persona + servicio.
   base.version(3).stores({
     raciones: '[personaCodigoP+servicioId], personaCodigoP, servicioId',
+  });
+
+  // v4: outbox persistente. Hasta aca el encolado vivia en memoria y una
+  // recarga perdia los cambios sin avisar. La tabla es aditiva: no migra datos,
+  // las bases v3 quedan con el outbox vacio, que es la verdad (nada pendiente).
+  base.version(4).stores({
+    outbox: 'eventUuid, [lamport+deviceId], estado',
   });
 
   abiertas.set(ollaId, base);

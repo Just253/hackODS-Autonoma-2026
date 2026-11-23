@@ -38,7 +38,7 @@ describe('ServicioResumen (servirDelDia conectado)', () => {
   it('declara los grupos sin porcion firmada en vez de inventar una', () => {
     const html = render(menusDelDiaDemo());
 
-    expect(html).toContain('Grupos sin porcion firmada');
+    expect(html).toContain('Grupos sin porción firmada');
     expect(html).toContain('Adulto mayor');
     expect(html).toContain('Lactante 6 a 23 meses');
   });

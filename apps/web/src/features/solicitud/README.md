@@ -11,3 +11,7 @@ demo determinista, sin red ni estado global.
 exige (`NOT NULL`): los agrega la capa que persiste. Los `id` de los dos movimientos de la entrega
 son UUID que el caller provee (`resolverSolicitud(..., { ids })`); el dominio no llama a
 `randomUUID()` y nunca interpola ids no-UUID (la columna `movimientos.id` es `uuid`).
+
+**Distribución:** el pedido y sus decisiones son la columna principal; lo que generó la entrega (los
+dos deltas) va al costado en escritorio y debajo en el teléfono. Usa los tokens de la app
+(`oc-tarjeta`, `oc-estado`): antes mezclaba `gray-*` sueltos y era la única pantalla con otro lenguaje.
