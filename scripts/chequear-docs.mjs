@@ -31,7 +31,12 @@ if (cambio === null) {
   process.exit(0);
 }
 
-const archivos = cambio.split('\n').filter(Boolean);
+// `.split(/\r?\n/)` y no `'\n'`: en Windows `git` devuelve CRLF y cada ruta quedaba con un `\r`
+// final, asi que ningun patron (`/^AGENTS\.md$/`) volvia a matchear y el chequeo fallaba siempre.
+const archivos = cambio
+  .split(/\r?\n/)
+  .map((f) => f.trim())
+  .filter(Boolean);
 if (archivos.length === 0) {
   console.log('docs: sin cambios respecto de la base.');
   process.exit(0);
