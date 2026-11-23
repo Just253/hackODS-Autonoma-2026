@@ -15,8 +15,11 @@ Si algo de acá contradice `docs/PROTOCOL.md`, gana `PROTOCOL.md` y se corrige e
 | Persona | Área(s) | Dueño de | Agentes que usa | Revisa PRs de |
 |---|---|---|---|---|
 | **A** | `area:web` | `apps/web/`, `packages/ui/`, `packages/printing/` | `orquestador`, `frontend` | `api`, `contracts` |
-| **B** | `area:api` | `supabase/`, `packages/sync/` | `orquestador`, `backend`, `datos-supabase`, `seguridad-privacidad` | `web`, `contracts` |
-| **C** | `area:contracts` + `area:nutricion` + `area:infra` + `area:docs` | `packages/contracts/`, `packages/domain/`, `packages/nutrition/`, `docs/`, `scripts/`, `.github/` | `orquestador`, `nutricion`, `docs`, `qa-verificador` | `web`, `api` |
+| **B** | `area:api` | `supabase/` | `orquestador`, `backend`, `datos-supabase`, `seguridad-privacidad` | `web`, `contracts` |
+| **C** | `area:contracts` + `area:infra` | `packages/contracts/`, `packages/domain/`, `packages/nutrition/`, `packages/sync/`, `docs/`, `scripts/`, `.github/` | `orquestador`, `nutricion`, `docs`, `qa-verificador` | `web`, `api` |
+
+Áreas válidas: solo `web`, `api`, `infra`, `contracts`. `area:nutricion` y `area:docs` no existen como
+labels y un claim que las use no matchea nada.
 
 Reglas del reparto que no se negocian:
 
@@ -96,7 +99,7 @@ Lectura obligatoria antes de tocar nada: AGENTS.md, docs/DECISIONES.md, docs/PRO
 Común a las tres (60 minutos, no más):
 
 1. `AGENTS.md` — reglas duras y mapa del repo.
-2. `docs/DECISIONES.md` — D1–D8. **Manda sobre todo lo demás.**
+2. `docs/DECISIONES.md` — D1–D9. **Manda sobre todo lo demás.**
 3. `docs/PROTOCOL.md` §0–§7 — claims, labels, ramas, gate.
 4. `docs/adr/0001-base-monorepo.md` y `docs/adr/0002-decisiones-usuario.md`.
 5. `AGENTS.md` de tu paquete.
@@ -107,26 +110,30 @@ Después, según el área:
 |---|---|---|
 | A | `apps/web/AGENTS.md`, `packages/ui/AGENTS.md`, skill `pwa-offline` | offline real, outbox, service worker |
 | B | `supabase/AGENTS.md`, skill `supabase-rls`, `docs/contracts/sync.md` | RLS, migraciones, lote ≤ 100 |
-| C | `packages/{domain,nutrition,sync}/AGENTS.md`, `docs/contracts/nutricion.md`, skill `nutricion-reglas` | menú firmado, porción por grupo, sin cifras |
+| C | `packages/{domain,nutrition,sync}/AGENTS.md`, skill `nutricion-reglas` | menú firmado, porción por grupo, sin cifras (D3) |
 
-`docs/PLAN.md` es **insumo histórico** (habla de `area:domain` y de `calcularRacion`): no se usa para
-decidir el alcance actual.
+`docs/PLAN.md` es **insumo histórico** (habla de `area:domain` y del motor anterior): no se usa para
+decidir el alcance actual. `docs/historical/nutricion-pre-D3.md` está retirado y no se lee para
+implementar.
 
 ---
 
 ## 5. Reparto de los primeros issues
 
-Los 8 issues de arranque están en `status:ready`, con criterio de una línea, prueba exigida y
-`blocked_by` en el cuerpo. Se reclaman en este orden.
+Los issues de arranque están en `status:ready`, con criterio de una línea, prueba exigida y
+`blocked_by` en el cuerpo. **Los números y títulos reales se leen en GitHub**, no de esta tabla:
 
-| Persona | Objetivo | Primer issue | Después |
+```bash
+gh issue list --state open --label status:ready
+```
+
+| Persona | Objetivo | Primer issue (título) | Después |
 |---|---|---|---|
-| **A** | Que la PWA exista sin red: alta → ración → recarga | **#1** walking skeleton (`fp:web-walking-skeleton`) | #3 PWA instalable + SW real |
-| **B** | Que los datos sean confiables y no filtren salud | **#2** seed idempotente (`fp:api-seed-idempotente`) | #4 RLS por rol (`needs-verification`) |
-| **C** | Que el contrato de comprobantes exista antes del código | **#5** comprobantes D8 (`fp:contracts-comprobantes`) | #6 ComputePort, luego #7 CI |
+| **A** | Que la PWA exista sin red: alta → ración → recarga | `[web] Walking skeleton: alta de persona → ración con recarga en modo avión` | `[web] PWA instalable + service worker real + arranque offline` |
+| **B** | Que los datos sean confiables y no filtren salud | `[api] Seed de demo: prueba de idempotencia y paridad con contratos` | `[api] RLS probado: nutricionista ve agregado, cocinera no lee flags de salud` |
+| **C** | Que el contrato de comprobantes exista antes del código | `[contracts] Comprobantes D8: tablas, estados y revisión de ítems` | `[infra] ComputePort: fachada y modo degradado`, luego `[infra] CI: ESLint y typecheck obligatorios` |
 
-Los que no son primer issue: #8 (captura por voz) está `blocked_by #6`; no se reclama hasta que
-ComputePort esté mergeado.
+`[web] Captura por voz` depende de que `ComputePort` esté mergeado; no se reclama antes.
 
 Cómo se reclama, sin inventar nada (Windows, desde el repo):
 
@@ -146,15 +153,18 @@ gh issue edit 1 --add-label status:claimed --remove-label status:ready --add-ass
 
 Primer push: **draft PR**, aunque sea un commit vacío. Un issue = un PR.
 
-**Vocabulario de estado vigente** (un solo `status:*` por issue):
+**Labels canónicos** (un solo `status:*` por issue). Fuente: `docs/PROTOCOL.md` §3.7 +
+`.github/labels.yml` + `scripts/labels.sh`:
 
 ```text
-status:ready -> status:claimed -> status:review -> status:done
-                                  \-> status:blocked (y vuelve a claimed al destrabarse)
+status:triage -> status:ready -> status:claimed -> status:in-review
+                                              \-> status:blocked (y vuelve a claimed al destrabarse)
 ```
 
-`status:in-review` y `type:feat` existen por compatibilidad con `docs/PROTOCOL.md` y
-`scripts/labels.sh`; si los ves en un doc viejo, el nombre del set corto es `status:review`.
+No existen `status:review` ni `status:done`: el PR en revisión usa `status:in-review` y el cierre lo
+hace `Closes #<issue>`. Los tipos son `type:bug`, `type:feat`, `type:chore`, `type:docs`, `type:spike`.
+Si en GitHub quedaron labels duplicados de una corrida anterior, **no se borran en este PR**: queda
+anotado como pendiente de limpieza.
 
 ---
 
@@ -208,20 +218,21 @@ escribe el test o se re-acota el issue, no se aprueba "porque el código está b
 
 Configurada para que el protocolo no dependa de la buena voluntad de nadie:
 
-| Regla | Valor |
+| Regla | Valor real |
 |---|---|
-| Push directo | bloqueado (todo por PR) |
-| Aprobaciones requeridas | 1, con `dismiss_stale_reviews` |
+| Push directo | bloqueado para no-admin; el admin puede por `enforce_admins: false` |
+| Aprobaciones requeridas | 1, con `dismiss_stale_reviews` (el admin puede saltearla) |
 | Check requerido | `ci` (workflow y job `ci` de `.github/workflows/ci.yml`) |
 | Force push | prohibido |
 | Borrar la rama | prohibido |
 | Historial | lineal (squash) |
 | Conversaciones | deben estar resueltas |
-| `enforce_admins` | `false` — bootstrap con una sola cuenta (ver §1) |
+| `enforce_admins` | `false` — bootstrap con una sola cuenta (§1) |
+| `require_code_owner_reviews` | `false` — `CODEOWNERS` apunta a esa misma cuenta |
 
-Cuando estén las 3 cuentas: pasar `enforce_admins` a `true` en el mismo PR que documente el cambio.
-`Require review from Code Owners` queda apagado hasta que `CODEOWNERS` apunte a cuentas reales con
-write (hoy todo apunta a `@Just253`); activarlo antes bloquearía todos los PRs.
+**Condición para activarlos:** 3 cuentas con `write` (una por persona) + `CODEOWNERS` por equipo
+(no por persona). Recién entonces `enforce_admins: true` y `require_code_owner_reviews: true`, en el
+mismo PR que documente el cambio. Activarlos antes bloquea todos los PRs.
 
 ---
 

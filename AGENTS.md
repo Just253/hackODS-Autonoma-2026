@@ -9,8 +9,8 @@ para todo agente antes de tocar nada.
 ## 1. Orden de lectura antes de trabajar
 
 1. Este archivo (reglas y mapa).
-2. `docs/DECISIONES.md` — decisiones que mandan (D1–D7). Si choca con otro doc, gana este.
-3. `docs/PROTOCOL.md` — claims, labels, ramas, gate. Copiado de `_orquestacion-research/02`.
+2. `docs/DECISIONES.md` — decisiones que mandan (D1–D9). Si choca con otro doc, gana este.
+3. `docs/PROTOCOL.md` — claims, labels, ramas, gate. Único dueño de esa materia.
 4. `docs/adr/` — decisiones vigentes de implementación. Si no hay ADR, la decisión no existe.
 5. El `AGENTS.md` del paquete que vas a tocar.
 6. La skill del dominio si la tarea lo pide (`/skills` o el `description` de cada una).
@@ -47,18 +47,23 @@ PR con su `pnpm-lock.yaml`, (c) avisar en el issue `coordination`.
 ## 3. Mapa del repo
 
 ```text
-apps/web/            PWA. Pantallas, service worker, acceso a IndexedDB.
-supabase/            Migraciones, RLS, seed, tests y Edge Functions de sync. Dueño: area:api.
+apps/web/            PWA. Pantallas, service worker, acceso a IndexedDB. area:web.
+supabase/            Migraciones, RLS, seed, tests y Edge Functions de sync. area:api.
 packages/contracts/  Tipos + esquemas Zod del dominio (compartido). area:contracts.
-packages/domain/     Reglas de negocio puras (servicios, despensa, menú servible). area:contracts.
+packages/domain/     Reglas puras: presupuesto, serie de precios, conciliación, captura. area:contracts.
 packages/nutrition/  Menú firmado, porción por grupo y validación (sin cifras). area:contracts.
 packages/sync/       Outbox, ids, versiones, conflictos. area:contracts.
 packages/ui/         Componentes y tokens. area:web.
 packages/printing/   Folio y plantilla imprimible. area:web.
-docs/                DECISIONES.md, PROTOCOL.md, adr/, contracts/, guias/. area:infra.
+docs/                DECISIONES.md, PROTOCOL.md, adr/, contracts/, historical/. area:infra.
 scripts/             preflight, labels, seed. area:infra.
 qa/evidencia/        Salidas de verificación (se commitea poco; ver §7).
 ```
+
+Jerarquía documental: `docs/DECISIONES.md` decide · `docs/contracts/` especifica ·
+`docs/adr/` explica una implementación · este archivo y los `AGENTS.md` de paquete dan reglas
+operativas y punteros · `docs/historical/` no se usa para decidir. El mapa tema → archivo canónico
+está en `docs/FUENTES.md`.
 
 Una carpeta tiene **un solo dueño** (`docs/PROTOCOL.md` §5). El dueño no es el único que escribe:
 es el único que aprueba y el que decide ante conflicto.
@@ -70,15 +75,19 @@ es el único que aprueba y el que decide ante conflicto.
 ```bash
 pnpm install                     # una vez por máquina; avisá en coordination si cambia el lockfile
 pnpm dev                         # web en http://localhost:5173
-pnpm build                       # build de producción de todos los paquetes
-pnpm test                        # Vitest, todos los paquetes
-pnpm test --filter @hackods/nutrition
-pnpm test:e2e                    # PENDIENTE: Playwright no instalado (M0/M6)
-pnpm lint && pnpm typecheck
-pnpm exec supabase start         # Postgres + API local (Docker)
-pnpm exec supabase db reset      # migraciones + seed local. SOLO local
-pnpm exec supabase db diff -f <slug>   # nueva migración
+pnpm build                       # build de todos los paquetes + app
+pnpm test                        # Vitest, todos los paquetes (turbo run test)
+pnpm typecheck                   # TypeScript en todos los paquetes
+pnpm --filter @hackods/nutrition test   # un paquete concreto
+pnpm db:start                    # Postgres + API local (Docker)
+pnpm db:reset                    # migraciones + seed local. SOLO local
+pnpm db:seed                     # seed contra SUPABASE_DB_URL (requiere psql)
+pnpm db:types                    # tipos desde la base local
+pnpm exec supabase db diff -f <slug>    # nueva migración
 ```
+
+`pnpm lint` todavía no corre: ningún paquete tiene script `lint` (issue #7, ESLint pendiente).
+No hay `test:e2e` en el repo: Playwright aún no está instalado.
 
 Windows: los scripts de coordinación corren con
 `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/preflight.ps1 ...`.
@@ -94,8 +103,9 @@ Nunca `npm install`, `yarn`, `bun install` ni `pnpm add` en un paquete que no es
    fixtures, seeds, capturas, issues o commits. Solo datos sintéticos (`docs/dominio/datos.md`).
 2. **Secretos, jamás.** `.env`, `service_role`, keystores, `google-services.json` no se leen, no se
    imprimen, no se commitean. Al cliente solo va la `anon key`.
-3. **`main` no se toca a mano.** Sin push directo, sin force, sin merge sin aprobación de otra
-   cuenta. Todo entra por PR squash.
+3. **`main` no se toca a mano.** Todo entra por PR squash. Durante el bootstrap de una sola
+   cuenta, el admin puede mergear o pushear sin aprobación (estado real en §8); eso no es licencia
+   permanente.
 4. **No se instala nada sin avisar** en el issue + `coordination` (dependencia, versión de Node,
    tool del sistema).
 5. **No se edita fuera del write-set del claim.** Si necesitás un archivo ajeno, comentá y esperá.
@@ -125,9 +135,10 @@ Resumen operativo; la gramática completa está en `docs/PROTOCOL.md` §3 y §6.
 8. Ramas: `feat|fix|chore/<area>-<issue#>-<slug>`, vida < 48 h, rebase sobre `main`, squash al
    mergear.
 
-Labels canónicos: `status:*` (`triage`, `ready`, `claimed`, `in-review`, `blocked`), `area:*`
-(`web`, `api`, `infra`, `contracts`), `type:*`, `p0/p1/p2`, `needs:human`, `needs:decision`.
-**Un solo `status:*` por issue.**
+Labels canónicos (`docs/PROTOCOL.md` §3.7 + `.github/labels.yml`): `status:*` (`triage`, `ready`,
+`claimed`, `in-review`, `blocked`), `area:*` (`web`, `api`, `infra`, `contracts`), `type:bug`,
+`type:feat`, `type:chore`, `type:docs`, `type:spike`, `p0/p1/p2`, `needs:human`, `needs:decision`.
+No existen `status:review` ni `status:done`. **Un solo `status:*` por issue.**
 
 ---
 
@@ -157,6 +168,24 @@ Detalle de permisos, modelos y prompts: `.opencode/agents/*.md` y `docs/AGENTES.
 
 ## 8. Gate: qué significa "resuelto"
 
+### 8.1 Estado real de la protección de `main`
+
+Hoy hay **una sola cuenta** (`@Just253`, admin), así que:
+
+| Regla | Valor real |
+|---|---|
+| `enforce_admins` | `false` — el admin puede mergear/pushear sin aprobación (bootstrap) |
+| `require_code_owner_reviews` | `false` — `CODEOWNERS` apunta a esa misma cuenta |
+| Aprobaciones requeridas | 1, pero el admin puede saltearla con `enforce_admins: false` |
+| Checks requeridos | `ci` |
+| Force push / borrar rama | prohibido |
+
+**Condición para activarlos:** 3 cuentas con `write` + `CODEOWNERS` por equipo (no por persona).
+Recién entonces `enforce_admins: true` y `require_code_owner_reviews: true`, en el PR que documente
+el cambio. Activarlos antes bloquea todos los PRs.
+
+### 8.2 Checklist del PR
+
 Un PR está listo cuando **todo** esto está en `## Prueba` (plantilla en `docs/PROTOCOL.md` Anexo B):
 
 1. Reproducción antes del cambio (comando + salida).
@@ -167,7 +196,8 @@ Un PR está listo cuando **todo** esto está en `## Prueba` (plantilla en `docs/
 6. Sin secretos: `git diff origin/main...HEAD | rg -i '(api[_-]?key|secret|token|passw|BEGIN .*PRIVATE)'`
    sin resultados.
 7. Rebase sobre `origin/main`, sin merge commits.
-8. Aprobación de otra cuenta con `review/v1 ... sha:<sha> verdict:approve`.
+8. Aprobación de otra cuenta con `review/v1 ... sha:<sha> verdict:approve`. Mientras exista una
+   sola cuenta (§8.1), se registra la ausencia de revisor en el PR y no se finge una firma.
 
 Si falta un ítem, no se pide review. El revisor **checkoutea y corre**; no lee el resumen.
 
@@ -178,7 +208,7 @@ Si falta un ítem, no se pide review. El revisor **checkoutea y corre**; no lee 
 | Pregunta | Archivo |
 |---|---|
 | ¿Qué es una olla común, qué actores hay, qué reglas de negocio? | `.opencode/skills/ollas-dominio/` + `docs/dominio/` |
-| ¿Cómo se calcula una ración y qué no se inventa? | `.opencode/skills/nutricion-reglas/` + `docs/DECISIONES.md` D3 |
+| ¿Qué valida el menú firmado y qué no se inventa? | `.opencode/skills/nutricion-reglas/` + `docs/DECISIONES.md` D3 |
 | ¿Cómo funciona el offline, el outbox y los conflictos? | `.opencode/skills/pwa-offline/` |
 | ¿Cómo se escribe una política RLS o una migración? | `.opencode/skills/supabase-rls/` |
 | ¿PDF, térmica, OCR? | `.opencode/skills/impresion-escaneo/` |

@@ -4,15 +4,19 @@ La memoria escrita del proyecto. Si una decisión no está acá, no existe.
 
 ```text
 docs/
-  DECISIONES.md        decisiones que mandan (D1–D7)
-  PROTOCOL.md          claims, labels, ramas, gate (copiado de _orquestacion-research/02)
-  adr/                 decisiones, una por archivo, numeradas
-  contracts/           nutricion.md (histórico) y sync.md (vigente)
-  research/            PRD e insumos de producto
-  dominio/             qué es una olla, actores, reglas de negocio, datos sintéticos
-  guias/               cómo correr, cómo seedear, cómo demostrar
+  DECISIONES.md        decisiones que mandan (D1–D9). Único nivel que decide
+  PROTOCOL.md          claims, labels, ramas, gate. Único dueño de esa materia
+  FUENTES.md           tabla tema → archivo canónico → commit o archivo:línea
+  adr/                 por qué de una implementación, una por archivo
+  contracts/           contratos implementables: sync, comprobantes, clasificacion, captura-voz
+  historical/          insumos retirados (nutricion-pre-D3, experimentos). No se usan para decidir
+  research/            PRD e insumos de producto (incluye la medición de embeddings)
   seguridad/           informes de auditoría (no políticas inventadas)
   planes/              planes de oleada y SINTESIS.md (los escribe el orquestador)
+
+Jerarquía: `DECISIONES.md` decide · `contracts/` especifica · `adr/` explica · los `AGENTS.md` dan
+reglas operativas y punteros · `historical/` no se cita como vigente. Si hay conflicto, gana el nivel
+de arriba y la corrección va en el mismo PR.
 ```
 
 ## Qué es de este paquete
@@ -49,8 +53,8 @@ rg -n "localhost|127\.0\.0\.1" docs/    # guías que solo funcionan en una máqu
 2. **Cada afirmación del dominio lleva fuente**: `fuente: entrevista 2026-11-24, olla X` o
    `fuente: MIDIS, <documento>, p. 12`. Sin fuente, es hipótesis y se marca.
 3. **Sin PII en ejemplos**: alias, no nombres; sin DNI, sin direcciones, sin fotos de personas.
-4. **Español peruano**, sin regionalismos importados; "olla común", "ración", "socia" son los
-   términos canónicos.
+4. **Español peruano**, sin regionalismos importados; "olla común", "persona", "ración" y "menú
+   firmado" son los términos canónicos.
 5. `PROTOCOL.md` y `CODEOWNERS` solo cambian por PR con **2 aprobaciones**.
 
 ## Dueño y revisión

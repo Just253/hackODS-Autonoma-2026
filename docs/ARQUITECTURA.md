@@ -1,6 +1,7 @@
 # 02 · Arquitectura — PWA para ollas comunes
 
-> **Vigente: `docs/DECISIONES.md`; este documento queda como insumo.**
+> Insumo histórico (2026-11-23). Vigente: `docs/DECISIONES.md` + `docs/adr/`.
+> Este documento **no decide**: conserva comparativas, mediciones y una versión anterior del esquema.
 
 **Proyecto:** hackODS-Autónoma 2026 · repo público y vacío `Just253/hackODS-Autonoma-2026`
 **Alcance:** arquitectura ejecutable por 3 personas en paralelo, con ADRs.
@@ -16,7 +17,7 @@
 | 1 | Monorepo | pnpm workspaces + Turborepo | Nx, workspaces pelados | 1 archivo de config, `--filter` alcanza para 3 personas, cache local gratis |
 | 2 | Frontend | Vite + React 19 + TS (SPA) | Next, SvelteKit | SSR no aporta en local-first y encarece el arranque en gama baja |
 | 3 | Offline | Dexie/IndexedDB + outbox propio + reloj de Lamport | PowerSync, ElectricSQL, Realtime | 500 líneas propias contra 2 servicios nuevos que configurar |
-| 4 | Backend | **Supabase** (Postgres+RLS+Auth+Storage) | CF Workers+D1, híbrido de dos backends | RLS es la forma más barata de no filtrar datos de salud entre ollas |
+| 4 | Backend | **Supabase** (Postgres+RLS+Auth+Storage) + Compute sin estado (D9) | CF Workers+D1 como backend | RLS es la forma más barata de no filtrar datos de salud entre ollas |
 | 5 | Auth | Código de olla + PIN, sobre `signInAnonymously()` | email/OTP, SMS | Cero costo por SMS, cero email, y sigue habiendo `auth.uid()` real para RLS |
 | 6 | Impresión | HTML + `@media print` | PDF en servidor, `@react-pdf` como primario | 0 dependencias, 0 red, y el equipo edita CSS en vez de un motor de layout |
 | 7 | Escaneo | QR propio primero; OCR solo texto impreso | OCR de cuaderno manuscrito | Tesseract no está hecho para manuscrito (lo dice su propio FAQ) |
@@ -36,16 +37,16 @@
 │                                                                                        │
 │   packages/ui  ──  features: personas · raciones · despensa · recetas · solicitudes    │
 │         │                       │                                                      │
-│         │             @olla/domain (zod + reglas puras)                                │
-│         │             @olla/nutrition (motor explicable: entrada → reglas → razones)   │
+│         │             @hackods/domain (zod + reglas puras)                                │
+│         │             @hackods/nutrition (motor explicable: entrada → reglas → razones)   │
 │         ▼                       ▼                                                      │
-│   @olla/sync  ──►  IndexedDB (Dexie)  =  FUENTE DE VERDAD LOCAL                        │
+│   @hackods/sync  ──►  IndexedDB (Dexie)  =  FUENTE DE VERDAD LOCAL                        │
 │                     ├── personas · raciones · movimientos · solicitudes (espejo)       │
 │                     ├── outbox   (seq, lamport, device_id, intentos, error)            │
 │                     ├── sync_state (cursor por tabla, device_id, lamport)              │
 │                     └── blobs    (fotos comprimidas 1280 px / JPEG 0.7)                │
 │                                                                                        │
-│   @olla/printing: HTML + @media print  (A4 · 58 mm · 80 mm)  →  window.print()         │
+│   @hackods/printing: HTML + @media print  (A4 · 58 mm · 80 mm)  →  window.print()         │
 └────────────────┬───────────────────────────────────────────────────────────────────────┘
                  │  HTTPS · por lotes · idempotente · reintentos con backoff
                  │  ⚠ NO se necesita para operar: solo para sincronizar
@@ -83,7 +84,7 @@ cocinera toca "Entregar" → 1 registro en `raciones` (id UUIDv7 del cliente)
 
 | Opción | A favor | En contra para 3 personas / 48-72 h |
 |---|---|---|
-| **pnpm + Turborepo** ✅ | `pnpm-workspace.yaml` + `turbo.json` = 2 archivos. `turbo run build --filter=@olla/web...` resuelve el grafo. Cache local en `.turbo`. Cero daemon, cero plugin. | Hay que escribir los `package.json` de cada paquete a mano (10 min). |
+| **pnpm + Turborepo** ✅ | `pnpm-workspace.yaml` + `turbo.json` = 2 archivos. `turbo run build --filter=@hackods/web...` resuelve el grafo. Cache local en `.turbo`. Cero daemon, cero plugin. | Hay que escribir los `package.json` de cada paquete a mano (10 min). |
 | Nx | Generadores, `nx graph`, límites de módulos con lint, Nx Cloud. | Curva de aprendizaje y conceptos propios (executors, inferred tasks) que nadie del equipo va a usar en 3 días. Suma otra cuenta si se quiere cache remoto. |
 | Workspaces pelados | Cero config. | Sin cache ni orquestación: `pnpm -r build` reconstruye todo siempre y no hay orden de dependencias garantizado para `typecheck`. Con 3 personas corriendo builds todo el día se nota. |
 
@@ -152,7 +153,7 @@ hackODS-Autonoma-2026/
     "db:push": "supabase db push",
     "db:types": "supabase gen types typescript --local > packages/domain/src/db.types.ts",
     "db:sizes": "psql \"$SUPABASE_DB_URL\" -c \"select relname, pg_size_pretty(pg_total_relation_size(relid)) from pg_catalog.pg_statio_user_tables order by 3 desc limit 15\"",
-    "demo": "pnpm --filter @olla/web build && pnpm --filter @olla/web preview"
+    "demo": "pnpm --filter @hackods/web build && pnpm --filter @hackods/web preview"
   }
 }
 ```
@@ -203,7 +204,7 @@ Presupuesto de peso (aproximado, 🔶 medir en el primer `build`): React+ReactDO
 - **Router:** React Router 7 en modo datos (`createBrowserRouter`), una ruta por feature con `lazy()`. Por qué no TanStack Router: los search params tipados son lindos, pero es una API nueva para 3 personas.
 - **Estado de datos:** **no hay store global**. La fuente de verdad es Dexie; se lee con `useLiveQuery` (`dexie-react-hooks`). Toda la UI se re-renderiza sola cuando cambia IndexedDB.
 - **Estado de UI:** `useState` local + **un** store Zustand de ~40 líneas para: sesión/dispositivo, olla activa, preferencias (tamaño de letra, contraste), estado de sync.
-- **Formularios:** `react-hook-form` + `@hookform/resolvers/zod`, con los schemas de `@olla/domain`. Un schema, tres usos: validación en el form, validación antes de encolar en el outbox, validación en el servidor (RPC).
+- **Formularios:** `react-hook-form` + `@hookform/resolvers/zod`, con los schemas de `@hackods/domain`. Un schema, tres usos: validación en el form, validación antes de encolar en el outbox, validación en el servidor (RPC).
 - **Sin React Query / SWR.** Es deliberado: cachear dos veces (Dexie + React Query) genera la clase de bug más cara del proyecto ("la lista muestra algo distinto de lo que se guardó"). Se pide a Dexie, siempre.
 
 ### 3.3 i18n
@@ -277,11 +278,11 @@ db.version(1).stores({
 
 | Dato | Modelo | Regla de merge | Por qué |
 |---|---|---|---|
-| `personas` | documento mutable | **LWW** por `(lamport, device_id)`; la versión perdedora se guarda en `personas_historial` | Un nombre corregido es descriptivo; perder una edición es recuperable y visible |
-| `movimientos` (despensa) | **append-only, deltas con signo** | Converge sola: el saldo es `sum(delta)` | Dos celulares que descuentan 2 kg y 3 kg dan −5 kg. **Un contador mutable con LWW mentiría** ("quedan 10 kg" cuando quedan 5) |
+| `personas` | documento editable | **Gana el cierre válido más antiguo** por `(lamport, device_id)` (D5); el otro queda como conflicto visible | Un nombre corregido es descriptivo; perder una edición debe ser visible, no silencioso |
+| `movimientos` (despensa) | **append-only, deltas con signo** | Converge sola: el saldo es `sum(delta)` | Dos celulares que descuentan 2 kg y 3 kg dan −5 kg. **Un contador mutable mentiría** ("quedan 10 kg" cuando quedan 5) |
 | `raciones` | append-only | Una ración entregada no se edita: se **anula** con otro registro | Trazabilidad para el reporte y para la auditoría de la nutricionista |
 | `solicitudes` | máquina de estados | `borrador < enviada < aceptada < entregada`; `cancelada` es terminal. Gana el estado de mayor rango; empate → `(lamport, device_id)` y se marca "revisar" | Un pedido entre ollas no puede "volver" a borrador porque un celular estaba viejo |
-| `insumos` (catálogo) | documento | LWW, solo `admin` puede editar | Datos de referencia, no operativos |
+| `insumos` (catálogo) | documento | Gana el cierre válido más antiguo (D5); solo `admin` puede editar | Datos de referencia, no operativos |
 
 > **La decisión más importante de todo el documento:** la despensa **no guarda saldos, guarda movimientos**. El saldo es una vista. Es lo que hace que el inventario siga siendo verdad después de un día sin red, y es lo que se puede explicar en el pitch en una frase: *"nunca perdemos un movimiento, aunque el celular esté desconectado"*.
 
@@ -368,7 +369,9 @@ Tres conclusiones que cambian decisiones:
 
 **Supabase (datos/auth) + Cloudflare Pages (hosting estático).** Son capas distintas, no dos fuentes de verdad: Pages sirve archivos, Supabase guarda datos. Y es donde cada uno es claramente mejor: Pages da preview por PR, 500 builds/mes y egress ilimitado gratis; Supabase da Postgres con RLS.
 
-**El híbrido que NO:** Workers + D1 **además de** Supabase. Dos backends, dos auth, dos migraciones, dos free tiers que vigilar. Es la forma más rápida de perder un hackathon.
+**El híbrido que NO:** Workers + D1 **además de** Supabase como segundo registro. Dos auth, dos
+migraciones, dos free tiers que vigilar. Permitido y vigente (D9): **Supabase = registro** y
+**Compute sin estado = ejecución** (transcripción, extracción, vectorización); no guarda datos.
 
 ### 5.4 Plan B si Supabase falla durante el evento
 
@@ -858,7 +861,7 @@ Se escriben **juntos** (P1+P3 los de sync/domain, P2 los de UI) en los primeros 
 ### 12.3 Reglas anti-colisión
 
 - **Un archivo tiene un dueño.** Si necesitás tocarlo: PR de 5 líneas o pedilo en el chat. Nunca dos personas en el mismo archivo el mismo día.
-- **P2 no importa nada de `supabase/`.** Consume `@olla/sync` (hooks: `usePersonas()`, `useRaciones()`, `useOutbox()`) y `@olla/domain` (tipos). Si necesita un dato que no existe, lo pide a P3.
+- **P2 no importa nada de `supabase/`.** Consume `@hackods/sync` (hooks: `usePersonas()`, `useRaciones()`, `useOutbox()`) y `@hackods/domain` (tipos). Si necesita un dato que no existe, lo pide a P3.
 - **P3 no toca `features/`.** Expone hooks; la UI la hace P2.
 - **`pnpm-lock.yaml`:** conflictos se resuelven borrándolo, `pnpm install`, y commit. Nunca merge a mano.
 - **Migraciones:** solo P1, con `supabase migration new`. Si dos ramas agregan tablas distintas, el orden por timestamp resuelve.
@@ -893,11 +896,11 @@ pnpm add -Dw turbo typescript prettier
 
 # (2) la app                                                  ~4 min
 pnpm create vite apps/web --template react-ts
-pnpm --filter @olla/web add react-router dexie dexie-react-hooks zod @supabase/supabase-js uuid
-pnpm --filter @olla/web add -D tailwindcss @tailwindcss/vite vite-plugin-pwa
+pnpm --filter @hackods/web add react-router dexie dexie-react-hooks zod @supabase/supabase-js uuid
+pnpm --filter @hackods/web add -D tailwindcss @tailwindcss/vite vite-plugin-pwa
 
 # (3) los 5 paquetes vacíos con package.json                   ~3 min
-# packages/{domain,nutrition,ui,sync,printing}  → name @olla/<x>, main src/index.ts
+# packages/{domain,nutrition,ui,sync,printing}  → name @hackods/<x>, main src/index.ts
 
 # (4) supabase                                                 ~6 min
 pnpm dlx supabase init
@@ -997,22 +1000,10 @@ create table ollas (
   creada_en timestamptz not null default now()
 );
 
-create table personas (
-  id uuid primary key,                         -- UUIDv7 generado en el cliente
-  olla_id uuid not null references ollas on delete cascade,
-  nombre text not null,
-  edad_anios int not null,
-  sexo text not null,
-  gestante boolean not null default false,
-  anemia boolean not null default false,
-  lamport bigint not null default 0,
-  device_id text not null,
-  updated_at timestamptz not null default now(),
-  deleted_at timestamptz
-);
-create index on personas (olla_id, updated_at, id);
-
-alter table personas enable row level security;   -- default-deny: sin policy, nadie pasa
+-- Esquema vigente: supabase/migrations/20261123150000_modelo_base.sql
+-- Identidad: la tabla de personas NO tiene columna de nombre ni dato personal (D2).
+-- `nombreLocal`/`alias` viven solo en Dexie con `localOnly: true`.
+-- Este bloque anterior se retira para no citarse como contrato.
 ```
 
 `.github/workflows/ci.yml` → el de §9.2.
@@ -1023,7 +1014,7 @@ alter table personas enable row level security;   -- default-deny: sin policy, n
 2. Se crea una persona en el formulario → aparece en la lista.
 3. Se apaga el wifi (modo avión) → se recarga la página → **la persona sigue ahí y se puede crear otra**.
 4. `navigator.storage.persist()` devuelve `true`.
-5. `pnpm test` pasa con 1 test de `@olla/domain` y 1 de merge en `@olla/sync`.
+5. `pnpm test` pasa con 1 test de `@hackods/domain` y 1 de merge en `@hackods/sync`.
 6. Un PR de prueba con un error de tipos → CI falla y bloquea el merge.
 7. El build está en una URL `*.pages.dev` que abre en un Android real.
 
@@ -1037,7 +1028,7 @@ Si el punto 3 funciona el día 1, el producto ya es demostrable. Todo lo demás 
 
 Es el componente más nuevo, el más concurrente, y el que más se muestra en un demo ("mirá, lo que cargó acá aparece allá"). Un conflicto visible en el escenario destruye la percepción de solidez.
 
-- **Mitigación de diseño:** append-only para lo que importa (movimientos, raciones); LWW solo en lo descriptivo; ids de cliente idempotentes; reloj de Lamport (no `Date.now()`).
+- **Mitigación de diseño:** append-only para lo que importa (movimientos, raciones); en lo descriptivo gana el cierre válido más antiguo (D5); ids de cliente idempotentes; reloj de Lamport (no `Date.now()`).
 - **Mitigación de guion:** el segmento de sync se ensaya **10 veces** con los mismos dos celulares y los mismos datos. `DEMO_MODE=1` congela la UI de conflictos (no muestra "pendiente de revisar" en vivo).
 - **Mitigación de contenido:** nunca mostrar la cola de errores ni un toast de fallo en pantalla. El estado de sync es un semáforo mudo: verde "al día", ámbar "3 por enviar".
 - **Plan de escape:** hay un video de 90 s grabado con todo funcionando.
@@ -1081,29 +1072,9 @@ Medidas equivocadas (media etiqueta), térmica que solo acepta ESC/POS crudo y n
 
 ## 15. ADRs
 
-### ADR-001 · Monorepo con pnpm workspaces + Turborepo
-**Contexto:** 3 personas, un repo, 5 dominios que se mueven a distinta velocidad (dominio, nutrición, sync, UI, impresión). Nadie quiere ser el cuello de botella. **Decisión:** pnpm workspaces + Turborepo; `apps/web` y 5 paquetes con scope `@olla/*`; contratos congelados el día 1. **Consecuencias:** (+) `--filter` permite que cada quien corra solo su parte, cache local acelera CI y máquina, y un paquete roto no bloquea a los demás; (−) hay que mantener `package.json` por paquete y la trampa de `onlyBuiltDependencies` de pnpm 10 cuesta 40 minutos si se descubre tarde; se descarta Nx por peso conceptual y workspaces pelados por falta de orquestación.
-
-### ADR-002 · Vite + React + TS como SPA (sin SSR)
-**Contexto:** PWA offline-first para Android de gama baja, sin necesidad de SEO ni de first-paint desde servidor (la primera pantalla ya está en disco). **Decisión:** Vite + React 19 + TS, router en modo datos, estado de datos vía Dexie/`useLiveQuery`, sin React Query. **Consecuencias:** (+) bundle y arranque mínimos, cero runtime de servidor, Capacitor trivial, ecosistema React para todo lo que necesitamos; (−) se renuncia a las ventajas de Svelte en peso y a las de Next en SEO/imagen — ninguna de las dos importa acá; el presupuesto de 130–160 KB gzip hay que vigilarlo a mano.
-
-### ADR-003 · Offline-first propio: Dexie + outbox + Lamport
-**Contexto:** conectividad intermitente real; el sistema tiene que operar un turno completo sin red y converger después sin mentir sobre el inventario. **Decisión:** IndexedDB con Dexie como fuente de verdad; outbox append-only con ids UUIDv7 del cliente e idempotencia por id; reloj de Lamport; despensa y raciones como hechos append-only, no como contadores mutables; borrados lógicos. Se descartan PowerSync (otro servicio y otra cuota), ElectricSQL (solo lectura) y Realtime (no hace backfill). **Consecuencias:** (+) 500 líneas propias, diagnosticables, sin dependencias nuevas, y el modelo de datos es *explicable* en el pitch; (−) hay que escribir y testear el merge, y los bugs de sync son los más caros de encontrar; si el producto escala a 50+ ollas reales, migrar a PowerSync es la salida natural.
-
-### ADR-004 · Supabase como único backend
-**Contexto:** datos de salud con aislamiento por olla, 3 personas, 48–72 horas, free tier obligatorio. **Decisión:** Supabase (Postgres + RLS + Auth + Storage + Realtime opcional). Hosting estático en Cloudflare Pages. No se usa Cloudflare Workers/D1 como backend. **Consecuencias:** (+) RLS pone la autorización en la base y no en cada endpoint, un solo contrato (migraciones SQL + tipos generados), Auth y Storage incluidos, todo el stack es estándar y portable; (−) free tier con 2 proyectos y pausa por inactividad (mitigado con cron), 1 GB de storage, y latencia de 185 ms desde Lima que **no importa porque el camino crítico es local**; lock-in medio en Auth/Storage, bajo en los datos.
-
-### ADR-005 · Auth por código de olla + PIN sobre usuarios anónimos
-**Contexto:** la organizadora no tiene email y no se va a pagar SMS; pero RLS necesita un `auth.uid()` real. **Decisión:** `signInAnonymously()` para el dispositivo + RPC `enroll(olla_code, personal, pin)` que valida hashes y ata `auth.uid()` a una membresía; roles en `olla_members`; RLS por membresía; flags de salud fuera del alcance de `cocinera` vía vista + privilegios por columna. **Consecuencias:** (+) cero costo por usuaria, cero PII de contacto obligatoria, autorización real en la base, mínimo privilegio verificable; (−) la identidad está atada al dispositivo (se mitiga con código de respaldo y revocación), el alta requiere red una vez, y hay un rate limit de 30 anónimos/hora por IP que complica el desarrollo en equipo (se mitiga con `VITE_BACKEND=local`).
-
-### ADR-006 · Impresión en cliente con HTML + `@media print`
-**Contexto:** hay que imprimir en A4 (padrón, receta, solicitud) y en térmica 58/80 mm, sin red, desde un Android. **Decisión:** un modelo de `Documento` independiente de la presentación y dos renderers React (A4 / térmica) con CSS de impresión; `window.print()` como salida; `pdf-lib` opcional solo para un archivo compartible. Nada de PDF en servidor. **Consecuencias:** (+) cero dependencias, cero red, un solo sistema de maquetado para pantalla y papel, el equipo itera en CSS; (−) la salida depende del navegador (hay que verificar `@page size` y las fuentes), y la térmica por Bluetooth puro queda fuera del alcance de la PWA.
-
-### ADR-007 · Escaneo por QR propio; OCR solo sobre texto impreso
-**Contexto:** se pidió "escanear desde el celular" sobre cuadernos manuscritos y documentos. **Decisión:** el escaneo del producto es el **QR de nuestros propios documentos** (`BarcodeDetector` nativo + `zxing-wasm` de fallback); OCR con Tesseract.js **solo** como asistencia sobre listas impresas, en worker, con resultado siempre editable. Se descarta OCR en la nube por costo, offline y privacidad; se descarta escanear DNI por minimización de datos. **Consecuencias:** (+) una función que funciona el 100% de las veces y sin red, y no se promete lo que la tecnología no da; (−) el "escaneo de cuaderno" se convierte en "foto adjunta al día", que es menos vistoso pero es lo que la olla realmente necesita.
-
-### ADR-008 · PWA primero; Capacitor diferido
-**Contexto:** hace falta cámara, impresión y estabilidad en Android viejo, pero también un link que el jurado abra al instante. **Decisión:** PWA como entregable; ninguna feature importa `@capacitor/*`; todo pasa por `PrinterPort` y `platform/`. Capacitor se agrega solo si la impresora térmica Bluetooth entra al guion. **Consecuencias:** (+) instalación y actualización instantáneas, cero toolchain Android en 3 máquinas, y el APK sigue siendo posible sin reescribir; (−) sin ESC/POS nativo hasta que se agregue, y la app queda expuesta a que el sistema descarte la pestaña (IndexedDB sobrevive, el estado en memoria no).
+> Bloque histórico retirado: duplicaba los ADR vigentes con otra numeración y otro contenido.
+> **ADR vigentes: `docs/adr/`** (`0001-base-monorepo`, `0002-decisiones-usuario`,
+> `0003-comprobantes-y-captura`). Este documento no fija ADR.
 
 ---
 
@@ -1111,14 +1082,14 @@ Medidas equivocadas (media etiqueta), térmica que solo acepta ESC/POS crudo y n
 
 | Tema | Decisión | No hacer |
 |---|---|---|
-| Repo | Monorepo pnpm + Turborepo, `@olla/*` | Nx, carpetas sueltas |
+| Repo | Monorepo pnpm + Turborepo, `@hackods/*` | Nx, carpetas sueltas |
 | App | `apps/web` Vite+React+TS | `apps/api`, SSR |
 | Estado | Dexie + `useLiveQuery` + un Zustand chico | React Query, Redux |
 | Contratos | `domain/schema.ts`, `sync/types.ts` congelados H0 | Cambiarlos sin PR |
 | IDs | UUIDv7 en el cliente | `bigserial`, `crypto.randomUUID()` sin orden |
 | Tiempo | Reloj de Lamport + `device_id` | `Date.now()` para ordenar |
 | Despensa | Movimientos append-only, saldo = suma | Contador mutable |
-| Backend | Supabase (sa-east-1) | Workers+D1 como backend, dos backends |
+| Backend | Supabase = registro; Compute sin estado = ejecución (D9) | Workers+D1 como backend; un segundo registro |
 | Auth | Anónimo + `enroll(código de olla, PIN)` | Email, SMS, `service_role` en el cliente |
 | Salud | Flags fuera del alcance de `cocinera` | Diagnóstico en texto libre, DNI |
 | Impresión | HTML + `@media print` | PDF en servidor, `@react-pdf` |

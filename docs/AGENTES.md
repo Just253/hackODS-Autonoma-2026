@@ -39,7 +39,7 @@ packages/domain/AGENTS.md          tipos y reglas de negocio (contratos)
 packages/nutrition/AGENTS.md       contrato del motor nutricional (sin cifras)
 packages/ui/AGENTS.md              componentes y tokens
 packages/sync/AGENTS.md            outbox, resolución de conflictos (contratos)
-docs/AGENTS.md                     PROTOCOL.md, ADRs, dominio, guías
+docs/AGENTS.md                     DECISIONES.md, PROTOCOL.md, ADRs, contratos, histórico
 
 .opencode/agents/
   orquestador.md                   planifica y delega. NO escribe código
@@ -87,7 +87,7 @@ Regla de modelos: **decide → caro, transcribe → barato, escribe código → 
 emite un veredicto que bloquea un merge (`nutricion`, `qa-verificador`, `seguridad-privacidad`,
 `orquestador`) nunca corre en el modelo barato.
 
-Reparto de las 3 personas y qué agente usa cada una: `AGENTS.md` §6.
+Reparto de las 3 personas y qué agente usa cada una: `AGENTS.md` §7.
 
 ---
 

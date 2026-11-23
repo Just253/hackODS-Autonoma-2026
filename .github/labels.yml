@@ -3,7 +3,8 @@
 # GitHub NO lee este archivo por si solo: es la fuente para un labeler
 # (p. ej. crazy-max/ghaction-github-labeler) o para revisar a mano.
 # La via ejecutable equivalente es `bash scripts/labels.sh` (idempotente).
-# Todavia NO se crearon labels en el repo: eso va despues del ensamblado.
+# Los labels canónicos ya están creados en GitHub; este archivo es el espejo declarativo.
+# Si GitHub tiene labels viejos o duplicados, se limpian aparte: no se borran desde un PR.
 
 - name: status:triage
   color: EDEDED

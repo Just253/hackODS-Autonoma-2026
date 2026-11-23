@@ -110,9 +110,12 @@ Se implementa con tres capas: convención (este doc), un wrapper que rechaza ver
 
 ### 2.3 Ajustes de repo obligatorios (una vez)
 
-- `main` protegida: sin push directo, sin force, 1 aprobación como mínimo, `dismiss_stale_reviews`, checks requeridos, conversaciones resueltas.
-- **`Require review from Code Owners`** activado (ver límites en §5.4).
-- "Allow auto-merge" activado (opcional, cómodo para PRs chicos ya aprobados).
+- `main` protegida: sin force, 1 aprobación como mínimo, `dismiss_stale_reviews`, checks requeridos,
+  conversaciones resueltas.
+- **`Require review from Code Owners`** apagado mientras haya una sola cuenta
+  (`require_code_owner_reviews: false`, `enforce_admins: false`). Estado real y condición para
+  activarlo: `docs/ORQUESTACION.md` §8.
+- "Allow auto-merge" solo cuando exista una segunda cuenta que pueda aprobar; antes no aporta.
 - Actions con permiso de escritura solo donde haga falta (el workflow de §G necesita `issues: write`).
 
 ---
@@ -130,7 +133,7 @@ Se implementa con tres capas: convención (este doc), un wrapper que rechaza ver
 Una sola línea, todo en minúsculas, `clave:valor`, separada por un espacio, sin espacios dentro de los valores, timestamps UTC RFC 3339. Después de una línea en blanco, lo que quieras en humano (el parser ignora todo lo que no empiece con el verbo).
 
 ```
-claim/v1 issue:142 by:@ana agent:ana-lead-3f2a area:api branch:feat/api-142-oauth-refresh started:2026-11-23T14:02Z ttl:24h searched:2026-11-23 files:services/api/src/auth/**
+claim/v1 issue:142 by:@ana agent:ana-lead-3f2a area:api branch:feat/api-142-oauth-refresh started:2026-11-23T14:02Z ttl:24h searched:2026-11-23 files:apps/web/src/sync/**
 ```
 
 | Campo | Regla |
@@ -159,7 +162,7 @@ gh issue develop 142 --base main --name feat/api-142-oauth-refresh \
   --worktree ../wt/142-oauth-refresh --checkout
 
 # 2) claim + estado + assignee, en una sola pasada
-gh issue comment 142 --body "claim/v1 issue:142 by:@ana agent:ana-lead-3f2a area:api branch:feat/api-142-oauth-refresh started:$(date -u +%Y-%m-%dT%H:%M:%SZ) ttl:24h searched:$(date -u +%F) files:services/api/src/auth/**
+gh issue comment 142 --body "claim/v1 issue:142 by:@ana agent:ana-lead-3f2a area:api branch:feat/api-142-oauth-refresh started:$(date -u +%Y-%m-%dT%H:%M:%SZ) ttl:24h searched:$(date -u +%F) files:apps/web/src/sync/**
 
 Reclamo #142. Worktree: ../wt/142-oauth-refresh. Draft PR en el primer push."
 gh issue edit 142 --add-label status:claimed --remove-label status:ready --add-assignee @me
@@ -320,10 +323,9 @@ Rationale: el subagente tiene el contexto del código pero no el del equipo. Las
 
 | Persona | Área (`area:*`) | Carpetas (ejemplo) | También revisa |
 |---|---|---|---|
-| Ana | `web` | `apps/web/`, `apps/mobile/` | `contracts/` |
-| Beto | `api` | `services/api/`, `jobs/` | `contracts/` |
-| Caro | `infra` | `infra/`, `.github/`, `scripts/`, `docs/` | `web`, `api` (no bloqueante) |
-| — | `contracts` | `packages/contracts/` | **las tres** (por eso es caro) |
+| A | `web` | `apps/web/`, `packages/ui/`, `packages/printing/` | `api`, `contracts` |
+| B | `api` | `supabase/` | `web`, `contracts` |
+| C | `contracts` + `infra` | `packages/{contracts,domain,nutrition,sync}/`, `docs/`, `scripts/`, `.github/` | `web`, `api` |
 
 Ajustá las rutas a tu repo; lo que **no** se negocia es: **una carpeta tiene un solo dueño**. El dueño no es el único que puede escribir: es el único que puede aprobar y el que decide ante conflicto.
 
@@ -342,7 +344,7 @@ Sin esto, "compartido" significa "de nadie" y en 3 días hay dos versiones del t
 
 Orden de resolución, de menos a más caro:
 
-1. **Declararlo en el claim** (`files:services/api/src/auth/**`). Si el glob del otro se solapa, se ve antes de escribir la primera línea.
+1. **Declararlo en el claim** (`files:apps/web/src/sync/**`). Si el glob del otro se solapa, se ve antes de escribir la primera línea.
 2. **Ganar por claim más viejo** para ese archivo. El segundo no edita; consume.
 3. **Shim de interfaz**: el segundo agrega una función/adaptador en *su* archivo y no toca el ajeno. 80% de los casos se resuelve así.
 4. **Esperar**: el segundo se pone `status:blocked` con `blocked-by` del issue del primero. Costo real: horas, no días.
@@ -441,7 +443,7 @@ git fetch --prune && git branch -r --sort=-committerdate | head -30
 
 # 4. commits recientes que mencionen el síntoma o el área
 git log --since=21.days --oneline --grep="oauth" -i
-git log --since=21.days --oneline -- services/api/src/auth/
+git log --since=21.days --oneline -- apps/web/src/sync/
 
 # 5. claims vigentes en comentarios
 gh issue list --state open --search "claim in:comments" --limit 50
@@ -527,7 +529,7 @@ risk: main se movió 14 commits, rebase pendiente en 3 ramas
 handoff/v1 issue:142 from:@ana agent:ana-lead-3f2a to:@ana agent:ana-lead-9d21 at:2026-11-23T22:40Z sha:4f2a9c1 state:in-review
 
 Qué está hecho: endpoint + tests, falta el caso de token revocado (test rojo en auth.spec.ts:88).
-Qué NO tocar: services/api/src/auth/legacy.ts (lo tiene @beto en #155).
+Qué NO tocar: apps/web/src/sync/legacy.ts (lo tiene @beto en #155).
 Siguiente paso: arreglar el test, pushear, marcar ready y pedir review a @caro.
 Riesgos: el mock de reloj asume UTC; no cambiar TZ.
 ```
@@ -768,7 +770,7 @@ body:
     attributes:
       label: Archivos / carpetas que toca
       description: Globs, separados por coma. Es lo que se pone en `files:` del claim.
-      placeholder: services/api/src/auth/**,packages/contracts/auth.ts
+      placeholder: apps/web/src/sync/**,packages/contracts/auth.ts
     validations:
       required: false
 
@@ -1016,7 +1018,7 @@ Nota: en `reclaim` el `last_activity` sale de la rama que tenés checkouteada. S
 ### Comentarios listos para pegar (sin script)
 
 ```text
-claim/v1 issue:142 by:@ana agent:ana-lead-3f2a area:api branch:feat/api-142-oauth-refresh started:2026-11-23T14:02Z ttl:24h searched:2026-11-23 files:services/api/src/auth/**
+claim/v1 issue:142 by:@ana agent:ana-lead-3f2a area:api branch:feat/api-142-oauth-refresh started:2026-11-23T14:02Z ttl:24h searched:2026-11-23 files:apps/web/src/sync/**
 ```
 
 ```text
@@ -1062,44 +1064,13 @@ git ls-remote --heads origin "feat/api-142-*"
 
 ## Anexo E — `.github/CODEOWNERS`
 
-```text
-# Orden importa: gana la ÚLTIMA línea que matchea.
-# Owners necesitan write en el repo. Los drafts NO disparan review requests.
+**Fuente única: `.github/CODEOWNERS`.** Este documento no copia su contenido (la copia anterior
+quedó desincronizada y nombraba rutas que no existen).
 
-# 1. Fallback: si algo no está cubierto, lo ve Caro (infra/plataforma) y nadie más.
-*                                   @caro
-
-# 2. Áreas (una carpeta = un dueño)
-/apps/web/                          @ana
-/apps/mobile/                       @ana
-/services/api/                      @beto
-/jobs/                              @beto
-/infra/                             @caro
-/.github/                           @caro
-/scripts/                           @caro
-/docs/                              @caro
-
-# 3. Compartido: contratos. Requiere 2 aprobaciones (una por área consumidora).
-/packages/contracts/                @ana @beto @caro
-
-# 4. Las reglas del juego se protegen aparte.
-/docs/adr/                          @ana @beto @caro
-/PROTOCOL.md                        @ana @beto @caro
-/.github/CODEOWNERS                 @ana @beto @caro
-/.github/ISSUE_TEMPLATE/            @ana @beto @caro
-/.github/PULL_REQUEST_TEMPLATE.md   @ana @beto @caro
-
-# 5. Generados y lockfiles: duelo del área que los toque, sin review extra.
-#    (Se dejan sin owner explícito a propósito: heredan `*` → @caro.)
-/pnpm-lock.yaml
-/package-lock.json
-```
-
-Notas operativas:
-
-- Con **1 approval + `Require review from Code Owners`** alcanza con un owner. Para que `contracts/` exija dos áreas de verdad, configurá **2 approvals** en la protección de `main` y la regla social "ninguna de las dos del área autora".
-- Si el equipo crece a 4+, pasá de handles a equipos (`@org/web-team`): rotan sin editar el archivo.
-- Nunca dejes el `CODEOWNERS` sin dueño: es el archivo que decide quién decide.
+- Hoy todo apunta a `@Just253` (una sola cuenta). `require_code_owner_reviews` está en `false`.
+- Condición para activarlo: 3 cuentas con write + `CODEOWNERS` por equipo, no por persona
+  (ver `docs/ORQUESTACION.md` §8).
+- Al crecer a 4+, pasar de handles a equipos (`@org/web-team`): rotan sin editar el archivo.
 
 ---
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # scripts/labels.sh — crear/actualizar los labels del protocolo (docs/PROTOCOL.md Anexo C).
 # Idempotente. Se ejecuta UNA vez por repo, por una persona con permisos.
-# Todavia NO se corrio en este repo: los labels se crean despues del ensamblado.
+# Idempotente: se puede correr de nuevo. No borra labels viejos; eso se limpia a mano.
 set -euo pipefail
 labels=(
   "status:triage|EDEDED|Sin reproducir ni acotar. No se puede reclamar."

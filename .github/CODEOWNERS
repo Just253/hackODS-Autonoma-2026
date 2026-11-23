@@ -8,9 +8,9 @@
 #   /packages/contracts/   -> @org/web-team @org/datos-team @org/dominio-team
 #   /packages/domain/      -> @org/dominio-team
 #   /packages/nutrition/   -> @org/dominio-team
-#   /packages/sync/        -> @org/datos-team
+#   /packages/sync/        -> @org/dominio-team    (persona C · area:contracts)
 #   /docs/                 -> @org/dominio-team
-#   /.github/              -> @org/datos-team
+#   /.github/              -> @org/dominio-team
 # Los drafts no disparan review requests: eso es intencional.
 
 *                                   @Just253
