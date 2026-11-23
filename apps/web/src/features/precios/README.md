@@ -20,3 +20,5 @@ ventana, la variación dice `sin dato`: no se inventa una flecha.
 **Qué escribe:** nada; es pantalla de lectura. No hace OCR ni lee boletas, y no promete dictado.
 `PreciosPantalla` sigue siendo presentacional: recibe `productos`, `fuente` y el estado; el acceso a
 datos vive en `PreciosDeLaOlla`.
+
+**Texto visible:** la fuente dice de dónde salen los precios de la olla, sin jerga de escaneo.

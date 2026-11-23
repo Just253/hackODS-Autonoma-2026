@@ -81,7 +81,7 @@ export function CuentaSupabase({ cuenta }: { readonly cuenta: ControlCuenta }) {
           ) : esLocal ? (
             <>
               <p className="text-xs text-texto-suave">
-                Este backend es el Supabase local: no tiene las cuentas demo. Entrá con el código
+                Este backend es el Supabase local: no tiene las cuentas demo. Entra con el código
                 de la olla y su PIN (el seed usa <strong>1234</strong>).
               </p>
               <form onSubmit={enrolar} className="flex flex-col gap-1">

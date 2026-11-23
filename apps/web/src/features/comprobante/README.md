@@ -32,3 +32,5 @@ pantalla sería un PR rechazado (`packages/ui/AGENTS.md` §3).
 
 **Qué NO hace:** no hace OCR ni abre la cámara, no clasifica de verdad (usa el doble de embeddings de
 los fixtures), no deduplica comprobantes y no empuja nada a Supabase.
+
+**Texto visible:** la boleta de ejemplo se anuncia como de ejemplo; no se habla de OCR ni de escaneo, que la demo no hace.

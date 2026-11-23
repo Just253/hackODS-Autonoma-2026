@@ -49,3 +49,5 @@ equivalencias o porciones. No sincroniza: el envío y el Lamport son de `package
 **Pruebas:** `RecetasPage.test.tsx` (componente con Dexie y `fetch` apagado: faltante, sustitución,
 75 °C, producción, stock derivado, costo y offline) y `packages/domain/src/recetas.test.ts` (explosión,
 factor firmado vs base, costo con y sin precio, faltante, sustitución y saldo derivado).
+
+**Texto visible:** la sustitución dice "aprobada por la nutricionista"; el CNP queda en el detalle. Sin voseo.

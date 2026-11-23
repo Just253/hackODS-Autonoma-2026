@@ -79,12 +79,12 @@ describe('RecetasPage', () => {
 
     const faltante = await screen.findByTestId('faltante-leche_evaporada');
     expect(faltante).toHaveTextContent(/Faltan 60 g/);
-    expect(screen.getByLabelText(/Quinua.*factor 1,20/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Quinua.*en proporción 1,20/)).toBeInTheDocument();
 
     const registrar = screen.getByRole('button', { name: /Registrar servicio/ });
     expect(registrar).toBeDisabled();
 
-    fireEvent.click(screen.getByLabelText(/Quinua.*factor 1,20/));
+    fireEvent.click(screen.getByLabelText(/Quinua.*en proporción 1,20/));
     fireEvent.click(screen.getByLabelText(/Confirmo que se cocinó a 75 °C/));
 
     await waitFor(() => expect(registrar).toBeEnabled());

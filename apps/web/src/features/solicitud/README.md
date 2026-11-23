@@ -15,3 +15,5 @@ son UUID que el caller provee (`resolverSolicitud(..., { ids })`); el dominio no
 **Distribución:** el pedido y sus decisiones son la columna principal; lo que generó la entrega (los
 dos deltas) va al costado en escritorio y debajo en el teléfono. Usa los tokens de la app
 (`oc-tarjeta`, `oc-estado`): antes mezclaba `gray-*` sueltos y era la única pantalla con otro lenguaje.
+
+**Texto visible:** el pedido muestra la cantidad sin nombrar un insumo fijo.

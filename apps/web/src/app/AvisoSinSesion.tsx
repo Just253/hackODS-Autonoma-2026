@@ -19,7 +19,7 @@ export function AvisoSinSesion({ que }: { readonly que: string }) {
       <p className="text-lg font-bold">Conectá Supabase para ver {que}</p>
       {configurado ? (
         <p className="text-sm text-texto-suave">
-          Entrá con una cuenta demo desde Ajustes: el botón «Más» en el teléfono, el panel
+          Entra con una cuenta demo desde Ajustes: el botón «Más» en el teléfono, el panel
           lateral en la computadora. Sin sesión no se muestra nada: la app no inventa
           personas ni precios.
         </p>

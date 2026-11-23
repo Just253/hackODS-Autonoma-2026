@@ -68,13 +68,13 @@ function traducirFallo(mensaje: string): string {
     return 'El email o la contraseña de esa cuenta demo no coinciden.';
   }
   if (texto.includes('fetch') || texto.includes('network') || texto.includes('failed to')) {
-    return 'No hay conexión con Supabase. Revisá la red de esta tablet.';
+    return 'No hay conexión con Supabase. Revisa la red de esta tablet.';
   }
-  return 'No se pudo entrar con esa cuenta demo. Probá otra vez.';
+  return 'No se pudo entrar con esa cuenta demo. Prueba otra vez.';
 }
 
 const SIN_OLLA =
-  'Esa cuenta no tiene una olla asignada. Avisá a quien administra la demo.';
+  'Esa cuenta no tiene una olla asignada. Avisa a quien administra la demo.';
 const SIN_SESION_GUARDADA = 'No se pudo leer la sesión guardada en esta tablet.';
 
 export function useCuenta(): ControlCuenta {
@@ -167,7 +167,7 @@ export function useCuenta(): ControlCuenta {
         });
         if (fallo !== null && montado.current) setError(traducirFallo(fallo.message));
       } catch {
-        if (montado.current) setError('No hay conexión con Supabase. Revisá la red de esta tablet.');
+        if (montado.current) setError('No hay conexión con Supabase. Revisa la red de esta tablet.');
       } finally {
         if (montado.current) setOcupado(false);
       }
@@ -182,7 +182,7 @@ export function useCuenta(): ControlCuenta {
     try {
       await cliente.auth.signOut();
     } catch {
-      if (montado.current) setError('No se pudo cerrar la sesión. Probá otra vez.');
+      if (montado.current) setError('No se pudo cerrar la sesión. Prueba otra vez.');
     } finally {
       if (montado.current) setOcupado(false);
     }
@@ -215,7 +215,7 @@ export function useCuenta(): ControlCuenta {
           if (montado.current) {
             setError(
               mensaje.toLowerCase().includes('pin')
-                ? 'El PIN no es el de esa olla. Revisá el papel del comedor.'
+                ? 'El PIN no es el de esa olla. Revisa el papel del comedor.'
                 : 'No se pudo enrolar esta tablet con ese código de olla.',
             );
           }
@@ -226,7 +226,7 @@ export function useCuenta(): ControlCuenta {
         const refreshToken = data?.refreshToken ?? null;
         if (accessToken === null || refreshToken === null) {
           if (montado.current) {
-            setError('El enrolamiento no devolvió una sesión. Avisá a quien administra la demo.');
+            setError('El enrolamiento no devolvió una sesión. Avisa a quien administra la demo.');
           }
           return;
         }
@@ -236,11 +236,11 @@ export function useCuenta(): ControlCuenta {
           refresh_token: refreshToken,
         });
         if (fallo !== null && montado.current) {
-          setError('Se enroló la tablet, pero no se pudo abrir la sesión. Probá otra vez.');
+          setError('Se enroló la tablet, pero no se pudo abrir la sesión. Prueba otra vez.');
         }
         // `onAuthStateChange` resuelve la olla y el rol.
       } catch {
-        if (montado.current) setError('No hay conexión con este backend. Revisá la red.');
+        if (montado.current) setError('No hay conexión con este backend. Revisa la red.');
       } finally {
         if (montado.current) setOcupado(false);
       }

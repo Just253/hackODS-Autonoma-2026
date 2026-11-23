@@ -86,7 +86,7 @@ export function PadronPage() {
     <section className="flex flex-col gap-4 lg:gap-6">
       <EncabezadoPantalla
         titulo="Padrón"
-        descripcion="Cada persona se identifica con un código P-XXXX. No se piden nombres, documentos ni teléfonos."
+        descripcion="Cada persona se identifica con un código propio, sin nombre ni documento. No se piden teléfonos ni datos de salud."
       />
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:items-start lg:gap-6">

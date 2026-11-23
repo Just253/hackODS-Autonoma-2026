@@ -110,7 +110,7 @@ export const SUSTITUCIONES_DEMO: readonly SustitucionAprobada[] = [
     insumoOrigenId: 'leche_evaporada',
     insumoDestinoId: 'quinua',
     factor: 1.2,
-    aprobadaPor: 'Nutricionista Demo · CNP-DEMO-0001',
+    aprobadaPor: 'la nutricionista',
   },
 ] as const;
 

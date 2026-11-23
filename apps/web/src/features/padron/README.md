@@ -17,3 +17,5 @@ ver el padrón" (sin fixtures); cargando; olla sin personas → "Padrón vacío"
 (`altaPersona`) y su envío es de `@hackods/sync`; esta pantalla es de lectura remota. No calcula el
 grupo nutricional ni la ración (`packages/nutrition`, DEC-2026-0003) y no muestra salud: esa frontera
 está en la RLS y en el `select`, no en un `if` de la vista.
+
+**Texto visible:** el código de la persona se explica sin el marcador de plantilla `P-XXXX`.

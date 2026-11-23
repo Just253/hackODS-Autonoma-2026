@@ -227,7 +227,9 @@ describe('pantalla de despensa', () => {
     await abrirPantalla();
 
     expect(screen.getByRole('button', { name: 'Dictar' })).toBeDisabled();
-    expect(screen.getByText(/dictado no configurado/)).toBeInTheDocument();
+    // Lo que ve la cocinera es "sin dictado", no "dictado no configurado": ese
+    // último describía la falta de una variable del equipo, no la pantalla.
+    expect(screen.getByText(/sin dictado/)).toBeInTheDocument();
   });
 
   it('con VITE_COMPUTE_URL, un dictado que falla cae al cuadro de texto sin bloquear', async () => {
