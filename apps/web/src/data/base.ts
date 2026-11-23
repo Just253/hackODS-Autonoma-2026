@@ -1,6 +1,6 @@
 import Dexie, { type EntityTable, type Table } from 'dexie';
 import type { IdentidadLocal, Insumo, Movimiento, Persona, Racion } from '@hackods/contracts';
-import type { ServicioDeReceta } from '@hackods/domain';
+import type { RegistroConsentimiento, ServicioDeReceta } from '@hackods/domain';
 import type { EventoSaliente } from '@hackods/sync';
 
 /**
@@ -35,12 +35,22 @@ import type { EventoSaliente } from '@hackods/sync';
  * pre-release y esas filas ni siquiera pueden formar la clave compuesta, porque
  * `null` no es un componente valido en IndexedDB.
  */
-export const VERSION_ESQUEMA = 6;
+export const VERSION_ESQUEMA = 7;
 
 export interface RegistroLamport {
   readonly clave: 'lamport';
   readonly valor: number;
 }
+
+/**
+ * Firma de consentimiento tal como vive en Dexie.
+ *
+ * No hay una segunda definición de la forma: es `RegistroConsentimiento` de
+ * `@hackods/domain` (la regla pura de otorgar/revocar/vigente) más el `ollaId`
+ * que la tabla necesita para separar ollas en el dispositivo. La tabla es
+ * append-only igual que en el servidor: cada firma es una fila con su `id`.
+ */
+export type ConsentimientoLocal = RegistroConsentimiento & { readonly ollaId: string };
 
 /**
  * Fila del outbox tal como vive en Dexie.
@@ -111,6 +121,8 @@ export type BaseOlla = Dexie & {
    * local y marcado como tal hasta que #62/#65 lo lleven a SQL.
    */
   serviciosCocidos: EntityTable<ServicioDeReceta, 'id'>;
+  /** Firmas de consentimiento: append-only, una fila por firma. */
+  consentimiento: EntityTable<ConsentimientoLocal, 'id'>;
   meta: EntityTable<RegistroLamport, 'clave'>;
   /**
    * `eventUuid` como clave = idempotencia gratis: guardar el mismo evento no
@@ -165,11 +177,20 @@ export function baseDeOlla(ollaId: string): BaseOlla {
     serviciosCocidos: 'id, ollaId, recetaId, fecha, [ollaId+fecha]',
   });
 
-  // v6: despensa con vencimiento (issue #69). Aditiva: suma el catalogo de
+  // v6: consentimiento append-only (#74). Tabla nueva, aditiva: una base v5
+  // queda con cero firmas, que es "sin registro" y no "otorgado" ni "revocado".
+  // `id` es la clave (cada firma es una fila, nunca un UPDATE); `personaId` y
+  // `[personaId+tipo]` son las dos lecturas de la pantalla: "todas las firmas
+  // de esta persona" y "la última de este permiso".
+  base.version(6).stores({
+    consentimiento: 'id, ollaId, personaId, [personaId+tipo], lamport',
+  });
+
+  // v7: despensa con vencimiento (issue #69). Aditiva: suma el catalogo de
   // insumos y los lotes al `movimientos` que ya creo el recetario en v5 (mismos
   // indices, para que los dos caminos de escritura convivan). `lotes` guarda el
   // vencimiento y es local-only: no tiene entidad en el outbox.
-  base.version(6).stores({
+  base.version(7).stores({
     insumos: 'id, denominacion',
     lotes: 'loteId, insumoId, fechaVencimiento, estado',
   });
