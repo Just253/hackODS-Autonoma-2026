@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
 
+import type { Persona } from '@hackods/contracts';
 import { racionSchema } from '@hackods/contracts';
 import { BotonGrande } from '@hackods/ui';
 
 import { OLLA_DEMO, RacionDuplicada, guardarRacion, listarPersonas, racionDe } from '../../data/repositorio.js';
+import { menusDelDiaDemo } from '../../fixtures/servicio-demo.js';
+import { ServicioResumen } from './ServicioResumen.js';
 
 /**
  * Servicio del dia: una racion por persona, explicada con al menos dos razones.
@@ -13,10 +16,15 @@ import { OLLA_DEMO, RacionDuplicada, guardarRacion, listarPersonas, racionDe } f
  * calculan aca (son de `packages/nutrition`, DEC-2026-0003): si no hay calculo,
  * se dice `sin dato` en vez de dibujar un cero.
  *
+ * El resumen del menu (sello, hash, 2 opciones, porcion por grupo y total) lo
+ * calcula `servirDelDia` de `@hackods/domain` en `ServicioResumen`; esta pantalla
+ * solo le pasa el padron real leido del dispositivo. El total sale del padron,
+ * no de una constante.
+ *
  * Estados: cargando / vacio (sin padron) / error / pendiente de sincronizar.
  */
 /**
- * El mínimo de razones no se copia acá: lo manda `racionSchema.razones` y se
+ * El minimo de razones no se copia aca: lo manda `racionSchema.razones` y se
  * pregunta al propio schema. La pantalla solo usa la respuesta para avisar
  * antes de intentar guardar; el rechazo real es del contrato.
  */
@@ -28,6 +36,7 @@ interface Fila {
 }
 
 export function ServicioPage() {
+  const [personas, setPersonas] = useState<readonly Persona[] | null>(null);
   const [filas, setFilas] = useState<readonly Fila[] | null>(null);
   const [cargando, setCargando] = useState(true);
   const [razones, setRazones] = useState<readonly string[]>(['', '']);
@@ -36,11 +45,10 @@ export function ServicioPage() {
   const [ultimaGuardada, setUltimaGuardada] = useState<string | null>(null);
 
   const recargar = async (): Promise<void> => {
-    const personas = await listarPersonas(OLLA_DEMO);
-    const raciones = await Promise.all(personas.map((p) => racionDe(p.codigoP, OLLA_DEMO)));
-    setFilas(
-      personas.map((p, i) => ({ codigoP: p.codigoP, guardada: raciones[i] !== undefined })),
-    );
+    const lista = await listarPersonas(OLLA_DEMO);
+    const raciones = await Promise.all(lista.map((p) => racionDe(p.codigoP, OLLA_DEMO)));
+    setPersonas(lista);
+    setFilas(lista.map((p, i) => ({ codigoP: p.codigoP, guardada: raciones[i] !== undefined })));
   };
 
   useEffect(() => {
@@ -71,8 +79,6 @@ export function ServicioPage() {
     setGuardando(true);
     guardarRacion({
       personaCodigoP: codigoP,
-      // Los componentes del menu firmado son de la integracion (H3:30) y de
-      // `packages/nutrition`: hoy no hay menu cargado, asi que sin servicio.
       servicioId: null,
       razones: razonesValidas,
     })
@@ -82,7 +88,6 @@ export function ServicioPage() {
         await recargar();
       })
       .catch((error: unknown) => {
-        // Duplicado: se dice tal cual. Un "intentá otra vez" ahi seria mentira.
         setError(
           error instanceof RacionDuplicada
             ? error.message
@@ -94,36 +99,38 @@ export function ServicioPage() {
       });
   };
 
-  const totalGuardadas = filas?.filter((f) => f.guardada).length ?? 0;
-
+  const totalGuardadas = filas ? filas.filter((f) => f.guardada).length : 0;
   return (
     <section className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
         <h2 className="text-2xl font-bold">Servicio del día</h2>
         <p className="text-gray-600">
-          Raciones de hoy. Cada ración se explica con al menos dos razones.
+          Raciones de hoy, según el menú firmado. Cada ración se explica con al menos dos razones.
         </p>
       </div>
 
-      {cargando ? (
+      {cargando && (
         <p role="status" className="text-gray-600">
-          Leyendo el servicio guardado en este dispositivo…
+          Leyendo el servicio guardado en este dispositivo...
         </p>
-      ) : null}
+      )}
 
-      {filas !== null && filas.length === 0 ? (
+      {personas && personas.length > 0 && (
+        <ServicioResumen menus={menusDelDiaDemo()} personas={personas} />
+      )}
+
+      {filas && filas.length === 0 && (
         <p className="rounded-lg border border-gray-300 bg-gray-50 p-4">
           No hay personas en el padrón. Primero se da de alta a alguien en Padrón.
         </p>
-      ) : null}
-
-      {filas !== null && filas.length > 0 ? (
+      )}
+      {filas && filas.length > 0 && (
         <p className="text-gray-600">
           {totalGuardadas} de {filas.length} raciones registradas en este dispositivo.
         </p>
-      ) : null}
+      )}
 
-      {ultimaGuardada !== null ? (
+      {ultimaGuardada && (
         <div
           role="status"
           className="rounded-lg border border-gray-300 bg-gray-50 p-4"
@@ -132,17 +139,11 @@ export function ServicioPage() {
           <p className="text-lg font-semibold">Ración de {ultimaGuardada} guardada</p>
           <p className="text-gray-600">Pendiente de sincronizar. La red no hizo falta.</p>
         </div>
-      ) : null}
+      )}
 
-      <div className="flex flex-col gap-2" aria-label="Datos de la ración">
-        <p className="text-gray-600">
-          Grupo por edad: <strong>sin dato</strong> — el cálculo por grupo es de nutrición y todavía
-          no está conectado.
-        </p>
-        <p className="text-gray-600">
-          Peso y nutrientes: <strong>sin dato</strong> — no se inventan cifras.
-        </p>
-      </div>
+      <p className="text-gray-600">
+        Peso y nutrientes: <strong>sin dato</strong> - no se inventan cifras.
+      </p>
 
       <fieldset className="flex flex-col gap-2">
         <legend className="font-semibold">Razones de la ración (más de una)</legend>
@@ -165,14 +166,13 @@ export function ServicioPage() {
           </BotonGrande>
         </div>
       </fieldset>
-
-      {error !== null ? (
+      {error && (
         <p role="alert" className="font-semibold">
           {error}
         </p>
-      ) : null}
+      )}
 
-      {filas !== null && filas.length > 0 ? (
+      {filas && filas.length > 0 && (
         <ul className="flex flex-col gap-2" aria-label="Personas del padrón">
           {filas.map((fila) => (
             <li
@@ -190,7 +190,7 @@ export function ServicioPage() {
             </li>
           ))}
         </ul>
-      ) : null}
+      )}
     </section>
   );
 }
