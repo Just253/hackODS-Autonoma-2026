@@ -6,7 +6,7 @@
  * `core.hooksPath` ahí. Sin esto, `git commit` no chequea nada y la regla sólo existe en el papel.
  */
 import { spawnSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { appendFileSync, existsSync, readFileSync } from 'node:fs';
 
 const git = (args) => spawnSync('git', args, { encoding: 'utf8', shell: process.platform === 'win32' });
 
@@ -25,6 +25,20 @@ if (r.status !== 0) {
 if (process.platform !== 'win32') {
   for (const hook of ['pre-commit', 'pre-push']) {
     spawnSync('chmod', ['+x', `.githooks/${hook}`]);
+  }
+}
+
+// `.worktrees/` vive dentro del repo: sin esta línea, cada worktree de agente aparece como "sin
+// trackear" en `git status` y alguien lo commitea por error. `.git/info/exclude` es local, así que
+// se agrega una vez por clon y no viaja en el repo (a propósito: no ensucia el diff).
+const rutaExclude = git(['rev-parse', '--git-path', 'info/exclude']).stdout?.trim();
+if (rutaExclude) {
+  const previo = existsSync(rutaExclude) ? readFileSync(rutaExclude, 'utf8') : '';
+  const yaEsta = previo.split('\n').some((linea) => linea.trim() === '.worktrees/');
+  if (!yaEsta) {
+    const salto = previo === '' || previo.endsWith('\n') ? '' : '\n';
+    appendFileSync(rutaExclude, `${salto}.worktrees/\n`);
+    console.log('  .git/info/exclude  → .worktrees/ agregado');
   }
 }
 

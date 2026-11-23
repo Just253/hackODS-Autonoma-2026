@@ -55,7 +55,17 @@ function correr(cmd, args, cwd = RAIZ) {
 }
 
 /** Recorre el repo sin entrar en lo que no es fuente. */
-const OMITIR = new Set(['node_modules', '.git', 'dist', 'coverage', '.turbo', 'historical']);
+const OMITIR = new Set([
+  'node_modules',
+  '.git',
+  'dist',
+  'coverage',
+  '.turbo',
+  'historical',
+  // Worktrees de agentes: copias del mismo repo, no fuentes (mismo criterio
+  // que scripts/chequear-ids.mjs).
+  '.worktrees',
+]);
 function* archivos(dir, filtro) {
   for (const entrada of readdirSync(dir)) {
     if (OMITIR.has(entrada)) continue;
