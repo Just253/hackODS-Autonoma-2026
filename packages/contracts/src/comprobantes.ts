@@ -7,10 +7,12 @@ import { comprobanteItemSchema, type ComprobanteItem } from './finanzas.js';
  * Un item de comprobante solo puede afectar el presupuesto si una persona lo confirmo
  * (`docs/contracts/comprobantes.md` §0.3; `docs/DECISIONES.md` D8).
  */
-export const itemPresupuestableSchema = comprobanteItemSchema.refine(
-  (item) => item.estado === 'confirmado',
-  { message: 'un item no confirmado no afecta el presupuesto (D8)', path: ['estado'] },
-);
+export const itemPresupuestableSchema = comprobanteItemSchema
+  .refine(
+    (item) => item.estado === 'confirmado',
+    { message: 'un item no confirmado no afecta el presupuesto (D8)', path: ['estado'] },
+  )
+  .brand<'ItemPresupuestable'>();
 export type ItemPresupuestable = z.infer<typeof itemPresupuestableSchema>;
 
 /** Guard para consumidores que ya tienen un `ComprobanteItem` en memoria. */

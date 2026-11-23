@@ -20,7 +20,7 @@ function itemConEstado(estado: EstadoItemComprobante): ComprobanteItem {
     cantidadCruda: '1',
     unidadCruda: 'saco',
     presentacionCruda: '50KG',
-    cantidadMilesimas: aMilesimas(50_000),
+    cantidadMilesimas: aMilesimas(50_000_000),
     unidadBase: 'g',
     equivalenciaId: 'eq_01',
     precioUnitarioCrudoCentavos: aCentimos(24_000),
