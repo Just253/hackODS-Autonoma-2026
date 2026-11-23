@@ -13,6 +13,8 @@ out/
 # Supabase local (Docker)
 supabase/.branches/
 supabase/.temp/
+# copia transitoria del seed que hace scripts/db-test.mjs
+supabase/tests/fixtures/seed.txt
 
 # Entornos y secretos
 .env
