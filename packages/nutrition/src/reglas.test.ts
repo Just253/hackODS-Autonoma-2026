@@ -10,34 +10,14 @@ import { crearContexto, validarReglas } from './reglas.js';
  */
 const reglasVacias: ReglasMotor = {
   version: '',
-  coberturaDia: {
-    desayuno: null,
-    almuerzo: null,
-    cena: null,
-    refaccion: null,
-    unico: null,
-  },
-  coberturaHierroComidaPrincipal: null,
-  umbralDeficit: null,
+  toleranciaPorcion: null,
+  umbralDesvioPorcion: null,
+  maxSustitucionesPorPlato: null,
+  maxPlatosPorMomento: null,
+  frecuenciaMaxima: {},
   umbralesSeveridad: { critico: null, alto: null, moderado: null },
-  pesos: {
-    energia: null,
-    proteina: null,
-    hierro: null,
-    zinc: null,
-    vitaminaA: null,
-    folato: null,
-    vitaminaB12: null,
-    calcio: null,
-  },
-  topesDePuntaje: [],
-  bandasVeredicto: [],
-  factorObjetivoAnemia: null,
-  maxSugerencias: null,
-  maxNutrientesAAjustar: null,
-  escalonesGramos: [],
-  maxFrecuenciaInsumo: {},
-  umbralRepeticionOverride: null,
+  coberturaMinimaPorComida: null,
+  gruposObligatorios: ['adulto'],
 };
 
 const composicionVacia: ProveedorComposicion = {
@@ -49,7 +29,7 @@ const composicionVacia: ProveedorComposicion = {
 
 const ids = { nuevo: () => 'id_de_prueba' };
 
-describe('contrato del motor nutricional', () => {
+describe('contrato del motor nutricional (menu firmado)', () => {
   it('rechaza ReglasMotor ausente', () => {
     expect(() => validarReglas(null)).toThrow(ContratoInvalido);
   });
@@ -63,8 +43,18 @@ describe('contrato del motor nutricional', () => {
     }
     expect(error).toBeInstanceOf(ContratoInvalido);
     expect(error?.campos).toContain('version');
-    expect(error?.campos).toContain('umbralDeficit');
-    expect(error?.campos).toContain('pesos.energia');
+    expect(error?.campos).toContain('toleranciaPorcion');
+    expect(error?.campos).toContain('coberturaMinimaPorComida');
+  });
+
+  it('rechaza una lista de grupos obligatorios vacia', () => {
+    let error: ContratoInvalido | null = null;
+    try {
+      validarReglas({ ...reglasVacias, gruposObligatorios: [] });
+    } catch (e) {
+      error = e as ContratoInvalido;
+    }
+    expect(error?.campos).toContain('gruposObligatorios');
   });
 
   it('no construye un Contexto con reglas incompletas', () => {

@@ -1,37 +1,29 @@
 import type {
   Contexto,
-  NutrienteId,
+  GrupoEtario,
   ProveedorComposicion,
   ReglasMotor,
-  TipoServicio,
 } from './contrato.js';
 import { ContratoInvalido } from './errors.js';
 
-export const TIPOS_SERVICIO: readonly TipoServicio[] = [
-  'desayuno',
-  'almuerzo',
-  'cena',
-  'refaccion',
-  'unico',
-];
-
-export const NUTRIENTES: readonly NutrienteId[] = [
-  'energia',
-  'proteina',
-  'hierro',
-  'zinc',
-  'vitaminaA',
-  'folato',
-  'vitaminaB12',
-  'calcio',
+export const GRUPOS_ETARIOS: readonly GrupoEtario[] = [
+  'menor_6m',
+  'lactante_6_23m',
+  'menor_5',
+  'escolar',
+  'adolescente',
+  'adulto',
+  'adulto_mayor',
+  'gestante',
+  'lactante_materna',
 ];
 
 function esNumero(valor: unknown): valor is number {
   return typeof valor === 'number' && Number.isFinite(valor);
 }
 
-function esEnteroPositivo(valor: unknown): valor is number {
-  return esNumero(valor) && Number.isInteger(valor) && valor >= 1;
+function esEnteroNoNegativo(valor: unknown): valor is number {
+  return esNumero(valor) && Number.isInteger(valor) && valor >= 0;
 }
 
 /**
@@ -49,23 +41,30 @@ export function validarReglas(reglas: ReglasMotor | null | undefined): void {
     faltan.push('version');
   }
 
-  for (const tipo of TIPOS_SERVICIO) {
-    const valor = reglas.coberturaDia?.[tipo];
-    if (!esNumero(valor) || valor <= 0 || valor > 1) {
-      faltan.push(`coberturaDia.${tipo}`);
+  if (!esNumero(reglas.toleranciaPorcion) || reglas.toleranciaPorcion < 0 || reglas.toleranciaPorcion > 1) {
+    faltan.push('toleranciaPorcion');
+  }
+
+  if (!esNumero(reglas.umbralDesvioPorcion) || reglas.umbralDesvioPorcion < 0) {
+    faltan.push('umbralDesvioPorcion');
+  }
+
+  if (!esEnteroNoNegativo(reglas.maxSustitucionesPorPlato)) {
+    faltan.push('maxSustitucionesPorPlato');
+  }
+
+  if (!esEnteroNoNegativo(reglas.maxPlatosPorMomento) || reglas.maxPlatosPorMomento < 1) {
+    faltan.push('maxPlatosPorMomento');
+  }
+
+  if (reglas.frecuenciaMaxima === null || typeof reglas.frecuenciaMaxima !== 'object') {
+    faltan.push('frecuenciaMaxima');
+  } else {
+    for (const [insumo, veces] of Object.entries(reglas.frecuenciaMaxima)) {
+      if (!esNumero(veces) || veces < 0) {
+        faltan.push(`frecuenciaMaxima.${insumo}`);
+      }
     }
-  }
-
-  if (
-    !esNumero(reglas.coberturaHierroComidaPrincipal) ||
-    reglas.coberturaHierroComidaPrincipal < 0 ||
-    reglas.coberturaHierroComidaPrincipal > 1
-  ) {
-    faltan.push('coberturaHierroComidaPrincipal');
-  }
-
-  if (!esNumero(reglas.umbralDeficit) || reglas.umbralDeficit < 0) {
-    faltan.push('umbralDeficit');
   }
 
   const severidad = reglas.umbralesSeveridad;
@@ -76,68 +75,22 @@ export function validarReglas(reglas: ReglasMotor | null | undefined): void {
     }
   }
 
-  for (const nutriente of NUTRIENTES) {
-    const peso = reglas.pesos?.[nutriente];
-    if (!esNumero(peso) || peso < 0) {
-      faltan.push(`pesos.${nutriente}`);
-    }
+  if (
+    !esNumero(reglas.coberturaMinimaPorComida) ||
+    reglas.coberturaMinimaPorComida < 0 ||
+    reglas.coberturaMinimaPorComida > 1
+  ) {
+    faltan.push('coberturaMinimaPorComida');
   }
 
-  if (!Array.isArray(reglas.topesDePuntaje)) {
-    faltan.push('topesDePuntaje');
+  if (!Array.isArray(reglas.gruposObligatorios) || reglas.gruposObligatorios.length === 0) {
+    faltan.push('gruposObligatorios');
   } else {
-    reglas.topesDePuntaje.forEach((tope, i) => {
-      if (typeof tope?.si !== 'string' || tope.si.trim() === '' || !esNumero(tope.entonces)) {
-        faltan.push(`topesDePuntaje[${i}]`);
+    reglas.gruposObligatorios.forEach((grupo, i) => {
+      if (!GRUPOS_ETARIOS.includes(grupo)) {
+        faltan.push(`gruposObligatorios[${i}]`);
       }
     });
-  }
-
-  if (!Array.isArray(reglas.bandasVeredicto) || reglas.bandasVeredicto.length === 0) {
-    faltan.push('bandasVeredicto');
-  } else {
-    reglas.bandasVeredicto.forEach((banda, i) => {
-      const veredictosValidos = ['apto', 'deficit', 'insuficiente_datos'];
-      if (!esNumero(banda?.min) || !veredictosValidos.includes(banda.veredicto)) {
-        faltan.push(`bandasVeredicto[${i}]`);
-      }
-    });
-  }
-
-  if (!esNumero(reglas.factorObjetivoAnemia) || reglas.factorObjetivoAnemia < 0) {
-    faltan.push('factorObjetivoAnemia');
-  }
-
-  if (!esEnteroPositivo(reglas.maxSugerencias)) {
-    faltan.push('maxSugerencias');
-  }
-
-  if (!esEnteroPositivo(reglas.maxNutrientesAAjustar)) {
-    faltan.push('maxNutrientesAAjustar');
-  }
-
-  if (!Array.isArray(reglas.escalonesGramos) || reglas.escalonesGramos.length === 0) {
-    faltan.push('escalonesGramos');
-  } else {
-    reglas.escalonesGramos.forEach((gramos, i) => {
-      if (!esNumero(gramos) || gramos <= 0) {
-        faltan.push(`escalonesGramos[${i}]`);
-      }
-    });
-  }
-
-  if (reglas.maxFrecuenciaInsumo === null || typeof reglas.maxFrecuenciaInsumo !== 'object') {
-    faltan.push('maxFrecuenciaInsumo');
-  } else {
-    for (const [insumo, veces] of Object.entries(reglas.maxFrecuenciaInsumo)) {
-      if (!esNumero(veces) || veces < 0) {
-        faltan.push(`maxFrecuenciaInsumo.${insumo}`);
-      }
-    }
-  }
-
-  if (!esNumero(reglas.umbralRepeticionOverride) || reglas.umbralRepeticionOverride < 0) {
-    faltan.push('umbralRepeticionOverride');
   }
 
   if (faltan.length > 0) {

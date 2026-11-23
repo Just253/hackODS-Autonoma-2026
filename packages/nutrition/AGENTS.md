@@ -3,64 +3,60 @@
 El motor nutricional como **contrato de interfaces**, no como tabla de valores. TypeScript puro.
 **Este paquete no contiene ninguna cifra nutricional.**
 
-Decisión vigente (2026-11-23): la investigación de alimentos, las tablas de composición y los valores
-los hace una persona con otros agentes. Acá viven las interfaces, las reglas y el veredicto.
+Decisión vigente (`docs/DECISIONES.md` D3, manda sobre `docs/contracts/nutricion.md`):
+la unidad de verdad es el **menú semanal firmado por nutricionista** y la **porción por grupo**.
+El sistema **no prescribe dietas ni calcula requerimientos individuales**.
 
 ## Qué es de este paquete
 
-- `src/contrato.ts` — `ProveedorComposicion`, `ProveedorRequerimientos`, `ReglasMotor`, `Veredicto`.
-- `src/motor.ts` — el flujo: ingredientes → proveedor → totales → veredicto.
-- `src/reglas.ts` — configuración con **`[valor a confirmar]`**, nunca números inventados.
-- `fixtures/` — 5 casos JSON con valores `null` y el marcador `[valor a confirmar]`.
-- Overrides inmutables: motivo + autor + hash chain.
+- `src/contrato.ts` — `MenuSemanal`, `SelloMenu`, `PlatoMenu`, `Porcion`, `Restriccion`,
+  `SustitucionAprobada`, `ReglasMotor`, `Contexto`, `ResultadoValidacion`.
+- `src/reglas.ts` — `validarReglas()` y `crearContexto()`. Un umbral faltante lanza
+  `ContratoInvalido` con la lista de campos; nunca se convierte en `0`.
+- `src/menu.ts` — las cuatro funciones del contrato:
+  - `validarMenu(menu, restricciones, ctx)`
+  - `porcionParaGrupo(grupo, porcionBase, ctx)`
+  - `sustituirInsumo(plato, origenId, sustituciones, ctx)`
+  - `explicar(resultado, audiencia, ctx)`
+- Overrides/validaciones inmutables: motivo + autor + versión + hash.
 
 ## Qué NO es de este paquete
 
+- `calcularRacion(persona)` ni requerimientos por persona: **retirado** (D3).
 - Tablas de composición, CSV de alimentos, kcal/proteínas/hierro hardcodeados, "valores típicos".
 - Investigación de alimentos o búsqueda de fuentes: no es una tarea de este repo.
 - Consejo médico, dietas, diagnósticos.
 - UI, precios, costos (eso es `domain` / `apps/web`).
 - Completar un `null` con un promedio "razonable". El `null` viaja hasta la UI.
 
-## Contrato mínimo
+## Menú firmado
 
-```ts
-export type Veredicto = 'apto' | 'deficit' | 'insuficiente_datos';
+- 2 perfiles × 2 opciones, 7 días, almuerzo y cena.
+- Estados: `borrador → en_revision → aprobado → publicado → retirado`.
+- Un menú `aprobado`/`publicado` sin sello es inválido:
+  `{ nutricionista, cnp, fecha, version, hash }` y el hash SHA-256 debe coincidir
+  con el contenido calculado por el motor.
+- El sello lo emite una persona (nutricionista con CNP), nunca un modelo.
+- Sustituciones: **solo** las aprobadas en la plantilla, con factor. Nada de equivalencias
+  inventadas ni "parecidos razonables".
 
-export interface ProveedorComposicion {
-  // null = el proveedor no tiene el dato. El motor NO lo estima.
-  porIngrediente(ingredienteId: string, gramos: number): Promise<Composicion | null>;
-}
+## Porción por grupo
 
-export interface ProveedorRequerimientos {
-  para(poblacion: Poblacion): Promise<Requerimientos | null>;
-}
+- La porción la define el nutricionista para cada grupo etario (edad/condición).
+- `porcionParaGrupo` aplica el factor configurado en `ReglasMotor`; no recalcula requerimientos.
+- `menor_6m` no recibe ración: el resultado lo declara no resoluble y deriva a lactancia
+  materna exclusiva.
+- Alergia = veto absoluto de insumo, sugerencia y sustitución.
 
-export interface ReglasMotor {
-  // todos los umbrales con [valor a confirmar]; se inyectan, no se escriben acá
-  toleranciaDeficit: number | null;
-  redondeo: { kcal: number; macros: number } | null;
-}
-```
+## Degradación
 
-## Veredicto y degradación
-
-| Situación | Veredicto |
+| Situación | Resultado |
 |---|---|
-| Composición y requerimientos completos, dentro de tolerancia | `apto` |
-| Composición completa, requerimientos completos, fuera de tolerancia | `deficit` |
-| Falta edad o sexo (no se puede elegir población) | `insuficiente_datos` |
-| Falta composición de un ingrediente, o un umbral | degrada: resultado parcial + `faltantes[]`, **no rompe** |
-
-Regla: solo la falta de **edad/sexo** produce `insuficiente_datos`. Cualquier otro faltante degrada el
-resultado y se muestra como parcial. El motor nunca inventa para "llegar" a un veredicto.
-
-## Overrides
-
-- Inmutables y auditables: `{ campo, valor, motivo, autor, timestamp, hash_previo }`.
-- Quién puede: **nutricionista** → veredicto y objetivos; **organizadora** → porciones y alta de
-  alergias. Nadie más.
-- Un override sin motivo no se aplica. La cadena de hashes se verifica en un test.
+| Menú completo y sello válido | `valido: true` |
+| Sello ausente/hash distinto en estado aprobado/publicado | `valido: false` + hallazgo `firma` |
+| Falta porción de un grupo obligatorio | hallazgo `porcion`, cobertura < 1 |
+| Falta composición de un insumo | degrada: `insumosSinDato[]`, no rompe |
+| Falta un umbral de `ReglasMotor` | **lanza `ContratoInvalido`** (no se degrada) |
 
 ## Comandos
 
@@ -71,22 +67,21 @@ pnpm --filter @hackods/nutrition typecheck
 
 ## Cómo se testea
 
-1. Proveedor que devuelve `null` en un ingrediente → resultado parcial con `faltantes[]`, sin excepción.
-2. Población sin edad o sexo → `insuficiente_datos`.
-3. Caso completo con fixture → `apto` o `deficit` según `ReglasMotor`.
-4. Override aplicado → veredicto cambia y la cadena de hash queda válida; override sin motivo → rechazado.
-5. Proveedor que lanza error → el motor devuelve parcial, no un 500.
-6. Los fixtures validan como JSON y **no contienen números nutricionales** (solo `null` y
-   `[valor a confirmar]`).
+1. `ReglasMotor` con valores `null` → `ContratoInvalido` y campos faltantes listados.
+2. `gruposObligatorios` vacío → `ContratoInvalido`.
+3. Menú `aprobado` sin sello → `valido: false` (cuando se implemente M3).
+4. `porcionParaGrupo` nunca devuelve `cantidad <= 0` ni una unidad distinta de la firmada.
+5. Los fixtures validan como JSON y **no contienen números nutricionales**.
 
 ## Reglas locales
 
-1. **Cero cifras en el repo.** Si un PR agrega una kcal, una tabla o un "valor de referencia", se
-   rechaza: no es la frontera de este paquete.
+1. **Cero cifras en el repo.** Si un PR agrega una kcal, una tabla o un "valor de referencia",
+   se rechaza: no es la frontera de este paquete.
 2. Todo umbral va en `ReglasMotor` con `[valor a confirmar]` hasta que una persona lo confirme.
 3. Los proveedores se inyectan; el paquete no hace red ni lee archivos.
 4. Nada de `any`. Los `null` son parte del tipo, no un error.
-5. Los nombres de campos van en inglés; los motivos de override, en español.
+5. Los nombres de campos van en inglés; los motivos, en español.
+6. El **75 °C** es checklist de inocuidad del servicio, no un cálculo de este paquete.
 
 ## Dueño y revisión
 

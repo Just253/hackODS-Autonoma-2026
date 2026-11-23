@@ -1,9 +1,12 @@
 /**
- * Contrato del motor nutricional (docs/contracts/nutricion.md).
+ * Contrato del motor nutricional (docs/contracts/nutricion.md + docs/DECISIONES.md D3).
  *
- * ESTE PAQUETE NO CONTIENE VALORES NUTRICIONALES. Ni una kcal, ni un mg, ni un umbral.
- * Todo valor entra inyectado por `ProveedorComposicion`, `ProveedorRequerimientos` y
- * `ReglasMotor`; lo que todavia no tiene fuente se marca `null` = [valor a confirmar].
+ * La unidad de verdad es el MENU SEMANAL FIRMADO POR NUTRICIONISTA y la PORCION POR GRUPO.
+ * El sistema no prescribe dietas ni calcula requerimientos individuales.
+ *
+ * ESTE PAQUETE NO CONTIENE VALORES NUTRICIONALES: ni una kcal, ni un mg, ni un umbral.
+ * Todo valor entra inyectado por `ReglasMotor` y `ProveedorComposicion`; lo que no tiene
+ * fuente se marca `null` = [valor a confirmar].
  */
 
 export type NutrienteId =
@@ -16,8 +19,6 @@ export type NutrienteId =
   | 'vitaminaB12'
   | 'calcio';
 
-export type FactorAbsorcionId = 'vitaminaC' | 'fitato' | 'tanino' | 'hemo';
-
 export type Unidad =
   | 'g'
   | 'kg'
@@ -28,33 +29,6 @@ export type Unidad =
   | 'cucharón'
   | 'atado'
   | 'lata';
-
-export type Sexo = 'F' | 'M' | 'X';
-export type Actividad = 'ligera' | 'moderada' | 'intensa';
-
-export type DietaEspecial =
-  | 'vegetariana'
-  | 'vegana'
-  | 'sin_lactosa'
-  | 'sin_gluten'
-  | 'bajo_sodio'
-  | 'sin_cerdo'
-  | 'sin_pescado'
-  | 'sin_huevo';
-
-export type Condicion =
-  | 'menor_6m'
-  | 'lactante_6_23m'
-  | 'menor_5'
-  | 'escolar'
-  | 'adolescente'
-  | 'adulto'
-  | 'adulto_mayor'
-  | 'discapacidad_masticacion'
-  | 'requiere_derivacion';
-
-export type Veredicto = 'apto' | 'deficit' | 'insuficiente_datos';
-export type Severidad = 'critico' | 'alto' | 'moderado';
 
 export type GrupoEtario =
   | 'menor_6m'
@@ -67,45 +41,21 @@ export type GrupoEtario =
   | 'gestante'
   | 'lactante_materna';
 
-export type TipoServicio = 'desayuno' | 'almuerzo' | 'cena' | 'refaccion' | 'unico';
-export type ModoReparto = 'igual' | 'diferenciado';
-export type Tecnica = 'hervido' | 'guisado' | 'frito' | 'plancha' | 'al_vapor' | 'crudo';
-
-export interface Gestacion {
-  readonly trimestre: 1 | 2 | 3;
-  readonly semanas: number | null;
-  readonly controlPrenatal: boolean | null;
-}
-
-export interface EstadoAnemia {
-  /** Solo true si lo informo personal de salud. El motor NO diagnostica. */
-  readonly diagnosticada: boolean;
-  /** Dato clinico: vista tecnica, nunca el veredicto publico. */
-  readonly hemoglobinaGdL: number | null;
-  readonly altitudMetros: number | null;
-  readonly fechaDiagnostico: string | null;
-}
-
-export interface Persona {
-  readonly id: string;
-  /** Unica entrada obligatoria del calculo. */
-  readonly edadMeses: number;
-  readonly sexo: Sexo;
-  readonly pesoKg: number | null;
-  readonly tallaCm: number | null;
-  readonly actividad: Actividad;
-  readonly gestacion: Gestacion | null;
-  readonly lactancia: 'exclusiva' | 'predominante' | 'mixta' | 'no' | null;
-  readonly anemia: EstadoAnemia | null;
-  readonly alergias: readonly string[];
-  readonly dietas: readonly DietaEspecial[];
-  readonly condiciones: readonly Condicion[];
-  readonly notas: string | null;
-}
+export type EstadoMenu = 'borrador' | 'en_revision' | 'aprobado' | 'publicado' | 'retirado';
+export type MomentoMenu = 'almuerzo' | 'cena';
+export type Severidad = 'critico' | 'alto' | 'moderado';
+export type DietaEspecial =
+  | 'vegetariana'
+  | 'vegana'
+  | 'sin_lactosa'
+  | 'sin_gluten'
+  | 'bajo_sodio'
+  | 'sin_cerdo'
+  | 'sin_pescado'
+  | 'sin_huevo';
 
 export interface Insumo {
   readonly id: string;
-  readonly nombre: string;
   readonly grupo:
     | 'cereal'
     | 'menestra'
@@ -132,79 +82,89 @@ export interface Insumo {
   readonly alergenos: readonly string[];
   readonly esPerecedero: boolean;
   readonly vidaUtilDias: number | null;
-  readonly notas: string | null;
 }
 
-export interface IngredienteReceta {
-  readonly insumoId: string;
-  /** Gramos de porcion comestible cruda. */
-  readonly gramos: number;
-  readonly captura: { readonly cantidad: number; readonly unidad: Unidad } | null;
-}
-
-export interface Receta {
-  readonly id: string;
-  readonly nombre: string;
-  readonly ingredientes: readonly IngredienteReceta[];
-  readonly porcionesBase: number;
-  readonly rendimientoCocidoG: number | null;
-  readonly tecnicas: readonly Tecnica[];
-  readonly version: number;
-}
-
-export interface Servicio {
-  readonly id: string;
-  readonly ollaId: string;
+/** Sello obligatorio del menu aprobado. */
+export interface SelloMenu {
+  readonly nutricionista: string;
+  readonly cnp: string;
   readonly fecha: string;
-  readonly tipo: TipoServicio;
-  readonly recetaId: string;
-  readonly comensales: readonly { readonly personaId: string; readonly presente: boolean }[];
-  /** Fraccion del dia (0..1]. null = default de reglas por `tipo`. */
-  readonly coberturaDia: number | null;
-  readonly comidaPrincipal: boolean | null;
-  readonly modoReparto: ModoReparto;
-  readonly bebidas: readonly {
-    readonly tipo: 'te' | 'cafe' | 'mate' | 'jugo' | 'agua' | 'otro';
-    readonly conComida: boolean;
-  }[];
+  readonly version: number;
+  /** SHA-256 del contenido del menu (hex). */
+  readonly hash: string;
 }
 
-export interface ExistenciaDespensa {
+export interface IngredienteMenu {
   readonly insumoId: string;
-  readonly gramosDisponibles: number;
-  readonly gramosReservados: number;
-  readonly venceEn: string | null;
-  readonly costoPorKg: number | null;
+  /** Gramos de porcion comestible cruda. null = sin cantidad (degrada). */
+  readonly gramos: number | null;
+  readonly unidad: Unidad;
 }
 
-export interface Despensa {
-  readonly ollaId: string;
-  readonly actualizadaEn: string;
-  readonly existencias: readonly ExistenciaDespensa[];
+/** Porcion base del plato y ajuste por grupo etario. */
+export interface Porcion {
+  readonly grupo: GrupoEtario;
+  readonly cantidad: number;
+  readonly unidad: Unidad;
+}
+
+export interface PlatoMenu {
+  readonly id: string;
+  readonly momento: MomentoMenu;
+  readonly titulo: string;
+  readonly ingredientes: readonly IngredienteMenu[];
+  /** Porcion definida por el nutricionista para cada grupo. */
+  readonly porciones: readonly Porcion[];
+}
+
+export interface MenuDia {
+  readonly diaSemana: 1 | 2 | 3 | 4 | 5 | 6 | 7;
+  readonly fecha: string | null;
+  readonly platos: readonly PlatoMenu[];
+}
+
+/** Menu semanal: 2 perfiles x 2 opciones, 7 dias, almuerzo y cena. */
+export interface MenuSemanal {
+  readonly id: string;
+  readonly ollaId: string | null;
+  readonly perfil: 'general' | 'especial';
+  readonly opcion: 'A' | 'B';
+  readonly estado: EstadoMenu;
+  readonly sello: SelloMenu | null;
+  readonly dias: readonly MenuDia[];
+  readonly version: number;
+  readonly hash: string;
+}
+
+export type TipoRestriccion = 'alergia' | 'dieta' | 'frecuencia' | 'inocuidad' | 'otro';
+
+export interface Restriccion {
+  readonly id: string;
+  readonly tipo: TipoRestriccion;
+  readonly valor: string;
+  readonly motivo: string | null;
+}
+
+export interface SustitucionAprobada {
+  readonly id: string;
+  readonly insumoOrigenId: string;
+  readonly insumoDestinoId: string;
+  /** Gramos destino = gramos origen x factor. */
+  readonly factor: number;
+  readonly aprobadaPor: string;
 }
 
 export interface AporteNutrientes {
   /** Clave presente = valor conocido. Clave ausente = sin dato (NO es 0). */
   readonly valores: Readonly<Partial<Record<NutrienteId, number>>>;
-  readonly factores?: Readonly<Partial<Record<FactorAbsorcionId, number>>>;
 }
 
+/** Se usa para explicar/informar; no para prescribir requerimientos individuales. */
 export interface ProveedorComposicion {
   readonly tablaId: string;
   readonly version: string;
-  /** Aporte de `gramos` de porcion comestible cruda. null = insumo sin dato. */
   aporte(insumoId: string, gramos: number): AporteNutrientes | null;
-  /** Factor de retencion por tecnica. 1 si no hay dato. */
-  retencion(nutriente: NutrienteId, tecnica: Tecnica): number;
-}
-
-export interface ProveedorRequerimientos {
-  readonly tablaId: string;
-  readonly version: string;
-  /** Requerimiento diario por persona. Claves ausentes = sin dato. */
-  requerimiento(p: Persona, ctx: Contexto): AporteNutrientes;
-  /** Peso de referencia sin balanza. null = sin dato. */
-  pesoReferencia(edadMeses: number, sexo: Sexo): number | null;
+  retencion(nutriente: NutrienteId, tecnica: 'hervido' | 'guisado' | 'frito' | 'plancha' | 'al_vapor' | 'crudo'): number;
 }
 
 /**
@@ -214,26 +174,23 @@ export interface ProveedorRequerimientos {
  */
 export interface ReglasMotor {
   readonly version: string;
-  readonly coberturaDia: Readonly<Record<TipoServicio, number | null>>;
-  readonly coberturaHierroComidaPrincipal: number | null;
-  readonly umbralDeficit: number | null;
+  /** Fraccion de tolerancia al comparar la porcion servida con la firmada. */
+  readonly toleranciaPorcion: number | null;
+  /** Desvio absoluto (en gramos) que dispara hallazgo. */
+  readonly umbralDesvioPorcion: number | null;
+  readonly maxSustitucionesPorPlato: number | null;
+  readonly maxPlatosPorMomento: number | null;
+  /** insumoId -> veces por semana. */
+  readonly frecuenciaMaxima: Readonly<Record<string, number | null>>;
   readonly umbralesSeveridad: {
     readonly critico: number | null;
     readonly alto: number | null;
     readonly moderado: number | null;
   };
-  readonly pesos: Readonly<Record<NutrienteId, number | null>>;
-  readonly topesDePuntaje: readonly { readonly si: string; readonly entonces: number | null }[];
-  readonly bandasVeredicto: readonly {
-    readonly min: number | null;
-    readonly veredicto: Veredicto;
-  }[];
-  readonly factorObjetivoAnemia: number | null;
-  readonly maxSugerencias: number | null;
-  readonly maxNutrientesAAjustar: number | null;
-  readonly escalonesGramos: readonly (number | null)[];
-  readonly maxFrecuenciaInsumo: Readonly<Record<string, number | null>>;
-  readonly umbralRepeticionOverride: number | null;
+  /** Cobertura minima que debe declarar el menu validado. null = [a confirmar]. */
+  readonly coberturaMinimaPorComida: number | null;
+  /** Grupos que el menu debe cubrir; estructura, no valor nutricional. */
+  readonly gruposObligatorios: readonly GrupoEtario[];
 }
 
 /** Contexto explicito: nada de estado global, nada de Date.now(). */
@@ -247,45 +204,19 @@ export interface Contexto {
   readonly ids: { nuevo(): string };
 }
 
-export interface Hallazgo {
-  readonly nutriente: NutrienteId;
+export interface HallazgoMenu {
+  readonly tipo: 'alergia' | 'dieta' | 'frecuencia' | 'porcion' | 'firma' | 'inocuidad';
   readonly severidad: Severidad;
-  /** Cantidad de personas bajo el objetivo. Nunca nombres. */
-  readonly personasAfectadas: number;
-  readonly grupos: readonly GrupoEtario[];
-  readonly ratio: number | null;
+  readonly platoId: string | null;
+  readonly insumoId: string | null;
+  /** Frase legible; el motor no decide la presentacion final. */
+  readonly mensaje: string;
+  /** Detalle numerico solo para la vista tecnica. */
   readonly tecnico: {
-    readonly objetivo: number;
-    readonly aporte: number;
+    readonly esperado: number | null;
+    readonly observado: number | null;
     readonly unidad: string;
-    readonly factoresAplicados: readonly string[];
   } | null;
-}
-
-export interface Sugerencia {
-  readonly id: string;
-  readonly insumoId: string;
-  readonly nombreInsumo: string;
-  readonly cantidad: number;
-  readonly unidad: Unidad;
-  readonly paraNutriente: NutrienteId;
-  readonly razon: string;
-  readonly enDespensa: boolean;
-  /** Siempre true: lo vetado (alergia/dieta) no se devuelve. */
-  readonly compatible: true;
-  readonly deltaPuntaje: number | null;
-}
-
-export interface DesglosePuntaje {
-  readonly nutriente: NutrienteId;
-  readonly peso: number;
-  readonly ratio: number | null;
-  readonly aporte: number;
-}
-
-export interface CamposFaltante {
-  readonly campo: string;
-  readonly motivo: 'requerido' | 'sin_dato_en_tabla' | 'fuera_de_rango';
 }
 
 export interface TextoExplicativo {
@@ -298,70 +229,44 @@ export interface TextoExplicativo {
   readonly nivelTecnico: boolean;
 }
 
-export interface ResultadoEvaluacion {
-  readonly servicioId: string;
-  readonly veredicto: Veredicto;
-  readonly puntaje: number | null;
-  readonly desglose: readonly DesglosePuntaje[];
-  readonly hallazgos: readonly Hallazgo[];
-  readonly grupos: readonly {
-    readonly grupo: GrupoEtario;
-    readonly personas: number;
-    readonly ratios: Readonly<Partial<Record<NutrienteId, number | null>>>;
-  }[];
+export interface ResultadoValidacion {
+  readonly menuId: string;
+  readonly valido: boolean;
+  readonly selloValido: boolean;
+  /** Hash recalculado por el motor sobre el contenido recibido. */
+  readonly hashCalculado: string;
+  readonly hallazgos: readonly HallazgoMenu[];
+  /** 0..1: proporcion de pares plato×grupo con porcion declarada. */
   readonly coberturaDatos: number;
+  readonly platosSinPorcion: readonly string[];
   readonly insumosSinDato: readonly string[];
-  readonly insumosSinCantidad: readonly string[];
-  readonly recetaIncompleta: boolean;
-  readonly sinDespensa: boolean;
-  readonly estimaciones: readonly (
-    | 'peso_por_edad'
-    | 'sexo_no_declarado'
-    | 'rendimiento_no_pesado'
-    | 'sin_balanza'
-  )[];
-  readonly confianza: number;
   readonly trazabilidad: {
     readonly motorVersion: string;
     readonly reglasVersion: string;
     readonly composicionVersion: string;
-    readonly requerimientosVersion: string;
-    readonly inputsHash: string;
+    readonly menuVersion: number;
     readonly calculadoEn: string;
   };
-  readonly camposFaltantes: readonly CamposFaltante[];
   readonly explicacion: TextoExplicativo;
 }
 
-export interface ResultadoSugerencias {
-  readonly servicioId: string;
-  readonly sugerencias: readonly Sugerencia[];
-  readonly noResoluble: readonly {
-    readonly hallazgo: NutrienteId;
-    readonly motivo: 'sin_stock' | 'alergia' | 'dieta' | 'sin_insumo_adecuado';
-  }[];
-  readonly recetaPropuesta: Receta | null;
-  readonly puntajeEstimado: number | null;
-}
-
-export interface SolicitudItem {
-  readonly insumoId: string;
+export interface PorcionAjustada {
+  readonly grupo: GrupoEtario;
   readonly cantidad: number;
   readonly unidad: Unidad;
-  readonly presentacion: string | null;
-  readonly paraNutriente: NutrienteId;
-  readonly cubreFraccion: number;
+  /** 1 = sin ajuste. El ajuste por grupo nunca inventa equivalencias. */
+  readonly factorAplicado: number;
+  readonly motivo: string;
 }
 
-export interface ResultadoSolicitud {
-  readonly deficitDe: readonly { readonly nutriente: NutrienteId; readonly cantidad: number }[];
-  readonly items: readonly SolicitudItem[];
-  readonly cubreTotal: number;
-  readonly destinatarios: readonly {
-    readonly ollaId: string;
-    readonly items: readonly string[];
-    readonly mensaje: string;
-  }[];
-  readonly prioridad: readonly { readonly personaId: string; readonly motivo: string }[];
-  readonly parcial: boolean;
+export interface ResultadoSustitucion {
+  readonly platoId: string;
+  readonly insumoOrigenId: string;
+  readonly insumoDestinoId: string;
+  readonly factor: number;
+  readonly gramosOrigen: number | null;
+  readonly gramosDestino: number | null;
+  /** Siempre true: solo se devuelven sustituciones aprobadas en la plantilla. */
+  readonly aprobada: true;
+  readonly explicacion: TextoExplicativo;
 }
