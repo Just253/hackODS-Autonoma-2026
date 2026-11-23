@@ -1,0 +1,50 @@
+{
+  "meta": {
+    "proposito": "Stress set: productos vecinos lexicos que un catalogo real de olla comun tendria, para medir cuanto se degrada el embedding cuando el catalogo pasa de 21 a 36 productos.",
+    "uso": "Se fusiona con dataset.json (catalogo + catalogo_vecinos, items + items_vecinos). Todo ficticio."
+  },
+  "catalogo_vecinos": [
+    { "id": "papa_huayro", "nombre": "papa huayro", "categoria": "tuberculos", "unidad_base": "kg", "alias": ["papa huayro andina"] },
+    { "id": "camote", "nombre": "camote amarillo", "categoria": "tuberculos", "unidad_base": "kg", "alias": ["camote"] },
+    { "id": "cebolla_china", "nombre": "cebolla china", "categoria": "verduras", "unidad_base": "kg", "alias": ["cebolla de verdeo"] },
+    { "id": "pallar", "nombre": "pallar", "categoria": "menestras", "unidad_base": "kg", "alias": ["pallar costeno", "pallar grande"] },
+    { "id": "garbanzo", "nombre": "garbanzo", "categoria": "menestras", "unidad_base": "kg", "alias": ["garbanzo seco"] },
+    { "id": "aceite_oliva", "nombre": "aceite de oliva", "categoria": "aceites", "unidad_base": "L", "alias": ["aceite oliva extra virgen"] },
+    { "id": "atun", "nombre": "atun en aceite", "categoria": "abarrotes", "unidad_base": "unidad", "alias": ["atun lata", "conserva de atun"] },
+    { "id": "azucar_blanca", "nombre": "azucar blanca", "categoria": "abarrotes", "unidad_base": "kg", "alias": ["azucar refinada"] },
+    { "id": "sal_marina", "nombre": "sal marina", "categoria": "abarrotes", "unidad_base": "kg", "alias": ["sal de mar"] },
+    { "id": "fideos_cabello", "nombre": "fideos cabello de angel", "categoria": "cereales", "unidad_base": "kg", "alias": ["fideo cabello de angel"] },
+    { "id": "queso_mantecoso", "nombre": "queso mantecoso", "categoria": "lacteos", "unidad_base": "kg", "alias": ["queso mantecoso de Cajamarca"] },
+    { "id": "leche_fresca", "nombre": "leche fresca", "categoria": "lacteos", "unidad_base": "L", "alias": ["leche cruda de vaca"] },
+    { "id": "pollo_vivo", "nombre": "pollo vivo", "categoria": "pollo", "unidad_base": "kg", "alias": ["pollo vivo de corral"] },
+    { "id": "higado_pollo", "nombre": "higado de pollo", "categoria": "carnes", "unidad_base": "kg", "alias": ["higadito de pollo"] },
+    { "id": "arroz_anero", "nombre": "arroz anejo", "categoria": "cereales", "unidad_base": "kg", "alias": ["arroz anejo extra"] }
+  ],
+  "items_vecinos": [    { "id": "z01", "texto": "PAPA HUAYRO KG", "esperado": "papa_huayro", "dificil": true, "nota": "vecino de papa blanca/amarilla" },
+    { "id": "z02", "texto": "CAMOTE AMARILLO KG", "esperado": "camote", "dificil": true, "nota": "vecino de papa amarilla" },
+    { "id": "z03", "texto": "CEBOLLA CHINA KG", "esperado": "cebolla_china", "dificil": true, "nota": "vecino de cebolla roja" },
+    { "id": "z04", "texto": "PALLAR KG", "esperado": "pallar", "dificil": true, "nota": "vecino de frijol castilla y lenteja" },
+    { "id": "z05", "texto": "GARBANZO KG", "esperado": "garbanzo", "dificil": true, "nota": "vecino de menestras" },
+    { "id": "z06", "texto": "ACEITE DE OLIVA 1L", "esperado": "aceite_oliva", "dificil": true, "nota": "el plan exige oliva != vegetal" },
+    { "id": "z07", "texto": "ATUN EN ACEITE 170G", "esperado": "atun", "dificil": true, "nota": "atun en aceite: la palabra aceite confunde" },
+    { "id": "z08", "texto": "AZUCAR BLANCA 1K", "esperado": "azucar_blanca", "dificil": true, "nota": "rubia != blanca" },
+    { "id": "z09", "texto": "SAL MARINA 1K", "esperado": "sal_marina", "dificil": true, "nota": "sal marina != sal de mesa" },
+    { "id": "z10", "texto": "FIDEOS CABELLO DE ANGEL 1/2 KG", "esperado": "fideos_cabello", "dificil": true, "nota": "vecino de tallarin" },
+    { "id": "z11", "texto": "QUESO MANTECOSO KG", "esperado": "queso_mantecoso", "dificil": true, "nota": "vecino de queso fresco" },
+    { "id": "z12", "texto": "LECHE FRESCA LT", "esperado": "leche_fresca", "dificil": true, "nota": "fresca != evaporada" },
+    { "id": "z13", "texto": "POLLO VIVO KG", "esperado": "pollo_vivo", "dificil": true, "nota": "vivo != beneficiado: ahora SI existe en el catalogo" },
+    { "id": "z14", "texto": "HIGADO DE POLLO KG", "esperado": "higado_pollo", "dificil": true, "nota": "vecino de higado de res" },
+    { "id": "z15", "texto": "ARROZ ANEJO 1K", "esperado": "arroz_anero", "dificil": true, "nota": "vecino de arroz corriente y extra" }
+  ],
+  "items_ocr": [
+    { "id": "o01", "texto": "PAPA BLANCA IRA", "esperado": "papa_blanca", "nota": "1 -> I" },
+    { "id": "o02", "texto": "ACEITE PRIMOR IL", "esperado": "aceite_vegetal", "nota": "1 -> I" },
+    { "id": "o03", "texto": "ARROZ CORRIENTE IK", "esperado": "arroz_corriente", "nota": "1 -> I" },
+    { "id": "o04", "texto": "AZUCAP RUBIA KG", "esperado": "azucar_rubia", "nota": "R -> P" },
+    { "id": "o05", "texto": "ZANAHORIA KG", "esperado": "zanahoria", "nota": "falta una letra" },
+    { "id": "o06", "texto": "SANGRECITA K G", "esperado": "sangrecita", "nota": "espacio intruso" },
+    { "id": "o07", "texto": "FREJOL CASTILLA K6", "esperado": "frijol_castilla", "nota": "G -> 6" },
+    { "id": "o08", "texto": "LECHE EVAP GLORIA 40OG", "esperado": "leche_evaporada", "nota": "0 -> O" },
+    { "id": "o09", "texto": "HUEVO ROSADO KGS", "esperado": "huevo_rosado", "nota": "unidad duplicada" }
+  ]
+}

@@ -1,16 +1,16 @@
 /**
  * Umbrales de clasificacion de productos (docs/contracts/clasificacion.md §4.3).
  *
- * Estos valores son **de arranque**, no una verdad: salen de una calibracion con
- * el set etiquetado de 100 items. Para cambiarlos no se toca codigo: se corre el
- * benchmark y se reemplazan aca. Calibrar con `11-ollama-embeddings.md`.
+ * Calibrados con la medicion real en esta maquina (docs/research/11-ollama-embeddings.md):
+ * bge-m3, 45 items, catalogo de 36, acc@1 100 %. Con tau=0,62 el modelo auto-confirmaba
+ * `POLLO VIVO KG` -> `pollo_beneficiado`; el tau de 100 % de precision medido es 0,69.
  *
  * El umbral es del **modelo**, no del producto: si se cambia de embeddings
  * (por ejemplo bge-m3 1024 dim por embeddinggemma-2 768 dim), hay que recalibrar.
  */
 
 /** Similitud minima del top-1 para sugerencia fuerte. */
-export const TAU = 0.62;
+export const TAU = 0.69;
 
 /** Separacion minima `s1 - s2` para no quedar empatado. */
 export const MARGEN = 0.04;

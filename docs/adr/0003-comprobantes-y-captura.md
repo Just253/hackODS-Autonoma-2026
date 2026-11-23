@@ -21,9 +21,10 @@ mientras que la medición registrada en D8 da `τ=0,69` porque con 0,62 el clasi
    estados son uniones literales. Los bordes validan con zod; el dominio no usa `any`.
 3. **El parser emite `MONTO_SIN_REPARTIR`** (nombre del brief) y conserva `MONTO_COMPARTIDO` en el
    enum como código deprecado. `PRECIO_AMBIGUO` acompaña a `PRECIO_FUERA_DE_RANGO` en T10.
-4. **`TAU=0,62`, `MARGEN=0,04`, `PISO=0,45`** quedan en `clasificacion/config.ts` como valores de
-   arranque, tal como pide la integración. La calibración (D8 sugiere 0,69) se reemplaza en config,
-   no en código: calibrar con `11-ollama-embeddings.md`.
+4. **`TAU=0,69`, `MARGEN=0,04`, `PISO=0,45`** quedan en `clasificacion/config.ts`, calibrados con la
+   medición real de `docs/research/11-ollama-embeddings.md` (bge-m3, acc@1 100 %, 45 ítems). Con 0,62
+   el clasificador auto-confirmaba `POLLO VIVO KG` como `pollo_beneficiado`. Si cambia el modelo, se
+   recalibra en config, no en código.
 5. **Presentación sin equivalencia**: "tres bolsas" se expresa como `3000` milésimas de la
    presentación con `unidadBase = null`; el dinero cuenta y la serie de precios no.
 6. El precio unitario derivado se expresa **por unidad base** (docena = 12 unidad ⇒ S/ 0,43/unidad).

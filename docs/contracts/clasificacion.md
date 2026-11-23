@@ -577,7 +577,7 @@ s1 < piso                             → desconocido
 3. Elegir el punto con **precisión ≥ 0,95** y la **menor tasa de revisión**.
 4. Reportar el resultado en el set de test de 40, una sola vez.
 
-**Valores de arranque (🔶 estimados, no medidos):** `τ = 0,62`, `margen = 0,04`, `piso = 0,45`. Se usan para la primera corrida y **se reemplazan** por los calibrados. Si el catálogo usa `embeddinggemma-2` (768 dim) los valores cambian: **el umbral es del modelo, no del producto**.
+**Valores calibrados (medidos):** `τ = 0,69`, `margen = 0,04`, `piso = 0,45`, normalización **nivel 3**. Medición real: `bge-m3`, 45 ítems, catálogo de 36, acc@1 100 %; con 0,62 el sistema auto-confirmaba `POLLO VIVO KG` → `pollo_beneficiado`. Fuente: `docs/research/11-ollama-embeddings.md`. Si el catálogo usa `embeddinggemma-2` (768 dim) los valores cambian: **el umbral es del modelo, no del producto**.
 
 **Señales extra que suben la confianza sin costo:**
 
@@ -815,7 +815,7 @@ La inteligencia del pitch no es "la IA acierta siempre": es **"el sistema sabe c
 1. 🔶 **Precisión real de Moondream/Llama Vision en boletas peruanas.** No existe benchmark público. Medir 20 fotos anonimizadas: % de líneas correctas, % de totales correctos, tiempo.
 2. 🔶 **Tokens por imagen.** La ficha no publica cuántos tokens consume una foto. Se asume 2.000; verificar con el campo `usage` de la respuesta y ajustar la cuenta de §2.5.
 3. 🔶 **Latencia de visión (2–8 s).** Medir p50/p95 con 20 llamadas desde la conexión del venue.
-4. 🔶 **Umbrales `τ=0,62`, `margen=0,04`, `piso=0,45`.** Puntos de partida; se reemplazan por los calibrados con el set de 60.
+4. ✅ **Umbrales `τ=0,69`, `margen=0,04`, `piso=0,45`.** Medidos con `bge-m3` en Ollama (acc@1 100 %, 45 ítems, 9 con ruido OCR); recalibrar si cambia el modelo. Fuente: `docs/research/11-ollama-embeddings.md`.
 5. 🔶 **Costo de VPS (US$ 5–12/mes).** No se citó proveedor; verificar precio y región antes de comprometer.
 6. 🔶 **Precio de Cohere y Jina.** Las páginas consultadas no exponen la tarifa en HTML (render dinámico). No se inventan números.
 7. 🔶 **Precio de Google Document AI / Azure Document Intelligence.** Alternativa si la visión de Workers AI no alcanza; verificar antes de usarla.

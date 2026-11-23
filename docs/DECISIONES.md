@@ -69,6 +69,7 @@ Requisito nuevo del usuario: cada olla **sube sus facturas/boletas**, el sistema
 - **Presupuesto**: por olla y período (`monto_asignado`, `gastado`, `comprometido`, `disponible`, `proyección al cierre`, `alertas al 80 % y 100 %`). Compras compartidas y donaciones en especie se registran aparte, con origen explícito.
 - **Reporte entre ollas**: agregados por período y categoría, sin identidad de personas ni de proveedores; cada olla ve su detalle, las demás solo el agregado.
 - **Deduplicación**: mismo comprobante subido dos veces → se detecta por hash de imagen + proveedor + folio + total; no se suma dos veces.
+- **Umbral calibrado (medido, no estimado)**: `τ=0,69`, `margen=0,04`, `piso=0,45`, normalización **nivel 3**. Con `bge-m3` en Ollama: acc@1 100 % en 45 ítems (9 con ruido OCR). Con τ=0,62 el sistema auto-confirmaba `POLLO VIVO KG` → `pollo_beneficiado`. La normalización bajó la revisión de 31,2 % a 6,2 % sin perder accuracy. Fuente: `docs/research/11-ollama-embeddings.md`.
 
 **Referencia implementable (D8):**
 

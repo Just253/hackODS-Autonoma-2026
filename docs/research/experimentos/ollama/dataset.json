@@ -1,0 +1,193 @@
+{
+  "meta": {
+    "proyecto": "hackODS-Autonoma-2026",
+    "proposito": "Set sintetico de boletas peruanas de olla comun para comparar modelos de embeddings de Ollama",
+    "aviso": "TODO ES FICTICIO. Ninguna persona, RUC ni proveedor real. Los nombres imitan abreviaturas observadas en boletas de mercado de abastos.",
+    "diseno": "Los alias del catalogo se eligieron A PROPOSITO para no coincidir literalmente con ningun item: asi el s1 alto viene de la semantica del modelo y no de una igualdad de cadena. Las unicas identidades triviales aparecen en el nivel 4 de normalizacion (reduccion a forma canonica) y el script las cuenta y descuenta.",
+    "umbrales_plan": { "tau": 0.62, "margen": 0.04, "piso": 0.45 },
+    "fecha": "2026-11-23"
+  },
+  "catalogo": [
+    {
+      "id": "jurel",
+      "nombre": "jurel",
+      "categoria": "pescado",
+      "unidad_base": "kg",
+      "alias": ["pescado jurel", "jurel entero"]
+    },
+    {
+      "id": "bonito",
+      "nombre": "bonito",
+      "categoria": "pescado",
+      "unidad_base": "kg",
+      "alias": ["pescado bonito", "bonito entero"]
+    },
+    {
+      "id": "papa_blanca",
+      "nombre": "papa blanca",
+      "categoria": "tuberculos",
+      "unidad_base": "kg",
+      "alias": ["pap blanca", "papa bca"]
+    },
+    {
+      "id": "papa_amarilla",
+      "nombre": "papa amarilla",
+      "categoria": "tuberculos",
+      "unidad_base": "kg",
+      "alias": ["papa amar", "papa amarilla peruana"]
+    },
+    {
+      "id": "arroz_corriente",
+      "nombre": "arroz corriente",
+      "categoria": "cereales",
+      "unidad_base": "kg",
+      "alias": ["arroz corr", "arroz corriente granel"]
+    },
+    {
+      "id": "arroz_extra",
+      "nombre": "arroz extra",
+      "categoria": "cereales",
+      "unidad_base": "kg",
+      "alias": ["arroz extra calidad"]
+    },
+    {
+      "id": "aceite_vegetal",
+      "nombre": "aceite vegetal",
+      "categoria": "aceites",
+      "unidad_base": "L",
+      "alias": ["aceite botella", "aceite comestible"]
+    },
+    {
+      "id": "lenteja",
+      "nombre": "lenteja",
+      "categoria": "menestras",
+      "unidad_base": "kg",
+      "alias": ["lentejas", "lenteja castilla"]
+    },
+    {
+      "id": "frijol_castilla",
+      "nombre": "frijol castilla",
+      "categoria": "menestras",
+      "unidad_base": "kg",
+      "alias": ["frejol castilla", "frj castilla"]
+    },
+    {
+      "id": "huevo_rosado",
+      "nombre": "huevo rosado",
+      "categoria": "huevo",
+      "unidad_base": "kg",
+      "alias": ["huevo pardo", "huevo de gallina"]
+    },
+    {
+      "id": "sangrecita",
+      "nombre": "sangrecita de pollo",
+      "categoria": "pollo",
+      "unidad_base": "kg",
+      "alias": ["sangre de pollo", "sangrecita"]
+    },
+    {
+      "id": "higado_res",
+      "nombre": "higado de res",
+      "categoria": "carnes",
+      "unidad_base": "kg",
+      "alias": ["higado vacuno", "higado de res"]
+    },
+    {
+      "id": "pollo_beneficiado",
+      "nombre": "pollo beneficiado",
+      "categoria": "pollo",
+      "unidad_base": "kg",
+      "alias": ["pollo pelado", "pollo fresco"]
+    },
+    {
+      "id": "leche_evaporada",
+      "nombre": "leche evaporada",
+      "categoria": "lacteos",
+      "unidad_base": "unidad",
+      "alias": ["leche tarro", "leche evaporada tarro"]
+    },
+    {
+      "id": "queso_fresco",
+      "nombre": "queso fresco",
+      "categoria": "lacteos",
+      "unidad_base": "kg",
+      "alias": ["queso andino", "queso fresco de vaca"]
+    },
+    {
+      "id": "azucar_rubia",
+      "nombre": "azucar rubia",
+      "categoria": "abarrotes",
+      "unidad_base": "kg",
+      "alias": ["azucar morena", "azucar rubia saco"]
+    },
+    {
+      "id": "sal",
+      "nombre": "sal",
+      "categoria": "abarrotes",
+      "unidad_base": "kg",
+      "alias": ["sal de mesa", "sal yodada"]
+    },
+    {
+      "id": "fideos_tallarin",
+      "nombre": "fideos tallarin",
+      "categoria": "cereales",
+      "unidad_base": "kg",
+      "alias": ["fideo tallarin", "tallarin"]
+    },
+    {
+      "id": "cebolla_roja",
+      "nombre": "cebolla roja",
+      "categoria": "verduras",
+      "unidad_base": "kg",
+      "alias": ["ceb roja", "cebolla cabeza"]
+    },
+    {
+      "id": "tomate",
+      "nombre": "tomate",
+      "categoria": "verduras",
+      "unidad_base": "kg",
+      "alias": ["tomate santa cruz", "tomate italiano"]
+    },
+    {
+      "id": "zanahoria",
+      "nombre": "zanahoria",
+      "categoria": "verduras",
+      "unidad_base": "kg",
+      "alias": ["zanahoria peruana", "zanah"]
+    }
+  ],
+  "items": [
+    { "id": "q01", "texto": "JUREL KG", "esperado": "jurel", "dificil": false },
+    { "id": "q02", "texto": "JUREL FRESCO KG", "esperado": "jurel", "dificil": false },
+    { "id": "q03", "texto": "BONITO KG", "esperado": "bonito", "dificil": true, "nota": "par dificil: jurel vs bonito" },
+    { "id": "q04", "texto": "BONITO ENT KG", "esperado": "bonito", "dificil": true, "nota": "abreviatura ent + par dificil" },
+    { "id": "q05", "texto": "PAPA BLANCA 1K", "esperado": "papa_blanca", "dificil": false },
+    { "id": "q06", "texto": "PAP. BLANCA 1RA", "esperado": "papa_blanca", "dificil": true, "nota": "abreviatura PAP + ordinal" },
+    { "id": "q07", "texto": "PAPA AMARILLA KG", "esperado": "papa_amarilla", "dificil": true, "nota": "par dificil: blanca vs amarilla" },
+    { "id": "q08", "texto": "PAPA AMAR. SACO", "esperado": "papa_amarilla", "dificil": true, "nota": "abreviatura AMAR + presentacion saco" },
+    { "id": "q09", "texto": "ARROZ CORRIENTE 1K", "esperado": "arroz_corriente", "dificil": false },
+    { "id": "q10", "texto": "ARROZ EXTRA 1K", "esperado": "arroz_extra", "dificil": true, "nota": "par dificil: corriente vs extra" },
+    { "id": "q11", "texto": "ARROZ CORR. SACO 49 KG", "esperado": "arroz_corriente", "dificil": true, "nota": "abreviatura CORR + presentacion" },
+    { "id": "q12", "texto": "ACEITE PRIMOR 1L", "esperado": "aceite_vegetal", "dificil": true, "nota": "marca incluida" },
+    { "id": "q13", "texto": "ACEITE VEGETAL 3L", "esperado": "aceite_vegetal", "dificil": false },
+    { "id": "q14", "texto": "LENTEJA KG", "esperado": "lenteja", "dificil": false },
+    { "id": "q15", "texto": "LENTEJAS 1/2 KG", "esperado": "lenteja", "dificil": false },
+    { "id": "q16", "texto": "HUEVO ROSADO KG", "esperado": "huevo_rosado", "dificil": false },
+    { "id": "q17", "texto": "HUEVOS PARDO KG", "esperado": "huevo_rosado", "dificil": true, "nota": "pardo como alias de rosado" },
+    { "id": "q18", "texto": "SANGRECITA KG", "esperado": "sangrecita", "dificil": false },
+    { "id": "q19", "texto": "HIGADO DE RES KG", "esperado": "higado_res", "dificil": false },
+    { "id": "q20", "texto": "HIGADO RES KG", "esperado": "higado_res", "dificil": false },
+    { "id": "q21", "texto": "LECHE EVAP. GLORIA 400G", "esperado": "leche_evaporada", "dificil": true, "nota": "abreviatura EVAP + marca" },
+    { "id": "q22", "texto": "AZUCAR RUBIA KG", "esperado": "azucar_rubia", "dificil": false },
+    { "id": "q23", "texto": "SAL ECOMUSA 1K", "esperado": "sal", "dificil": true, "nota": "marca de sal como unico diferenciador" },
+    { "id": "q24", "texto": "FIDEOS TALLARIN 1/2 KG", "esperado": "fideos_tallarin", "dificil": false },
+    { "id": "q25", "texto": "FREJOL CASTILLA KG", "esperado": "frijol_castilla", "dificil": true, "nota": "frejol vs frijol" },
+    { "id": "q26", "texto": "CEB. ROJA KG", "esperado": "cebolla_roja", "dificil": true, "nota": "abreviatura CEB" },
+    { "id": "q27", "texto": "TOMATE ITALIANO KG", "esperado": "tomate", "dificil": false },
+    { "id": "q28", "texto": "ZANAH. KG", "esperado": "zanahoria", "dificil": true, "nota": "abreviatura ZANAH" },
+    { "id": "q29", "texto": "QUESO FRESCO KG", "esperado": "queso_fresco", "dificil": false },
+    { "id": "q30", "texto": "POLLO BENEFICIADO KG", "esperado": "pollo_beneficiado", "dificil": false },
+    { "id": "q31", "texto": "POLLO VIVO KG", "esperado": null, "dificil": true, "nota": "trampa: pollo vivo NO es pollo beneficiado; debe ir a revision/desconocido" },
+    { "id": "q32", "texto": "DETERGENTE BOLIVAR 780G", "esperado": null, "dificil": true, "nota": "no alimento: debe caer en desconocido, no forzarse a comida" }
+  ]
+}
