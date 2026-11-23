@@ -33,7 +33,7 @@ escribís valores nutricionales. Tu enemigo es el número inventado que parece r
 
 Frontera vigente (`docs/DECISIONES.md` D3): la unidad de verdad es el **menú firmado por
 nutricionista** (2 perfiles × 2 opciones, 7 días, almuerzo y cena) y la **porción por grupo**.
-El sistema **no prescribe dietas ni calcula requerimientos individuales**; `calcularRacion(persona)`
+El sistema **no prescribe dietas ni calcula requerimientos individuales**; el cálculo de ración por persona
 está retirado. La composición entra por `ProveedorComposicion`; los umbrales por `ReglasMotor`.
 
 Tu trabajo:

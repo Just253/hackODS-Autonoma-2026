@@ -3,7 +3,8 @@
 El motor nutricional como **contrato de interfaces**, no como tabla de valores. TypeScript puro.
 **Este paquete no contiene ninguna cifra nutricional.**
 
-Decisión vigente (`docs/DECISIONES.md` D3, manda sobre `docs/contracts/nutricion.md`):
+Decisión vigente (`docs/DECISIONES.md` D3; el contrato anterior está en
+`docs/historical/nutricion-pre-D3.md` y no se usa):
 la unidad de verdad es el **menú semanal firmado por nutricionista** y la **porción por grupo**.
 El sistema **no prescribe dietas ni calcula requerimientos individuales**.
 
@@ -22,7 +23,7 @@ El sistema **no prescribe dietas ni calcula requerimientos individuales**.
 
 ## Qué NO es de este paquete
 
-- `calcularRacion(persona)` ni requerimientos por persona: **retirado** (D3).
+- Cálculo de ración por persona ni requerimientos individuales: **retirado** (D3).
 - Tablas de composición, CSV de alimentos, kcal/proteínas/hierro hardcodeados, "valores típicos".
 - Investigación de alimentos o búsqueda de fuentes: no es una tarea de este repo.
 - Consejo médico, dietas, diagnósticos.

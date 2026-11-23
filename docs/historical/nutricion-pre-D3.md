@@ -1,7 +1,9 @@
 # 03 · Motor nutricional — contrato de interfaz
 
-> **Vigente: `docs/DECISIONES.md` D3 y `packages/nutrition/src` (menú firmado + porción
-> por grupo). Este documento queda como insumo histórico del contrato anterior.**
+> **HISTÓRICO: reemplazado por D3. No usar.**
+> El contrato vigente es `docs/DECISIONES.md` D3 + `packages/nutrition/AGENTS.md` +
+> `packages/nutrition/src`. Este archivo describe el motor retirado (`evaluarServicio`,
+> `priorizarSolicitud`, requerimientos individuales) y se conserva solo como registro.
 
 > **Alcance de este documento:** solo el **contrato** del paquete `packages/nutrition`.
 > No define valores nutricionales, ni tablas de composición, ni requerimientos, ni umbrales

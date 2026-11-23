@@ -3,7 +3,7 @@
 **Proyecto:** hackODS-Autónoma 2026 · PWA para ollas comunes del Perú
 **Base:** `08-clasificacion-productos.md` (§1.3 `EmbeddingsPort`, §4.3 umbrales, §3.1 opción VPS con Ollama)
 **Fecha:** 2026-11-23 · **Dónde:** esta PC de desarrollo (Windows, i7-11700F, 32 GB RAM, RTX 4070 Ti SUPER 16 GB)
-**Evidencia completa:** `experimentos/ollama/resultados.md` (todas las tablas, comandos y salidas reales)
+**Evidencia completa:** `../historical/experimentos-ollama/ollama/resultados.md` (todas las tablas, comandos y salidas reales; el directorio es histórico)
 
 **Regla de este documento:** ✅ medido en esta máquina · 🔶 estimado, hay que medirlo en el destino · ⚠️ decisión de diseño.
 
@@ -92,7 +92,7 @@ bge-m3 separa **4–6× mejor** los pares que el plan marca como peligrosos. Con
 | embeddinggemma-2 (+marca fuera) | **0,82** | 0,03 | 6,2% |
 
 - Con `τ = 0,62` **bge-m3 auto-confirma `POLLO VIVO KG` como `pollo_beneficiado`** (0,682 / margen 0,083). Es el único falso positivo del experimento.
-- `embeddinggemma-2` tiene el coseno **comprimido hacia arriba**: un texto sin relación (`DETERGENTE BOLIVAR`) puntúa **0,647**. Con τ=0,62 y piso=0,45 **nada quedaría fuera**: la decisión dependería solo del margen.
+- `embeddinggemma-2` tiene el coseno **comprimido hacia arriba**: un texto sin relación (`DETERGENTE BOLIVAR`) puntúa **0,647**. Con el umbral de arranque y piso=0,45 **nada quedaría fuera**: la decisión dependería solo del margen.
 - El **margen 0,04** aporta menos de lo que el plan supone con este catálogo (el óptimo medido es 0,00). Se mantiene porque con 200 productos sí va a separar, pero **no debe ser la única puerta**.
 
 ⚠️ Grilla medida sobre n=32: **indicativa**. El procedimiento de §4.3 (calibrar con 60, reportar con 40) sigue siendo el correcto; lo que este experimento agrega es que **hay que calibrar por modelo** y que los valores de arranque no se copian entre modelos.

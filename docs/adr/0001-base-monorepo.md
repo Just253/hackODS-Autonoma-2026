@@ -22,7 +22,7 @@ resuelven imports entre paquetes); esas decisiones están abajo.
 2. **Alcance `@hackods/*`** (no `@olla/*`): es el que ya usan los `AGENTS.md` de la
    capa de agentes copiada. Cambiarlo después toca imports y docs.
 3. **Paquetes:** `contracts` (tipos+zod), `domain` (puro, firmas con TODO),
-   `nutrition` (contrato de `docs/contracts/nutricion.md`, sin cifras), `ui`
+   `nutrition` (menú firmado, porción por grupo, sin cifras; D3), `ui`
    (presentacional), `sync` (`SyncPort` + outbox en memoria), `printing` (folio y
    plantilla HTML). **No hay `apps/api`** (spec §2.2).
 4. **Tipos inferidos de Zod en `contracts`**; `SCHEMA_VERSION = 1` y

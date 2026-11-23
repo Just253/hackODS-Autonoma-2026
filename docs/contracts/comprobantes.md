@@ -41,7 +41,7 @@ Están marcadas así en todo el documento. Si el equipo las cambia, no se rompe 
 | # | Decisión propia | Valor inicial | Dónde |
 |---|---|---|---|
 | P1 | N de la mediana móvil | **7** observaciones, mínimo 3 | §8 |
-| P2 | Umbrales de clasificación | similitud ≥ 0,90 y margen ≥ 0,05 ⇒ sugerencia fuerte; 0,75–0,90 ⇒ `por_revisar`; < 0,75 o empate ⇒ `por_revisar` | §4 |
+| P2 | Umbrales de clasificación | Los de `packages/domain/src/clasificacion/config.ts` (τ, margen y piso calibrados; hoy τ=0,69). Este documento **no repite los números**. El antiguo 0,90/0,05 era una **segunda puerta de sugerencia fuerte** (presentación), no el umbral de clasificación τ, y queda retirado | §4 |
 | P3 | Filtro de outlier | z modificado > 3,5 sobre MAD (Iglewicz–Hoaglin) | §8 |
 | P4 | Guarda de precio | fuera de `[P50/3, 3×P50]` ⇒ `sospechoso` | §8 |
 | P5 | Período por defecto | mensual (día 1 al último día del mes), `America/Lima` | §7 |
@@ -452,7 +452,7 @@ Terminales para edición: `asentado`, `anulado`, `duplicado`, `rechazado`. Un `a
 | 5 | `extrayendo` → `error_extraccion` | sistema | Timeout de lease o fallo del proveedor | Alerta; reintento manual |
 | 6 | `error_extraccion` → `en_cola` | `organizadora`, sistema | `intentos < 5` | Reintento |
 | 7 | `extraido` → `clasificando` | sistema | — | Embeddings/alias |
-| 8 | `clasificando` → `por_revisar` | sistema | Algún ítem con confianza < 0,90, empate, unidad no aprobada, conciliación > ±1 céntimo, duplicado posible | Ítems quedan `por_revisar` con motivo |
+| 8 | `clasificando` → `por_revisar` | sistema | Algún ítem bajo el piso de `config.ts`, empate, unidad no aprobada, conciliación > ±1 céntimo, duplicado posible | Ítems quedan `por_revisar` con motivo |
 | 9 | `clasificando` → `por_revisar` | sistema | Incluso si todo salió bien | **Siempre** pasa por revisión humana (D8) |
 | 10 | `por_revisar` → `por_revisar` | `organizadora` | Corrige producto/unidad/total; guarda | No asienta |
 | 11 | `por_revisar` → `confirmado` | `organizadora`, `admin` | 0 ítems en `por_revisar`; conciliación ±1; duplicado resuelto; `total_pen` si aplica; **presupuesto vigente** para `fecha_imputacion` | Congela ítems; calcula precios |
@@ -554,10 +554,12 @@ type ExtraccionCruda = {
 ### 4.4 Clasificación en dos pasos
 
 1. **Alias exacto (determinístico, offline):** `texto_norm` en `producto_alias` aprobados (primero de la olla, luego globales). Si hay match único → `producto_id` con `confianza = 1.0`, origen `alias`.
-2. **Embeddings (online):** similitud coseno contra `nombre + alias aprobados`. Regla P2:
-   - `sim ≥ 0,90` **y** `sim_top1 − sim_top2 ≥ 0,05` ⇒ sugerencia fuerte, pero **sigue** yendo a revisión humana.
-   - `0,75 ≤ sim < 0,90`, o margen < 0,05 ⇒ `por_revisar` con top-3.
-   - `sim < 0,75` ⇒ `por_revisar` sin sugerencia; la persona elige del catálogo o propone alias.
+2. **Embeddings (online):** similitud coseno contra `nombre + alias aprobados`. Se aplican los
+   umbrales de `packages/domain/src/clasificacion/config.ts` (τ, margen y piso; D8), que son los
+   únicos vigentes:
+   - `sim ≥ τ` **y** margen ≥ `MARGEN` ⇒ sugerencia, pero **sigue** yendo a revisión humana.
+   - `PISO ≤ sim < τ`, o margen < `MARGEN` ⇒ `por_revisar` con top-3.
+   - `sim < PISO` ⇒ `por_revisar` sin sugerencia; la persona elige del catálogo o propone alias.
 
 Guardas adicionales que fuerzan `por_revisar` aunque la similitud sea alta:
 
@@ -1216,7 +1218,7 @@ Eso ya cuenta la historia completa (“subo la boleta, el sistema ordena, me dic
 2. Tratamiento tributario de donaciones en especie y de comprobantes informales (recibos internos): el módulo los registra como evidencia, no como gasto deducible.
 3. Validación del dígito verificador del RUC y consulta del CPE ante SUNAT: no implementadas en v1.
 4. Retención legal de la imagen del comprobante (se propone 24 meses, alineado con `movimientos`).
-5. Umbrales de similitud (0,90 / 0,75) y margen (0,05): calibrar con ≥ 50 ítems reales anonimizados antes de fijarlos.
+5. Umbrales de similitud y margen: los vigentes están en `packages/domain/src/clasificacion/config.ts`; recalibrar con ≥ 50 ítems reales anonimizados si cambia el modelo.
 6. Si el comprobante puede no tener folio en la práctica de las ollas (recibos de mercado): la `huella_debil` cubre el caso, pero hay que validarlo con 20 boletas reales.
 7. Pesos de “saco”, “caja” y “atado” por producto: solo entran si una persona los aprueba; no se asumen.
 

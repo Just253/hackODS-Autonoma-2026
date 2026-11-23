@@ -83,13 +83,14 @@ El badge viaja con el resultado; no se calcula en la vista.
 ## Anti-patrones
 
 - Un CSV de composición "provisorio" en el repo (después queda para siempre).
-- Volver a `calcularRacion(persona)` o a requerimientos individuales.
+- Volver al cálculo de ración por persona o a requerimientos individuales.
 - Rellenar con 0 en vez de `null` (0 es un dato, `null` es una ausencia).
 - Aprobar un menú sin CNP o sin hash "porque es demo".
 - Cambiar un umbral en el código para que un test pase.
 
 ## Fuente
 
-- `docs/DECISIONES.md` D3 (manda sobre `docs/contracts/nutricion.md`).
-- `docs/contracts/nutricion.md` — contrato histórico, queda como insumo.
+- `docs/DECISIONES.md` D3 — única fuente que decide.
+- `packages/nutrition/AGENTS.md` — contrato vigente del paquete.
+- `docs/historical/nutricion-pre-D3.md` — retirado; **no usar**.
 - `packages/nutrition/AGENTS.md` — frontera y contrato vigente.

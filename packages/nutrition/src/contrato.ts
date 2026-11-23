@@ -1,5 +1,5 @@
 /**
- * Contrato del motor nutricional (docs/contracts/nutricion.md + docs/DECISIONES.md D3).
+ * Contrato del motor nutricional (docs/DECISIONES.md D3 + packages/nutrition/AGENTS.md).
  *
  * La unidad de verdad es el MENU SEMANAL FIRMADO POR NUTRICIONISTA y la PORCION POR GRUPO.
  * El sistema no prescribe dietas ni calcula requerimientos individuales.
@@ -154,7 +154,7 @@ export interface SustitucionAprobada {
   readonly aprobadaPor: string;
 }
 
-export interface AporteNutrientes {
+export interface ValorNutrientes {
   /** Clave presente = valor conocido. Clave ausente = sin dato (NO es 0). */
   readonly valores: Readonly<Partial<Record<NutrienteId, number>>>;
 }
@@ -163,7 +163,7 @@ export interface AporteNutrientes {
 export interface ProveedorComposicion {
   readonly tablaId: string;
   readonly version: string;
-  aporte(insumoId: string, gramos: number): AporteNutrientes | null;
+  aporte(insumoId: string, gramos: number): ValorNutrientes | null;
   retencion(nutriente: NutrienteId, tecnica: 'hervido' | 'guisado' | 'frito' | 'plancha' | 'al_vapor' | 'crudo'): number;
 }
 
