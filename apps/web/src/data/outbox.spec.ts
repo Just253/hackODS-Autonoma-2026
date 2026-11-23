@@ -70,6 +70,41 @@ describe('outbox en Dexie', () => {
     expect(await baseDeOlla(OLLA_DEMO).outbox.count()).toBe(1);
   });
 
+  it('la idempotencia vale en la tabla, no solo en el espejo (sin cargar())', async () => {
+    // Fila ya en disco, escrita sin pasar por el outbox: simula la base de una
+    // sesion anterior. El espejo de la instancia nueva arranca vacio a
+    // proposito: no se llama `cargar()`, asi que la unica defensa posible
+    // contra el duplicado es la guarda de la tabla (`tabla.get`).
+    await baseDeOlla(OLLA_DEMO).outbox.add(
+      {
+        eventUuid: 'ev-en-disco',
+        idempotencyKey: 'ev-en-disco',
+        lamport: 1,
+        deviceId: DEVICE_DEMO,
+        ollaId: OLLA_DEMO,
+        entidad: 'personas',
+        op: 'upsert',
+        payload: { codigoP: 'P-2345' },
+        creadoEn: '2026-11-23T10:00:00.000Z',
+        intentos: 0,
+        ultimoError: null,
+        estado: 'pendiente',
+      },
+    );
+
+    // Sesion nueva sobre la misma base: espejo vacio, sin `cargar()`.
+    cerrarBases();
+    const outbox = outboxDe(baseDeOlla(OLLA_DEMO));
+    expect(outbox.total()).toBe(0);
+
+    const entro = await outbox.encolarEnTransaccion(evento({ eventUuid: 'ev-en-disco' }));
+
+    expect(entro).toBe(false);
+    // Si la guarda de la tabla se cae, el `add` tira `ConstraintError` o deja
+    // dos filas: cualquiera de las dos rompe esta asercion.
+    expect(await baseDeOlla(OLLA_DEMO).outbox.count()).toBe(1);
+  });
+
   it('ordena por (lamport, deviceId) y no por orden de insercion', async () => {
     const outbox = outboxDe(baseDeOlla(OLLA_DEMO));
     await outbox.cargar();
