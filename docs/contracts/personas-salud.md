@@ -4,7 +4,8 @@
 [0005-rls-salud](../adr/0005-rls-salud.md); manda sobre `docs/ARQUITECTURA.md` §6.3
 cuando difieren.
 **Implementación:** `supabase/migrations/20261123170000_rls_salud.sql`;
-prueba `supabase/tests/002_rls_salud.sql` (`supabase test db`).
+pruebas `supabase/tests/002_rls_salud.sql` (salud) y
+`supabase/tests/003_sync_pull_salud.sql` (pull) con `supabase test db`.
 
 `anemia`, `peso_kg` y `talla_cm` son datos sensibles (Ley 29733, opt-in con
 `consentimiento_seguimiento`). No se leen por columna desde `authenticated`: se
@@ -67,7 +68,23 @@ select olla_id, categoria, personas, con_anemia from public.v_salud_agregado;
 
 ## 5. Cómo se verifica
 
-`supabase test db` → `supabase/tests/002_rls_salud.sql` (16 aserciones,
-autocontenidas). Rojo sin la migración: revocar a mano con
+`supabase test db` → `supabase/tests/002_rls_salud.sql` (24 aserciones) y
+`003_sync_pull_salud.sql` (6 aserciones), ambas autocontenidas. Rojo sin la migración: revocar a mano con
 `drop view v_personas_salud; drop view v_salud_agregado; grant select on personas
 to authenticated;` y repetir; verde al reaplicar la migración.
+
+## 6. `sync-pull` no entrega salud a quien no la ve
+
+`GET /sync/pull` lee `public.v_evento_sync_pull` (no `evento_sync` directo).
+Para `entidad = 'personas'` y un rol distinto de nutricionista/admin, el payload
+sale sin `anemia`, `pesoKg`, `tallaCm` ni `notas` (el `codigoP` y el resto del
+evento viajan intactos). Los demás eventos no se tocan. Lo decide el SQL de la
+vista; `sync-pull` solo re-mapea columnas y no puede volver a agregarlos.
+
+## 7. `search_path` en las vistas
+
+Las vistas no son funciones y todas las referencias van calificadas
+(`public.personas`, `app.mis_ollas`, `app.mi_rol`), así que `search_path` no
+aplica; el parámetro `security_invoker = false` se fija en el `WITH` de la
+vista. La regla de `supabase/AGENTS.md` sobre `search_path` aplica a funciones
+`security definer`.

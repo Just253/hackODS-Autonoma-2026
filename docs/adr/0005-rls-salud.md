@@ -87,6 +87,22 @@ consumidores del padrón que no lo piden.
   "permission denied for table personas" al leer `anemia`, y con una variante
   que sí compila la cocinera lee el flag (rojo del 002).
 
+## Sync y agregados (revisión del PR #23)
+
+- **`sync-pull` era otra puerta:** la Edge Function devuelve el `payload` del
+  outbox tal cual y `evento_sync_select` filtra por olla, no por rol; una
+  cocinera recibía `anemia`/`pesoKg`/`tallaCm`/`notas` de su olla por
+  `GET /sync/pull`. Se sanea en SQL (`v_evento_sync_pull`, nueva vista de la
+  misma migración) y no en TS: lo que sale saneado de la query no lo puede
+  reensuciar el handler, y es testeable con pgTAP (`003_sync_pull_salud.sql`).
+- **k ≥ 10 en el agregado:** `v_salud_agregado` aplica `having count(*) >= 10`,
+  el criterio de privacidad del repo (`docs/contracts/comprobantes.md` §0.3). Un
+  grupo con menos de 10 personas no emite fila: el promedio no reconstruye el
+  peso de una sola persona. En el demo, con padrón chico, el agregado se suprime;
+  es lo correcto y se dice en el pitch.
+- **`personaSchema`**: `anemia`, `pesoKg`, `tallaCm` y `notas` pasan a
+  opcionales; el servidor ya no los concede por SELECT directo.
+
 ## Consecuencias
 
 - La cocinera conserva el padrón (código, olla, edad, sexo, categoría) y pierde

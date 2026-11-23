@@ -27,7 +27,7 @@ begin;
 
 set local search_path to extensions, pg_temp, public;
 
-select plan(22);
+select plan(24);
 
 -- Fixtures sintéticos (D7: cero datos reales). Dos ollas, un nutricionista en
 -- cada una, para probar la fuga cruzada con el rol coincidente.
@@ -57,13 +57,33 @@ values
   ('bbbbbbbb-0000-4000-8000-0000000000c3', 'aaaaaaaa-0000-4000-8000-000000000001', 'organizadora'),
   ('bbbbbbbb-0000-4000-8000-0000000000c4', 'aaaaaaaa-0000-4000-8000-000000000002', 'nutricionista');
 
+-- Olla A: 10 niños (uno con anemia, peso 18,50) -> grupo visible con k=10;
+-- 1 adulto mayor y 1 gestante sin anemia -> grupos <10 que el HAVING suprime.
+-- Olla B: 10 adultos para el control de la fuga cruzada.
 insert into personas (codigo_p, olla_id, anio_nacimiento, sexo, categoria, anemia, peso_kg, talla_cm, consentimiento_seguimiento, device_id)
 values
   ('P-ZZ01', 'aaaaaaaa-0000-4000-8000-000000000001', 2020, 'F', 'nino', 'si', 18.50, 110.00, true, 'dev-test-a'),
-  ('P-ZZ02', 'aaaaaaaa-0000-4000-8000-000000000001', 2022, 'M', 'nino', 'no', 12.00, 90.00, false, 'dev-test-a'),
-  ('P-ZZ03', 'aaaaaaaa-0000-4000-8000-000000000001', 1950, 'M', 'adulto_mayor', 'no', 60.00, 165.00, false, 'dev-test-a'),
-  ('P-ZZ04', 'aaaaaaaa-0000-4000-8000-000000000001', 1990, 'F', 'gestante', 'si', 55.00, 158.00, true, 'dev-test-a'),
-  ('P-ZZ05', 'aaaaaaaa-0000-4000-8000-000000000002', 1995, 'F', 'adulto', 'no', 62.00, 160.00, false, 'dev-test-b');
+  ('P-ZZ02', 'aaaaaaaa-0000-4000-8000-000000000001', 2021, 'M', 'nino', 'no', 12.00, 90.00, false, 'dev-test-a'),
+  ('P-ZZ03', 'aaaaaaaa-0000-4000-8000-000000000001', 2021, 'M', 'nino', 'no', 12.10, 91.00, false, 'dev-test-a'),
+  ('P-ZZ04', 'aaaaaaaa-0000-4000-8000-000000000001', 2021, 'M', 'nino', 'no', 12.20, 92.00, false, 'dev-test-a'),
+  ('P-ZZ05', 'aaaaaaaa-0000-4000-8000-000000000001', 2021, 'M', 'nino', 'no', 12.30, 93.00, false, 'dev-test-a'),
+  ('P-ZZ06', 'aaaaaaaa-0000-4000-8000-000000000001', 2021, 'M', 'nino', 'no', 12.40, 94.00, false, 'dev-test-a'),
+  ('P-ZZ07', 'aaaaaaaa-0000-4000-8000-000000000001', 2021, 'M', 'nino', 'no', 12.50, 95.00, false, 'dev-test-a'),
+  ('P-ZZ08', 'aaaaaaaa-0000-4000-8000-000000000001', 2021, 'M', 'nino', 'no', 12.60, 96.00, false, 'dev-test-a'),
+  ('P-ZZ09', 'aaaaaaaa-0000-4000-8000-000000000001', 2021, 'M', 'nino', 'no', 12.70, 97.00, false, 'dev-test-a'),
+  ('P-ZZ22', 'aaaaaaaa-0000-4000-8000-000000000001', 2021, 'F', 'nino', 'no', 12.80, 98.00, false, 'dev-test-a'),
+  ('P-ZZ10', 'aaaaaaaa-0000-4000-8000-000000000001', 1950, 'M', 'adulto_mayor', 'no', 60.00, 165.00, false, 'dev-test-a'),
+  ('P-ZZ11', 'aaaaaaaa-0000-4000-8000-000000000001', 1990, 'F', 'gestante', 'si', 55.00, 158.00, true, 'dev-test-a'),
+  ('P-ZZ12', 'aaaaaaaa-0000-4000-8000-000000000002', 1995, 'F', 'adulto', 'no', 62.00, 160.00, false, 'dev-test-b'),
+  ('P-ZZ13', 'aaaaaaaa-0000-4000-8000-000000000002', 1995, 'F', 'adulto', 'no', 62.10, 160.10, false, 'dev-test-b'),
+  ('P-ZZ14', 'aaaaaaaa-0000-4000-8000-000000000002', 1995, 'F', 'adulto', 'no', 62.20, 160.20, false, 'dev-test-b'),
+  ('P-ZZ15', 'aaaaaaaa-0000-4000-8000-000000000002', 1995, 'F', 'adulto', 'no', 62.30, 160.30, false, 'dev-test-b'),
+  ('P-ZZ16', 'aaaaaaaa-0000-4000-8000-000000000002', 1995, 'F', 'adulto', 'no', 62.40, 160.40, false, 'dev-test-b'),
+  ('P-ZZ17', 'aaaaaaaa-0000-4000-8000-000000000002', 1995, 'F', 'adulto', 'no', 62.50, 160.50, false, 'dev-test-b'),
+  ('P-ZZ18', 'aaaaaaaa-0000-4000-8000-000000000002', 1995, 'F', 'adulto', 'no', 62.60, 160.60, false, 'dev-test-b'),
+  ('P-ZZ19', 'aaaaaaaa-0000-4000-8000-000000000002', 1995, 'F', 'adulto', 'no', 62.70, 160.70, false, 'dev-test-b'),
+  ('P-ZZ20', 'aaaaaaaa-0000-4000-8000-000000000002', 1995, 'F', 'adulto', 'no', 62.80, 160.80, false, 'dev-test-b'),
+  ('P-ZZ21', 'aaaaaaaa-0000-4000-8000-000000000002', 1995, 'F', 'adulto', 'no', 62.90, 160.90, false, 'dev-test-b');
 
 -- ---------------------------------------------------------------------------
 -- 1. Privilegios por columna (estables con y sin LOGIN).
@@ -111,8 +131,8 @@ select is_empty(
 
 select is(
   (select count(*) from public.personas where olla_id = 'aaaaaaaa-0000-4000-8000-000000000001'),
-  4::bigint,
-  'cocinera: el padrón de su olla sigue legible (4 personas)'
+  12::bigint,
+  'cocinera: el padrón de su olla sigue legible (12 personas)'
 );
 
 -- ---------------------------------------------------------------------------
@@ -122,26 +142,39 @@ select set_config('request.jwt.claims', '{"sub":"22222222-2222-4222-8222-2222222
 
 select is(
   (select count(*) from public.v_personas_salud),
-  4::bigint,
-  'nutricionista: ve el detalle de salud de su olla (4 filas)'
+  12::bigint,
+  'nutricionista: ve el detalle de salud de su olla (12 filas)'
+);
+
+select is(
+  (select count(*) from public.v_salud_agregado),
+  1::bigint,
+  'nutricionista: v_salud_agregado solo emite el grupo con k>=10 (niño)'
+);
+
+select is(
+  (select personas::bigint from public.v_salud_agregado where categoria = 'nino'),
+  10::bigint,
+  'nutricionista: v_salud_agregado cuenta el grupo niño (10 personas)'
 );
 
 select is(
   (select sum(con_anemia) from public.v_salud_agregado),
-  2::bigint,
-  'nutricionista: v_salud_agregado cuenta las 2 personas con anemia de su olla'
-);
-
-select is(
-  (select sum(personas) from public.v_salud_agregado),
-  4::bigint,
-  'nutricionista: v_salud_agregado suma las 4 personas de su olla'
+  1::bigint,
+  'nutricionista: v_salud_agregado cuenta la persona con anemia del grupo visible'
 );
 
 select is(
   (select peso_promedio_kg from public.v_salud_agregado where categoria = 'nino'),
-  15.25::numeric,
-  'nutricionista: v_salud_agregado promedia el peso del grupo niño (15,25 kg)'
+  13.01::numeric,
+  'nutricionista: v_salud_agregado promedia el peso del grupo niño (13,01 kg)'
+);
+
+select is(
+  (select count(*) from public.v_salud_agregado
+    where categoria in ('adulto_mayor', 'gestante')),
+  0::bigint,
+  'privacidad: los grupos con menos de 10 personas se suprimen (k≥10)'
 );
 
 select ok(
@@ -170,8 +203,8 @@ select set_config('request.jwt.claims', '{"sub":"44444444-4444-4444-8444-4444444
 
 select is(
   (select count(*) from public.v_personas_salud),
-  1::bigint,
-  'nutricionista de B: control, ve la 1 persona de su olla'
+  10::bigint,
+  'nutricionista de B: control, ve las 10 personas de su olla'
 );
 
 select set_config('request.jwt.claims', '{"sub":"22222222-2222-4222-8222-222222222222","role":"authenticated"}', true);
@@ -189,7 +222,7 @@ select is(
 );
 
 select is(
-  (select count(*) from public.v_personas_salud where codigo_p = 'P-ZZ05'),
+  (select count(*) from public.v_personas_salud where codigo_p = 'P-ZZ12'),
   0::bigint,
   'nutricionista de A: la persona con salud de B no aparece por código'
 );
@@ -206,8 +239,8 @@ select is_empty(
 
 select is(
   (select count(*) from public.personas where olla_id = 'aaaaaaaa-0000-4000-8000-000000000001'),
-  4::bigint,
-  'organizadora: el padrón de su olla sigue legible (4 personas)'
+  12::bigint,
+  'organizadora: el padrón de su olla sigue legible (12 personas)'
 );
 
 select * from finish();

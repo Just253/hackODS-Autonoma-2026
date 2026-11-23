@@ -29,8 +29,11 @@ grant select (
 ) on public.personas to authenticated;
 
 -- 2. Detalle de salud: nutricionista y admin, solo en sus ollas. 0 filas para
---    cualquier otro rol.
-create or replace view public.v_personas_salud as
+--    cualquier otro rol. Las referencias van calificadas (`public.personas`,
+--    `app.mis_ollas`, `app.mi_rol`) y las vistas no son `security definer`
+--    (no son funciones): `search_path` no aplica acá; ver docs/contracts/personas-salud.md §6.
+create or replace view public.v_personas_salud
+with (security_invoker = false) as
 select
   p.codigo_p,
   p.olla_id,
@@ -46,11 +49,14 @@ from public.personas p
 where p.deleted_at is null
   and p.olla_id in (select app.mis_ollas())
   and app.mi_rol(p.olla_id) in ('nutricionista', 'admin');
-alter view public.v_personas_salud set (security_invoker = false);
 grant select on public.v_personas_salud to authenticated;
 
 -- 3. Agregado: conteo por olla y categoría, nunca la fila de una persona.
-create or replace view public.v_salud_agregado as
+--    `having count(*) >= 10` aplica el criterio de privacidad del repo (k ≥ 10
+--    para agregados, docs/contracts/comprobantes.md §0.3): un grupo chico se
+--    suprime y no reconstruye el peso de una sola persona.
+create or replace view public.v_salud_agregado
+with (security_invoker = false) as
 select
   p.olla_id,
   p.categoria,
@@ -63,6 +69,38 @@ from public.personas p
 where p.deleted_at is null
   and p.olla_id in (select app.mis_ollas())
   and app.mi_rol(p.olla_id) in ('nutricionista', 'admin')
-group by p.olla_id, p.categoria;
-alter view public.v_salud_agregado set (security_invoker = false);
+group by p.olla_id, p.categoria
+having count(*) >= 10;
 grant select on public.v_salud_agregado to authenticated;
+
+-- 4. Pull de sync sin datos de salud para quien no puede verlos (#4, ALTA de
+--    la revisión del PR #23). `sync-pull` devuelve el `payload` del outbox tal
+--    cual y `evento_sync_select` filtra por olla, no por rol: una cocinera que
+--    hace `GET /sync/pull` recibía `anemia`/`pesoKg`/`tallaCm`/`notas` de las
+--    personas de su olla. La vista sanea el payload en el servidor, antes de que
+--    salga por la API; el TS no recompone lo que no le llega.
+--
+--    `security_invoker = false` y el mismo patrón que las vistas de salud: lee
+--    `evento_sync` como dueño (la policy de olla se aplicaría igual, pero el
+--    `where` explícito deja la frontera en un solo lugar y la vista es testeable
+--    con pgTAP).
+create or replace view public.v_evento_sync_pull
+with (security_invoker = false) as
+select
+  e.event_uuid,
+  e.idempotency_key,
+  e.lamport,
+  e.device_id,
+  e.olla_id,
+  e.entidad,
+  case
+    when e.entidad = 'personas'
+      and app.mi_rol(e.olla_id) not in ('nutricionista', 'admin')
+      then e.payload - 'anemia' - 'pesoKg' - 'tallaCm' - 'notas'
+    else e.payload
+  end as payload,
+  e.estado,
+  e.creado_en
+from public.evento_sync e
+where e.olla_id in (select app.mis_ollas());
+grant select on public.v_evento_sync_pull to authenticated;
