@@ -48,7 +48,6 @@ export default defineConfig({
       // Exactos a proposito: `@hackods/ui/tokens.css` debe resolver por package exports.
       { find: /^@hackods\/contracts$/, replacement: desdeAqui('../../packages/contracts/src/index.ts') },
       { find: /^@hackods\/ui$/, replacement: desdeAqui('../../packages/ui/src/index.ts') },
-      { find: /^@hackods\/domain$/, replacement: desdeAqui('../../packages/domain/src/index.ts') },
     ],
   },
   server: {

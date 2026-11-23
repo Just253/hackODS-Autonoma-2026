@@ -54,6 +54,11 @@ el PR mergeado y el entorno declarado.
    leer/escribir datos de la olla B debe devolver 0 filas o error.
 3. **Seed**: `db reset` dos veces seguidas deja el mismo estado (idempotente).
 
+Los tests SQL usan **pgTAP** (`plan`, `is`, `finish`). La extensión la crea la migración
+`20261123155000_pgtap.sql`; no se instala a mano ni se asume. Cada archivo de `supabase/tests/` fija su
+`search_path` (`extensions, pg_temp, public`) porque `db reset` corre en una sesión limpia. Sin eso,
+`test db` falla con `function plan(integer) does not exist`, y ese error no dice nada útil.
+
 Toda tabla nueva entra **con su política y su test en el mismo PR**. Tabla sin RLS = PR rechazado.
 
 ## Reglas locales

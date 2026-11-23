@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 
+import { racionSchema } from '@hackods/contracts';
 import { BotonGrande } from '@hackods/ui';
 
-import { OLLA_DEMO, guardarRacion, listarPersonas, racionDe } from '../../data/repositorio.js';
+import { OLLA_DEMO, RacionDuplicada, guardarRacion, listarPersonas, racionDe } from '../../data/repositorio.js';
 
 /**
  * Servicio del dia: una racion por persona, explicada con al menos dos razones.
@@ -14,7 +15,12 @@ import { OLLA_DEMO, guardarRacion, listarPersonas, racionDe } from '../../data/r
  *
  * Estados: cargando / vacio (sin padron) / error / pendiente de sincronizar.
  */
-const RAZONES_MINIMAS = 2;
+/**
+ * El mínimo de razones no se copia acá: lo manda `racionSchema.razones` y se
+ * pregunta al propio schema. La pantalla solo usa la respuesta para avisar
+ * antes de intentar guardar; el rechazo real es del contrato.
+ */
+const RAZONES_DEL_CONTRATO = racionSchema.shape.razones;
 
 interface Fila {
   readonly codigoP: string;
@@ -53,12 +59,12 @@ export function ServicioPage() {
   }, []);
 
   const razonesValidas = razones.filter((r) => r.trim() !== '');
-  const razonesSuficientes = razonesValidas.length >= RAZONES_MINIMAS;
+  const faltanRazones = !RAZONES_DEL_CONTRATO.safeParse(razonesValidas).success;
 
   const guardar = (codigoP: string): void => {
     setError(null);
-    if (!razonesSuficientes) {
-      setError(`Hacen falta al menos ${RAZONES_MINIMAS} razones: una sola no justifica la ración.`);
+    if (faltanRazones) {
+      setError('Faltan razones: la ración necesita más de una explicación.');
       return;
     }
 
@@ -75,8 +81,13 @@ export function ServicioPage() {
         setRazones(['', '']);
         await recargar();
       })
-      .catch(() => {
-        setError('No se pudo guardar la ración en el dispositivo. Intentá otra vez.');
+      .catch((error: unknown) => {
+        // Duplicado: se dice tal cual. Un "intentá otra vez" ahi seria mentira.
+        setError(
+          error instanceof RacionDuplicada
+            ? error.message
+            : 'No se pudo guardar la ración en el dispositivo. Intentá otra vez.',
+        );
       })
       .finally(() => {
         setGuardando(false);
@@ -134,7 +145,7 @@ export function ServicioPage() {
       </div>
 
       <fieldset className="flex flex-col gap-2">
-        <legend className="font-semibold">Razones de la ración (mínimo 2)</legend>
+        <legend className="font-semibold">Razones de la ración (más de una)</legend>
         {razones.map((valor, indice) => (
           <label key={indice} className="flex flex-col gap-1">
             <span>Razón {indice + 1}</span>
