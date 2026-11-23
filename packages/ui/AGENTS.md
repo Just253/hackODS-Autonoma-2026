@@ -6,6 +6,15 @@ Componentes y tokens. **Presentacional**: recibe props, dibuja, no sabe de ollas
 
 - Tokens (`colors.css`, `spacing.css`, `typography.css`) y el tema claro/oscuro.
 - Primitivos: `Button`, `Field`, `Select`, `Dialog`, `Table`, `Stat`, `EmptyState`, `SyncBadge`.
+- Primitivos del cascarón móvil (PR de interfaz):
+  - `Icono`: SVG inline, sin dependencia. Glifos `padron`, `servicio`, `comprobante`,
+    `presupuesto`, `precios`, `mas`. `aria-hidden` por defecto: el texto del enlace ya nombra el
+    destino.
+  - `EstadoPantalla`: los tres estados que se dibujan (`cargando` / `error` / `sin-conexion`;
+    `listo` no dibuja nada). Props: `estado`, `children` (qué pasa, se lee primero que el color) y
+    `accion` opcional (qué puede hacer la persona ahora). **Siempre imprime una etiqueta de
+    palabra**, no solo color, porque en una tablet al sol el color no se distingue. El `role` cambia
+    con el estado: `status` para cargando, `alert` para el error.
 - Patrones de impresión (`print.css`) que comparten reportes y tickets.
 - Accesibilidad: foco visible, contraste AA, tamaños táctiles ≥ 44 px.
 
