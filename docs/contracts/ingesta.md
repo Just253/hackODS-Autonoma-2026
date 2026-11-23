@@ -22,7 +22,9 @@ la RLS de `captura`/`captura_item`.
 | `deviceId` | string (opcional) | etiqueta del dispositivo; si falta, se usa el `sub` del JWT. |
 
 El binario va a Storage `capturas/<olla_id>/<uuid>.<ext>`; la olla la toma de la
-membresía del usuario (`app.mis_ollas()`), el cliente no la elige.
+membresía del usuario (`app.mis_ollas()`). Si el usuario tiene **una sola** olla se usa esa; con
+**varias**, el formulario debe mandar `olla_id` y se valida contra `app.mis_ollas()` (403 si no es
+del usuario). Nunca se elige una al azar.
 
 ## Response `200`
 
@@ -54,9 +56,11 @@ vacío en audio (el dictado se parsea en la app con `parsearDictado`).
 | 400 | `SIN_JWT` | falta `Authorization: Bearer`. |
 | 400 | `SIN_ARCHIVO` / `TIPO_INVALIDO` | falta `archivo` o `tipo` fuera de `audio\|boleta`. |
 | 403 | `SIN_OLLA` | el usuario no pertenece a ninguna olla. |
-| 413 | `ARCHIVO_GRANDE` | supera 10 MB. |
+| 413 | `ARCHIVO_GRANDE` | supera el limite del tipo: 4 MB imagen, 8 MB audio. |
 | 415 | `MIME_NO_SOPORTADO` | mime incompatible con `tipo`. |
 | 502 | `COMPUTE_TRANSCRIBE` / `COMPUTE_EXTRACT` / `COMPUTE_EMBED` | el compute (`tools/compute`) no respondió o devolvió error. **Nunca se inventa un resultado.** |
+| 504 | `COMPUTE_TIMEOUT` | el compute seguía trabajando al vencer el timeout del endpoint (120 s OCR, 180 s audio). **Reintentar tiene sentido**; un 502 no. |
+| 415 | `TIPO_NO_SOPORTADO` | el MIME no es de la lista blanca, o los bytes no coinciden con el tipo declarado (un "PNG" que empieza con `PK`). |
 | 500 | `MAL_CONFIGURADA` | faltan secrets `COMPUTE_URL`/`COMPUTE_TOKEN`. |
 
 El cuerpo de error es `{ "codigo": "...", "mensaje": "..." }`.
@@ -88,3 +92,15 @@ curl -s -X POST "http://127.0.0.1:54321/functions/v1/ingest" \
 - **Compute real**: cuando exista el túnel (`tools/compute/tunel-url.txt`),
   `curl $COMPUTE_URL/health` con `Authorization: Bearer $COMPUTE_TOKEN` debe dar `ok:true`
   antes de probar la función de punta a punta.
+
+## Retención del binario
+
+**A CONFIRMAR.** El contrato no define:
+
+1. **Cuánto vive** el objeto en el bucket `capturas`. Hoy no se borra nunca: una foto de boleta puede
+   tener nombre del comprador o RUC, y queda en Storage sin plazo.
+2. **Qué se hace con el huérfano** cuando el compute o el insert fallan. Desde este cambio la función
+   llama a `storage.remove()` en el camino de error; falta decidir si además hace falta barrido
+   periódico para los que quedaron de antes.
+
+No se inventan plazos: la decisión es de privacidad y va con su ADR.

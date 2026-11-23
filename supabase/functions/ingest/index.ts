@@ -10,8 +10,14 @@
 // - Compute externo (tools/compute): UNA sola fachada stateless detras de
 //   `$COMPUTE_URL` + `$COMPUTE_TOKEN` (Bearer, server-side). El token NUNCA
 //   viaja al cliente. Si el compute no responde -> `502` con motivo, nunca mock.
-// - Timeout de cada llamada a compute `~30 s`; la suma queda bien por debajo del
-//   muro de la Edge Function.
+// - Se acepta **solo** lo que el compute procesa (`supabase/functions/ingest/validacion.ts`):
+//   png/jpeg para boleta, wav/webm para audio, con sus limites (4 MB / 8 MB) y
+//   firma de bytes. Lo que el compute rechazaria se rechaza aca, antes de subir.
+// - Si el compute o el insert fallan, el binario ya subido se borra: nada de
+//   huerfanos en `capturas` (no hay policy de DELETE, el usuario no los limpia).
+// - Timeouts por endpoint (Ms_EXTRACT/MS_TRANSCRIBE, con margen sobre el compute):
+//   timeout propio -> `504`, distinto de "compute caido" (`502`).
+// - Mensajes fijos al cliente; el detalle de PostgREST/Storage queda en el log.
 //
 // Env de la funcion (secrets de Supabase): COMPUTE_URL, COMPUTE_TOKEN.
 // Deploy: supabase functions deploy ingest   (no lo corre un agente)
@@ -19,9 +25,21 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 import { json, preflight } from '../_shared/http.ts';
+// Sin extension: `supabase functions deploy` rechaza imports con `.ts` explicito.
+import {
+  MS_EMBED,
+  MS_EXTRACT,
+  MS_MURO_EDGE,
+  MS_TRANSCRIBE,
+  bytesCoinciden,
+  elegirOlla,
+  extensionDe,
+  limiteDe,
+  mimeValido,
+  normalizarMime,
+  textoLimite,
+} from './validacion';
 
-const MAX_BYTES = 10 * 1024 * 1024;
-const MS_COMPUTE = 30_000;
 const BUCKET = 'capturas';
 
 /**
@@ -60,18 +78,30 @@ function esErrorIngesta(e: unknown): e is ErrorIngesta {
   return typeof e === 'object' && e !== null && 'codigo' in e && 'status' in e;
 }
 
-function extensionDe(mime: string, tipo: string): string {
-  if (tipo === 'audio') {
-    if (mime === 'audio/wav' || mime === 'audio/wave' || mime === 'audio/x-wav') return 'wav';
-    return 'webm';
+/**
+ * `fetch` al compute con timeout propio. El timeout se distingue del compute caido:
+ * uno es `504 COMPUTE_TIMEOUT` (el compute sigue trabajando, se puede reintentar) y el
+ * otro `502` (no respondio). Antes todo era 30 s y un OCR en frio abortaba siempre.
+ */
+async function pedirCompute(url: string, init: RequestInit, ms: number, codigo: string): Promise<Response> {
+  try {
+    return await fetch(url, { ...init, signal: AbortSignal.timeout(ms) });
+  } catch (e) {
+    const nombre = (e as Error)?.name ?? '';
+    if (nombre === 'TimeoutError' || nombre === 'AbortError') {
+      throw error(504, 'COMPUTE_TIMEOUT', `el compute no respondio en ${Math.round(ms / 1000)} s; reintentá más tarde`);
+    }
+    console.error(`ingest: ${codigo} sin respuesta`, nombre);
+    throw error(502, codigo, 'no se pudo hablar con el compute');
   }
-  if (mime === 'application/pdf') return 'pdf';
-  if (mime === 'image/png') return 'png';
-  return 'jpg';
 }
 
-function mimeValido(mime: string, tipo: string): boolean {
-  return tipo === 'audio' ? mime.startsWith('audio/') : mime.startsWith('image/') || mime === 'application/pdf';
+/** Detalle para el log; al cliente nunca le llega el mensaje crudo de la base. */
+function logDetalle(etapa: string, detalle: unknown): void {
+  const partes = typeof detalle === 'object' && detalle !== null
+    ? Object.entries(detalle as Record<string, unknown>).filter(([, v]) => v !== undefined && v !== null)
+    : [];
+  console.error(`ingest: ${etapa}`, partes.length > 0 ? partes.map(([k, v]) => `${k}=${String(v)}`).join(' ') : String(detalle));
 }
 
 /** Coseno entre el vector de la imagen/texto y un alias del catalogo. */
@@ -97,12 +127,16 @@ let cacheCatalogo: { cuando: number; entradas: ReadonlyArray<{ categoria: string
 };
 
 async function embedTextos(textos: readonly string[], token: string, url: string): Promise<number[][]> {
-  const respuesta = await fetch(`${url}/embed`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
-    body: JSON.stringify({ textos }),
-    signal: AbortSignal.timeout(MS_COMPUTE),
-  });
+  const respuesta = await pedirCompute(
+    `${url}/embed`,
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+      body: JSON.stringify({ textos }),
+    },
+    MS_EMBED,
+    'COMPUTE_EMBED',
+  );
   if (!respuesta.ok) {
     throw error(502, 'COMPUTE_EMBED', `Compute /embed respondio ${respuesta.status}.`);
   }
@@ -166,12 +200,12 @@ function cantidadNumero(texto: string | null | undefined): number | null {
 }
 
 async function transcribir(bytes: ArrayBuffer, mime: string, token: string, url: string): Promise<ResultadoExtract> {
-  const respuesta = await fetch(`${url}/transcribe`, {
-    method: 'POST',
-    headers: { 'content-type': mime, authorization: `Bearer ${token}` },
-    body: bytes,
-    signal: AbortSignal.timeout(MS_COMPUTE),
-  });
+  const respuesta = await pedirCompute(
+    `${url}/transcribe`,
+    { method: 'POST', headers: { 'content-type': mime, authorization: `Bearer ${token}` }, body: bytes },
+    MS_TRANSCRIBE,
+    'COMPUTE_TRANSCRIBE',
+  );
   if (!respuesta.ok) {
     throw error(502, 'COMPUTE_TRANSCRIBE', `Compute /transcribe respondio ${respuesta.status}.`);
   }
@@ -181,12 +215,12 @@ async function transcribir(bytes: ArrayBuffer, mime: string, token: string, url:
 }
 
 async function extraer(bytes: ArrayBuffer, mime: string, token: string, url: string): Promise<ResultadoExtract> {
-  const respuesta = await fetch(`${url}/extract`, {
-    method: 'POST',
-    headers: { 'content-type': mime, authorization: `Bearer ${token}` },
-    body: bytes,
-    signal: AbortSignal.timeout(MS_COMPUTE),
-  });
+  const respuesta = await pedirCompute(
+    `${url}/extract`,
+    { method: 'POST', headers: { 'content-type': mime, authorization: `Bearer ${token}` }, body: bytes },
+    MS_EXTRACT,
+    'COMPUTE_EXTRACT',
+  );
   if (!respuesta.ok) {
     throw error(502, 'COMPUTE_EXTRACT', `Compute /extract respondio ${respuesta.status}.`);
   }
@@ -228,10 +262,24 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') return preflight();
   if (req.method !== 'POST') return json({ codigo: 'METODO_NO_PERMITIDO', mensaje: 'POST' }, 405);
 
+  const inicio = Date.now();
+  /**
+   * `504` honesto si la suma de esperas pasa el muro de la Edge Function. Es perezoso a
+   * proposito: si el request termino antes, el `setTimeout` se cancela y no se cierra;
+   * solo corta los que ya no pueden devolver respuesta.
+   */
+  let avisarMuro: (() => void) | undefined;
+  const muro = new Promise<never>((_, rechazar) => {
+    avisarMuro = () =>
+      rechazar(error(504, 'TIEMPO_AGOTADO', `la ingesta supero los ${Math.round(MS_MURO_EDGE / 1000)} s; reintenta`));
+  });
+  const temporizador = setTimeout(() => avisarMuro?.(), MS_MURO_EDGE);
+
   try {
     const authorization = req.headers.get('Authorization');
     if (authorization === null || !authorization.startsWith('Bearer ')) {
-      throw error(401, 'SIN_JWT', 'falta Authorization: Bearer <jwt>');
+      // El contrato (docs/contracts/ingesta.md) fija 400 para `SIN_JWT`.
+      throw error(400, 'SIN_JWT', 'falta Authorization: Bearer <jwt>');
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
@@ -248,10 +296,22 @@ Deno.serve(async (req: Request): Promise<Response> => {
     if (!(archivo instanceof File)) throw error(400, 'SIN_ARCHIVO', 'falta `archivo` (multipart)');
     if (tipo !== 'audio' && tipo !== 'boleta') throw error(400, 'TIPO_INVALIDO', 'tipo debe ser audio|boleta');
 
-    if (archivo.size > MAX_BYTES) throw error(413, 'ARCHIVO_GRANDE', `maximo ${MAX_BYTES} bytes`);
+    // Solo lo que el compute procesa y con su limite real. El mensaje dice el tope.
     const mime = (archivo.type || '').toLowerCase();
     if (!mimeValido(mime, tipo)) {
-      throw error(415, 'MIME_NO_SOPORTADO', tipo === 'audio' ? 'se esperaba audio/*' : 'se esperaba image/* o application/pdf');
+      const esperado = tipo === 'audio' ? 'audio/wav o audio/webm' : 'una foto image/png o image/jpeg';
+      throw error(415, 'MIME_NO_SOPORTADO', `se esperaba ${esperado}; llego "${archivo.type || 'sin tipo'}"`);
+    }
+    const mimeCanonico = normalizarMime(mime) ?? mime;
+    const limite = limiteDe(tipo);
+    if (archivo.size === 0) {
+      throw error(400, 'ARCHIVO_VACIO', tipo === 'audio' ? 'el audio esta vacio' : 'la imagen esta vacia');
+    }
+    if (archivo.size > limite) {
+      const mensaje = tipo === 'audio'
+        ? `el audio supera los ${textoLimite(tipo)}; grabalo mas corto`
+        : `la foto supera los ${textoLimite(tipo)}; sacala mas chica`;
+      throw error(413, 'ARCHIVO_GRANDE', mensaje);
     }
 
     const supabase = createClient(supabaseUrl, anonKey, {
@@ -259,18 +319,19 @@ Deno.serve(async (req: Request): Promise<Response> => {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
-    // La olla se toma de la membresia del usuario; el cliente no la elige.
-    // `ollas_select` (RLS) solo devuelve las ollas de `app.mis_ollas()`.
-    const { data: ollas, error: ollaError } = await supabase
-      .from('ollas')
-      .select('id')
-      .limit(1);
-    if (ollaError !== null) throw error(500, 'OLLAS', ollaError.message);
-    const primera = Array.isArray(ollas) ? ollas[0] : undefined;
-    const ollaId = primera !== undefined && typeof (primera as { id?: unknown }).id === 'string'
-      ? (primera as { id: string }).id
-      : null;
-    if (ollaId === null) throw error(403, 'SIN_OLLA', 'el usuario no pertenece a ninguna olla');
+    // `ollas_select` (RLS) solo devuelve las ollas de `app.mis_ollas()`; nunca `limit(1)`.
+    const { data: ollas, error: ollaError } = await supabase.from('ollas').select('id');
+    if (ollaError !== null) {
+      logDetalle('OLLAS', ollaError);
+      throw error(500, 'OLLAS', 'no se pudieron leer las ollas del usuario');
+    }
+    const misOllas = (Array.isArray(ollas) ? ollas : [])
+      .map((o) => (typeof (o as { id?: unknown }).id === 'string' ? (o as { id: string }).id : ''))
+      .filter((id) => id !== '');
+    const pedida = form.get('olla_id');
+    const eleccion = elegirOlla(typeof pedida === 'string' && pedida.trim() !== '' ? pedida : null, misOllas);
+    if (!eleccion.ok) throw error(eleccion.status, eleccion.codigo, eleccion.mensaje);
+    const ollaId = eleccion.ollaId;
 
     const dispositivo = form.get('deviceId');
     const { data: usuario } = await supabase.auth.getUser();
@@ -278,19 +339,68 @@ Deno.serve(async (req: Request): Promise<Response> => {
       ? dispositivo.trim()
       : usuario.user?.id ?? '';
 
-    const extension = extensionDe(mime, tipo);
-    const storagePath = `${ollaId}/${crypto.randomUUID()}.${extension}`;
     const bytesArreglo = await archivo.arrayBuffer();
+    // MIME mentiroso (p. ej. `image/png` con bytes de ZIP): rechazo antes de subir.
+    if (!bytesCoinciden(new Uint8Array(bytesArreglo), mimeCanonico)) {
+      throw error(415, 'MIME_NO_SOPORTADO', `el contenido no es ${mimeCanonico}; el archivo no coincide con su tipo`);
+    }
 
-    const { error: subidaError } = await supabase.storage.from(BUCKET).upload(storagePath, bytesArreglo, {
-      contentType: mime,
-      upsert: false,
-    });
-    if (subidaError !== null) throw error(subidaError.statusCode === '403' ? 403 : 502, 'STORAGE', subidaError.message);
+    const storagePath = `${ollaId}/${crypto.randomUUID()}.${extensionDe(mimeCanonico)}`;
 
-    const resultado = tipo === 'audio'
-      ? await transcribir(bytesArreglo, mime, computeToken, computeUrl)
-      : await extraer(bytesArreglo, mime, computeToken, computeUrl);
+    /**
+     * Deja el bucket como estaba si el compute o el insert fallan. El `catch` propio
+     * no tapa el error original: si el remove falla, se loguea y se sigue devolviendo
+     * el error del compute.
+     */
+    const borrarBinario = async (): Promise<void> => {
+      try {
+        const { error: removeError } = await supabase.storage.from(BUCKET).remove([storagePath]);
+        if (removeError !== null) logDetalle('REMOVE_HUERFANO', removeError);
+      } catch (e) {
+        console.error('ingest: remove del binario fallo', (e as Error)?.message);
+      }
+    };
+
+    /**
+     * La subida y el trabajo de compute corren juntos con el muro: si el muro gana,
+     * se borra lo que se haya subido. `enMarcha` es el error que hay que devolver si
+     * el muro dispara antes de que la subida sepa su resultado.
+     */
+    const subida = (async (): Promise<unknown> => {
+      const { error: subidaError } = await supabase.storage.from(BUCKET).upload(storagePath, bytesArreglo, {
+        contentType: mimeCanonico,
+        upsert: false,
+      });
+      return subidaError;
+    })();
+    let enMarcha: unknown = error(504, 'TIEMPO_AGOTADO', 'la subida no termino a tiempo; reintenta');
+    const procesar = (async (): Promise<ResultadoExtract> => {
+      try {
+        const subidaError = await subida;
+        if (subidaError !== null) {
+          logDetalle('STORAGE', subidaError);
+          const status = (subidaError as { statusCode?: string }).statusCode;
+          throw error(status === '403' ? 403 : 502, 'STORAGE', 'no se pudo guardar el archivo');
+        }
+        return tipo === 'audio'
+          ? await transcribir(bytesArreglo, mimeCanonico, computeToken, computeUrl)
+          : await extraer(bytesArreglo, mimeCanonico, computeToken, computeUrl);
+      } catch (e) {
+        enMarcha = e;
+        throw e;
+      }
+    })();
+
+    let resultado: ResultadoExtract;
+    try {
+      resultado = await Promise.race([procesar, muro]);
+    } catch (e) {
+      // Si gano el muro, se devuelve el error real de la etapa en curso, no el generico.
+      const original = esErrorIngesta(e) && e.codigo === 'TIEMPO_AGOTADO' ? enMarcha : e;
+      await borrarBinario();
+      throw original;
+    }
+    clearTimeout(temporizador);
 
     const texto = resultado.texto;
     let embedding: number[] | null = null;
@@ -331,7 +441,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
       })
       .select('id')
       .single();
-    if (insertError !== null) throw error(400, 'INSERT_CAPTURA', insertError.message);
+    if (insertError !== null) {
+      logDetalle('INSERT_CAPTURA', insertError);
+      // La fila no existe: el binario no tiene quien lo referencie.
+      await borrarBinario();
+      throw error(400, 'INSERT_CAPTURA', 'no se pudo registrar la captura');
+    }
     const capturaId = (fila as { id: string }).id;
 
     if (resultado.items.length > 0) {
@@ -346,9 +461,14 @@ Deno.serve(async (req: Request): Promise<Response> => {
         confianza: null,
       }));
       const { error: itemsError } = await supabase.from('captura_item').insert(filas);
-      if (itemsError !== null) throw error(400, 'INSERT_ITEMS', itemsError.message);
+      if (itemsError !== null) {
+        logDetalle('INSERT_ITEMS', itemsError);
+        await borrarBinario();
+        throw error(400, 'INSERT_ITEMS', 'no se pudieron registrar las lineas de la captura');
+      }
     }
 
+    clearTimeout(temporizador);
     return json({
       capturaId,
       estado,
@@ -358,8 +478,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
       items: resultado.items,
     });
   } catch (e) {
+    clearTimeout(temporizador);
     if (esErrorIngesta(e)) return json({ codigo: e.codigo, mensaje: e.mensaje }, e.status);
-    console.error('ingest: error interno', (e as Error)?.message);
+    // Nunca el stack ni la URL del compute al cliente: solo el tipo al log, con ms.
+    console.error(`ingest: error interno (${Date.now() - inicio} ms)`, (e as Error)?.name ?? 'Error');
     return json({ codigo: 'ERROR_INTERNO', mensaje: 'fallo la ingesta' }, 500);
   }
 });
