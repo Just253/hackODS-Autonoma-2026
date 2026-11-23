@@ -154,7 +154,7 @@ describe('esqueleto offline', () => {
       fireEvent.click(screen.getByRole('button', { name: /Servir ración/i }));
     });
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(/al menos 2 razones/i);
+    expect(await screen.findByRole('alert')).toHaveTextContent(/faltan razones/i);
     await waitFor(async () => {
       expect(await racionDe('P-DDDD')).toBeUndefined();
     });
