@@ -21,10 +21,14 @@ supabase/
   k ≥ 10), familia de menú
   (`menu_template`, `menu_day`, `dish`, `ingredient`, `portion`, `menu_constraint`,
   `substitution`, `validation`), `movimientos` (append-only), `servicios`, `solicitudes`,
-  `evento_sync`.
+  `evento_sync`, `captura` + `captura_item` (ingesta de audio/boleta, #83).
 - Políticas RLS y funciones `security definer` mínimas (`app.mis_ollas`, `app.mi_rol`).
 - Edge Functions de sync (`docs/contracts/sync.md`): lote ≤ 100, `idempotency_key = event_uuid`,
   orden `(lamport, device_id)`. **Sin `service_role`** en la función: RLS con el JWT del cliente.
+- Edge Function `ingest` (`docs/contracts/ingesta.md`, ADR-0011): un endpoint, dos ramas
+  (`audio`→`/transcribe`, `boleta`→`/extract`) y `/embed`; compute externo por
+  `COMPUTE_URL`/`COMPUTE_TOKEN` server-side. Binario en bucket privado `capturas`
+  (`capturas/<olla_id>/…`), fila en `captura` bajo RLS.
 - Edge Function `enroll` (`docs/adr/0008-enrolamiento.md`): **única** excepción a lo anterior.
   Es pre-auth: crea `auth.users` y llama `app.enroll()` (SQL, `security definer`, sin
   `EXECUTE` para `anon`/`authenticated`) con `service_role`, que vive solo en el servidor.
