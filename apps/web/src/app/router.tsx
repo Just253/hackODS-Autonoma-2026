@@ -11,6 +11,7 @@ import {
 import { PreciosPantalla } from '../features/precios/PreciosPantalla.js';
 import { PresupuestoPantalla } from '../features/presupuesto/PresupuestoPantalla.js';
 import { Shell } from './Shell.js';
+import { ComprobantePage } from '../features/comprobante/ComprobantePage.js';
 import { PadronPage } from '../features/padron/PadronPage.js';
 import { ServicioPage } from '../features/servicio/ServicioPage.js';
 import { RutaVacia } from '../pages/RutaVacia.js';
@@ -31,8 +32,8 @@ export const rutas = [
       { index: true, element: <Navigate to="/padron" replace /> },
       { path: 'padron', element: <PadronPage /> },
       { path: 'servicio', element: <ServicioPage /> },
-      // Track B · comprobante y dinero
-      { path: 'comprobante', element: <RutaVacia titulo="Comprobante" dueno="B" /> },
+      // Track A · comprobante (lo tomó A al quedar libre el issue #9)
+      { path: 'comprobante', element: <ComprobantePage /> },
       { path: 'presupuesto', element: <PresupuestoPantalla movimientos={MOVIMIENTOS_DEMO} corte={CORTE_DEMO} /> },
       {
         path: 'precios',
