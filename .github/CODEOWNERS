@@ -1,0 +1,36 @@
+# CODEOWNERS — quién decide sobre cada carpeta (docs/PROTOCOL.md Anexo E).
+#
+# Orden: gana la ÚLTIMA línea que matchea.
+# Contexto: el repo tiene un solo owner por ahora (@Just253). Cuando exista una
+# organización, cambiar cada línea por el equipo correspondiente:
+#   /apps/web/            -> @org/web-team        (persona A · area:web)
+#   /supabase/            -> @org/datos-team      (persona B · area:api)
+#   /packages/contracts/   -> @org/web-team @org/datos-team @org/dominio-team
+#   /packages/domain/      -> @org/dominio-team
+#   /packages/nutrition/   -> @org/dominio-team
+#   /packages/sync/        -> @org/datos-team
+#   /docs/                 -> @org/dominio-team
+#   /.github/              -> @org/datos-team
+# Los drafts no disparan review requests: eso es intencional.
+
+*                                   @Just253
+
+/apps/web/                          @Just253
+/packages/ui/                       @Just253
+/packages/printing/                 @Just253
+
+/supabase/                          @Just253
+/packages/sync/                     @Just253
+/scripts/                           @Just253
+/.github/                           @Just253
+
+/packages/contracts/                @Just253
+/packages/domain/                   @Just253
+/packages/nutrition/                @Just253
+/docs/                              @Just253
+
+# Las reglas del juego se protegen aparte (2 aprobaciones).
+/docs/adr/                          @Just253
+/.github/CODEOWNERS                 @Just253
+/.github/ISSUE_TEMPLATE/            @Just253
+/.github/PULL_REQUEST_TEMPLATE.md   @Just253

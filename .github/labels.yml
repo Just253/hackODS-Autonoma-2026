@@ -1,0 +1,73 @@
+# Labels del protocolo (docs/PROTOCOL.md Anexo C), en formato declarativo.
+#
+# GitHub NO lee este archivo por si solo: es la fuente para un labeler
+# (p. ej. crazy-max/ghaction-github-labeler) o para revisar a mano.
+# La via ejecutable equivalente es `bash scripts/labels.sh` (idempotente).
+# Todavia NO se crearon labels en el repo: eso va despues del ensamblado.
+
+- name: status:triage
+  color: EDEDED
+  description: Sin reproducir ni acotar. No se puede reclamar.
+- name: status:ready
+  color: 0E8A16
+  description: "Acotado: criterio de aceptación y prueba esperada escritos."
+- name: status:claimed
+  color: 1D76DB
+  description: Claim vigente de un agente.
+- name: status:in-review
+  color: 5319E7
+  description: PR no-draft esperando revisión cruzada.
+- name: status:blocked
+  color: B60205
+  description: Espera otro issue o una decisión.
+- name: area:web
+  color: BFD4F2
+  description: "Dueño: frontend / apps de usuario."
+- name: area:api
+  color: F9D0C4
+  description: "Dueño: servicios, jobs, persistencia."
+- name: area:infra
+  color: D0E8D0
+  description: "Dueño: infra, CI, scripts, docs de proceso."
+- name: area:contracts
+  color: F7C6E0
+  description: "Compartido: contratos e interfaces. Requiere 2 aprobaciones."
+- name: type:bug
+  color: D73A4A
+  description: Algo está roto respecto de lo esperado.
+- name: type:feat
+  color: A2EEEF
+  description: Comportamiento nuevo.
+- name: type:chore
+  color: FEF2C0
+  description: Mantenimiento sin cambio de comportamiento.
+- name: type:docs
+  color: C5DEF5
+  description: Documentación y ADRs.
+- name: type:spike
+  color: D4C5F9
+  description: Investigación timeboxed. No se mergea a main.
+- name: p0
+  color: B60205
+  description: Producción rota. Se atiende ya.
+- name: p1
+  color: D93F0B
+  description: Bloquea a alguien del equipo.
+- name: p2
+  color: FBCA04
+  description: Cuando se pueda.
+- name: needs:human
+  color: "000000"
+  description: Requiere decisión o acción de un humano.
+- name: needs:decision
+  color: 6F42C1
+  description: Requiere ADR antes de seguir.
+- name: coordination
+  color: 006B75
+  description: Issue único de estado del equipo (fijado).
+- name: duplicate
+  color: CFD3D7
+  description: Ya existe otro issue para esto.
+- name: handoff
+  color: FFD8A8
+  description: Cambio de dueño documentado con handoff/v1.

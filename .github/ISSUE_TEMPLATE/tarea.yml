@@ -1,0 +1,141 @@
+name: Tarea
+description: Unidad de trabajo reclamable. Sin reproducción ni criterio de aceptación, no pasa a ready.
+title: "[area] síntoma corto (fp:area-slug-sintoma)"
+labels: ["status:triage"]
+# projects: ["mi-org/1"]      # opcional: requiere que quien crea tenga write en el Project
+# type: Task                  # opcional: los issue types se definen a nivel organización
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Antes de abrir:** buscá issues, PRs, ramas y commits (docs/PROTOCOL.md §7).
+        Si ya existe, comentá ahí en vez de crear otro.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Área
+      description: Una sola. Si toca dos, va a `contracts` o se parte en dos issues.
+      options:
+        - web
+        - api
+        - infra
+        - contracts
+    validations:
+      required: true
+
+  - type: dropdown
+    id: tipo
+    attributes:
+      label: Tipo
+      options:
+        - bug
+        - feat
+        - chore
+        - docs
+        - spike
+    validations:
+      required: true
+
+  - type: dropdown
+    id: prioridad
+    attributes:
+      label: Prioridad
+      description: p0 = producción rota. p2 = cuando se pueda.
+      options:
+        - p0
+        - p1
+        - p2
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: busqueda
+    attributes:
+      label: Búsqueda anti-duplicado
+      options:
+        - label: Busqué en issues abiertos y cerrados
+          required: true
+        - label: Busqué en PRs abiertos, mergeados y drafts
+          required: true
+        - label: Revisé ramas remotas y commits de los últimos 21 días
+          required: true
+
+  - type: textarea
+    id: problema
+    attributes:
+      label: Qué pasa (reproducción)
+      description: Comando exacto, versión/commit, salida. Si es un bug sin reproducción, no está listo.
+      placeholder: |
+        1. `pnpm dev`
+        2. login, esperar 30 min, `curl /api/me`
+        3. 401 (esperado 200)
+        commit: 9c1e4ab
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: esperado
+    attributes:
+      label: Qué debería pasar
+      placeholder: El token se refresca solo y /api/me responde 200.
+    validations:
+      required: true
+
+  - type: textarea
+    id: criterios
+    attributes:
+      label: Criterios de aceptación
+      description: Uno por línea, verificables. Cada uno va a aparecer checkeado en el PR con su evidencia.
+      placeholder: |
+        - [ ] token expirado se refresca antes de la request
+        - [ ] refresh fallido devuelve 401 y borra el token local
+        - [ ] test `auth.spec.ts > refresca token expirado` pasa
+    validations:
+      required: true
+
+  - type: textarea
+    id: prueba
+    attributes:
+      label: Prueba que debe pasar
+      description: El comando que el revisor va a correr para validar. Si no sabés cuál es, el issue no está listo.
+      placeholder: pnpm test --filter api -- auth.spec.ts
+      render: shell
+    validations:
+      required: true
+
+  - type: input
+    id: archivos
+    attributes:
+      label: Archivos / carpetas que toca
+      description: Globs, separados por coma. Es lo que se pone en `files:` del claim.
+      placeholder: services/api/src/auth/**,packages/contracts/auth.ts
+    validations:
+      required: false
+
+  - type: input
+    id: depende
+    attributes:
+      label: Depende de
+      description: Issues que tienen que cerrarse antes. Se cargan además como blocked-by.
+      placeholder: "#151, #160"
+    validations:
+      required: false
+
+  - type: textarea
+    id: fuera
+    attributes:
+      label: Fuera de alcance
+      description: Lo que NO se hace en este issue. Evita el PR que crece.
+      placeholder: No migramos a JWT. No tocamos el login de mobile.
+    validations:
+      required: false
+
+  - type: textarea
+    id: notas
+    attributes:
+      label: Contexto extra
+      description: Logs, capturas, links. Arrastrá archivos acá si hace falta.
+    validations:
+      required: false

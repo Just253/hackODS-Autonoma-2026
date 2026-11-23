@@ -1,0 +1,26 @@
+[
+  {
+    "author": { "login": "ana" },
+    "body": "claim/v1 issue:142 by:@ana agent:ana-lead-3f2a area:api branch:feat/api-142-oauth-refresh started:2026-11-20T10:00:00Z ttl:24h searched:2026-11-20 files:services/api/src/auth/** fp:fp_api_auth_login_timeout\n\nReclamo #142. Worktree en ../wt/142-oauth-refresh.",
+    "createdAt": "2026-11-20T10:00:00Z",
+    "url": "https://github.com/ejemplo/app/issues/142#issuecomment-1"
+  },
+  {
+    "author": { "login": "ana" },
+    "body": "heartbeat/v1 issue:142 agent:ana-lead-3f2a at:2026-11-20T20:00:00Z head:9c1e4ab state:coding\n\nEscribiendo el test de regresion, todavia falla.",
+    "createdAt": "2026-11-20T20:00:00Z",
+    "url": "https://github.com/ejemplo/app/issues/142#issuecomment-2"
+  },
+  {
+    "author": { "login": "ana" },
+    "body": "release/v1 issue:142 by:@ana agent:ana-lead-3f2a reason:done at:2026-11-25T09:00:00Z pr:187 next:none",
+    "createdAt": "2026-11-25T09:00:00Z",
+    "url": "https://github.com/ejemplo/app/issues/142#issuecomment-3"
+  },
+  {
+    "author": { "login": "caro" },
+    "body": "reclaim/v1 issue:142 by:@caro agent:caro-lead-77c1 from:@ana agent:ana-lead-3f2a last_activity:2026-11-22T09:14:00Z evidence:9c1e4ab at:2026-11-24T11:00:00Z notice:12h",
+    "createdAt": "2026-11-24T11:00:00Z",
+    "url": "https://github.com/ejemplo/app/issues/142#issuecomment-4"
+  }
+]
