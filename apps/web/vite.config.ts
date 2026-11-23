@@ -43,6 +43,9 @@ function serviceWorkerPwa(): Plugin {
 
 export default defineConfig({
   plugins: [react(), tailwindcss(), serviceWorkerPwa()],
+  // Un solo `.env.local` en la raiz del monorepo (web + scripts). Sin esto Vite
+  // solo mira `apps/web` y las `VITE_*` del root no llegan al bundle.
+  envDir: desdeAqui('../..'),
   resolve: {
     alias: [
       // Exactos a proposito: `@hackods/ui/tokens.css` debe resolver por package exports.
