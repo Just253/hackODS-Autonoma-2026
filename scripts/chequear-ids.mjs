@@ -21,7 +21,17 @@ const LEGADO = /\bDEC-2026-000([1-9])\b/g;
 const INTENTO = /\b(?:DEC|PRB|SPK)-[A-Za-z0-9-]*\b/g;
 
 const errores = [];
-const omitir = new Set(['node_modules', '.git', 'dist', 'coverage', '.turbo', 'historical']);
+const omitir = new Set([
+  'node_modules',
+  '.git',
+  'dist',
+  'coverage',
+  '.turbo',
+  'historical',
+  // Worktrees de agentes: copias del mismo repo, no fuentes. Escanearlas
+  // duplica cada hallazgo y bloquea el commit de la rama principal.
+  '.worktrees',
+]);
 
 function* archivos(dir) {
   for (const entrada of readdirSync(dir)) {
