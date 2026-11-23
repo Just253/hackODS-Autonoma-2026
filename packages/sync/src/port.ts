@@ -1,17 +1,32 @@
 /**
- * Frontera de sincronizacion (docs/ARQUITECTURA.md 5.4).
- * Hoy la implementa un adapter; manana puede ser Supabase, D1 o ninguno (`NoRemote`).
- * El paquete no hace red: recibe el transporte inyectado.
+ * Frontera de sincronizacion (docs/contracts/sync.md).
+ * `push`/`pull` son el contrato de las Edge Functions; el paquete no hace red.
  */
+
+export interface EventoEnviado {
+  readonly eventUuid: string;
+  readonly idempotencyKey: string;
+  readonly lamport: number;
+  readonly deviceId: string;
+  readonly ollaId: string;
+  readonly entidad: string;
+  readonly op: 'upsert' | 'delete';
+  readonly payload: unknown;
+  readonly creadoEn: string;
+}
+
 export interface ResultadoPush {
-  readonly enviados: number;
+  readonly aceptados: readonly string[];
+  readonly duplicados: readonly string[];
+  readonly rechazados: readonly { readonly idempotencyKey: string; readonly motivo: string }[];
   readonly pendientes: number;
   readonly error?: string;
 }
 
 export interface ResultadoPull {
-  readonly aplicados: number;
-  readonly cursor: string;
+  readonly eventos: readonly EventoEnviado[];
+  /** Cursor compuesto para el proximo `GET /sync/pull?since=…&since_device=…`. */
+  readonly cursor: { readonly lamport: number; readonly deviceId: string };
 }
 
 export interface EstadoSync {
@@ -21,6 +36,6 @@ export interface EstadoSync {
 
 export interface SyncPort {
   push(): Promise<ResultadoPush>;
-  pull(cursor?: string): Promise<ResultadoPull>;
+  pull(since?: number): Promise<ResultadoPull>;
   status(): EstadoSync;
 }
