@@ -1,7 +1,7 @@
 ---
 description: Lead del repo. Planifica, delega, integra y abre PRs. No escribe código.
 mode: primary
-model: anthropic/claude-sonnet-5-5#high
+model: mistral/deepseek-v4-1-flash-1017
 steps: 80
 permissions:
   - action: edit

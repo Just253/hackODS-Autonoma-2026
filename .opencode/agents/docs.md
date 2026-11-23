@@ -1,7 +1,7 @@
 ---
 description: Documentación, ADRs y guías reproducibles.
 mode: subagent
-model: anthropic/claude-haiku-4-5
+model: mistral/deepseek-v4-1-flash-1017
 steps: 30
 permissions:
   - action: edit

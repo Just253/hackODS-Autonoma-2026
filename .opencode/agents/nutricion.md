@@ -1,7 +1,7 @@
 ---
 description: Contrato del motor nutricional: menú firmado y porción por grupo. Sin cifras.
 mode: all
-model: anthropic/claude-sonnet-5-5#high
+model: mistral/deepseek-v4-1-flash-1017
 steps: 50
 permissions:
   - action: edit

@@ -1,7 +1,7 @@
 ---
 description: Read-only. Reproduce el bug y verifica el gate. Emite veredicto, no arregla.
 mode: subagent
-model: anthropic/claude-sonnet-5-5#high
+model: mistral/deepseek-v4-1-flash-1017
 steps: 60
 permissions:
   - action: edit

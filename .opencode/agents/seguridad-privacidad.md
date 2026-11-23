@@ -1,7 +1,7 @@
 ---
 description: Read-only. Audita RLS, PII y secretos. Clasifica riesgo, no explota nada.
 mode: subagent
-model: anthropic/claude-sonnet-5-5#high
+model: mistral/deepseek-v4-1-flash-1017
 steps: 45
 permissions:
   - action: edit
