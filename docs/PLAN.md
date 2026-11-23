@@ -1,6 +1,8 @@
 # 04 — Plan ejecutable: 3 orquestadores, un repo, una PWA para ollas comunes
 
-> **Vigente: `docs/DECISIONES.md`; este documento queda como insumo.**
+> **Insumo histórico (2026-11-23). No decide.** Vigente: `docs/DECISIONES.md` (D1–D9) y
+> `docs/contracts/`. Los ejemplos de contrato de este archivo son anteriores a D3/D8/D9.
+> **Backlog único: GitHub Issues** (`gh issue list`). Los `#N` de este plan no son issues.
 
 **Producto:** PWA offline-first para ollas comunes del Perú (padrón de personas, despensa, recetas, motor nutricional explicable, solicitudes entre ollas, impresión/escaneo).
 **Equipo:** 3 orquestadores (OpenChamber Desktop) + hasta 3 subagentes simultáneos cada uno, en 3 PCs distintas, un repo público `Just253/hackODS-Autonoma-2026` (hoy vacío).
@@ -22,7 +24,7 @@ No hay duración confirmada del hackathon. El plan se escribe una vez y se **cal
 | Horas **planeadas** (el resto es buffer) | 70 h-persona (≈78 %) | 96 h-persona (≈80 %) |
 | Sincronía | 3 syncs/día (09:00, 13:00, 20:30) | 2 syncs/día (09:00, 18:00) |
 | WIP por stream | 1 claim + 1 en review | 1 claim + 2 en review |
-| Tamaño máximo de PR | 250 líneas | 400 líneas |
+| Tamaño máximo de PR | 400 líneas | 400 líneas |
 | Alcance realista | M0–M4 completos + M5 degradado + M6 | M0–M6 completos + M5 con sync real |
 | Congelamiento antes de demo | últimas 6 h | último día completo |
 
@@ -53,7 +55,7 @@ No hay duración confirmada del hackathon. El plan se escribe una vez y se **cal
 | **Objetivo** | Repo operativo con protocolo aplicado, 3 streams con contratos congelados, datos sembrados, y **una persona registrada que ve su ración sin internet** |
 | **Entregable demostrable** | En las 3 PCs: `pnpm i && pnpm seed && pnpm dev` → alta de persona → pantalla de ración con explicación → recarga con red apagada → sigue ahí. Tag `v0.1-skeleton` |
 | **Criterio de hecho** | (1) `main` protegida, labels creados, plantillas de issue/PR y `CODEOWNERS` mergeados; (2) contratos v1 + esquema local v1 mergeados con 2 aprobaciones; (3) `pnpm -r typecheck && pnpm -r test` verde en CI y en las 3 máquinas; (4) e2e offline verde; (5) deploy preview accesible por URL; (6) 6 issues en `status:ready`; (7) `coordination` issue abierto con el primer `sync/` |
-| **Dueño** | A (lead de integración). B entrega workspace/CI/seed; C entrega contratos y `calcularRacion()` v0 |
+| **Dueño** | A (lead de integración). B entrega workspace/CI/seed; C entrega contratos y el menú firmado v0 |
 | **Riesgo de no hacerlo** | Sin M0 no hay paralelismo posible: cualquier stream que arranque antes escribe contra un contrato que todavía se mueve |
 
 **M0 hora por hora (S72; en S14 se estira a un día con los mismos cortes)**
@@ -61,9 +63,9 @@ No hay duración confirmada del hackathon. El plan se escribe una vez y se **cal
 | Hora | Todos | A (web) | B (api/infra) | C (domain) |
 |---|---|---|---|---|
 | 09:00–10:00 | Repo, protección, labels, plantillas, 6 issues, `coordination` | — | workspace + CI + `pnpm` fijado | borrador de contratos |
-| 10:00–12:00 | **Ventana de contratos** (nadie escribe código de feature) | shell PWA + Dexie spike | esquema SQL espejo + seed JSON | tipos + zod + `calcularRacion()` firma |
-| 12:00–13:00 | PR de contratos #2 y #3 → 2 aprobaciones → merge (**freeze v1**) | consumo del contrato | `pnpm seed` idempotente | tabla de requerimientos mínima (6 filas) |
-| 13:00–15:00 | Integración | formulario + persistencia | seed con 30 personas | `calcularRacion()` con 6 casos |
+| 10:00–12:00 | **Ventana de contratos** (nadie escribe código de feature) | shell PWA + Dexie spike | esquema SQL espejo + seed JSON | tipos + zod + firma de `validarMenu` |
+| 12:00–13:00 | PR de contratos y esquema → 2 aprobaciones → merge (**freeze v1**) | consumo del contrato | `pnpm db:seed` idempotente | menú firmado v0 |
+| 13:00–15:00 | Integración | formulario + persistencia | seed con 30 personas | `validarMenu` con 6 casos |
 | 15:00–16:00 | — | pantalla de ración + "por qué" | deploy preview | pruebas de dominio |
 | 16:00–17:00 | **Gate M0**: demo en las 3 PCs en modo avión; tag; sync de cierre | e2e offline | CI verde | revisión cruzada de A |
 
@@ -97,9 +99,9 @@ No hay duración confirmada del hackathon. El plan se escribe una vez y se **cal
 
 | | |
 |---|---|
-| **Objetivo** | Dada una persona (y opcionalmente el stock), devolver una ración sugerida **con razones legibles**, en modo automático o con ajuste de nutricionista |
-| **Entregable demostrable** | Niño de 4 años con anemia reportada → ración A con 3 razones; gestante → ración B distinta; nutricionista ajusta +20 g de hierro y queda registrado quién, cuándo y por qué |
-| **Criterio de hecho** | `calcularRacion()` es puro (sin IO, determinista, < 5 ms); toda ración trae ≥ 2 `reasons` en español legible; cobertura por nutriente calculada contra tabla versionada; override exige justificación y autor; 12 casos de prueba (4 categorías × 3 escenarios de stock) |
+| **Objetivo** | Menú semanal **firmado por nutricionista**, validado contra sus restricciones, con porción por grupo y explicación legible |
+| **Entregable demostrable** | Menú de 7 días aprobado con sello (CNP + hash); niño y gestante reciben porciones distintas del mismo plato; una sustitución solo si está aprobada en la plantilla |
+| **Criterio de hecho** | `validarMenu` y `porcionParaGrupo` son puros (sin IO, deterministas, < 5 ms); un menú aprobado sin sello es inválido; toda explicación es legible en español; 12 casos de prueba |
 | **Dueño** | C. A consume; B no toca |
 | **Corte** | Se cae el modo nutricionista (override), **nunca** la explicación |
 
@@ -119,7 +121,7 @@ No hay duración confirmada del hackathon. El plan se escribe una vez y se **cal
 |---|---|
 | **Objetivo** | Pedir insumos a otra olla y sincronizar cuando vuelva el internet, sin perder ni duplicar registros |
 | **Entregable demostrable** | Dispositivo 1 (offline) crea solicitud; al reconectar se sincroniza; dispositivo 2 la ve y la acepta; ambos convergen al mismo estado |
-| **Criterio de hecho** | Outbox persistente que sobrevive recarga; pull incremental por cursor; conflicto resuelto por LWW con `updated_at` + tombstone, **sin duplicados** (clave idempotente por `id`); estado de sync visible con pendientes y último error; prueba de convergencia de 2 dispositivos en CI |
+| **Criterio de hecho** | Outbox persistente que sobrevive recarga; pull incremental por `(lamport, device_id)`; conflicto: **gana el cierre válido más antiguo** y el otro queda visible (D5), con tombstone y **sin duplicados** (`idempotency_key`); estado de sync visible; prueba de convergencia de 2 dispositivos en CI |
 | **Dueño** | B. A hace el indicador de sync y la bandeja; C no interviene |
 | **Corte** | Es el primer candidato a caer (§8.3). Degradación: un solo dispositivo + badge "3 pendientes de subir" honesto |
 
@@ -127,9 +129,9 @@ No hay duración confirmada del hackathon. El plan se escribe una vez y se **cal
 
 | | |
 |---|---|
-| **Objetivo** | Que la demo funcione 3 veces seguidas en el dispositivo objetivo, sin internet, en 6 minutos, y que lo que se promete sea defendible |
+| **Objetivo** | Que la demo funcione 3 veces seguidas en el dispositivo objetivo, sin internet, en **3 minutos** (+ anexo de 2), y que lo que se promete sea defendible |
 | **Entregable demostrable** | Build de producción instalado como PWA en un Android de gama baja; `demo-v1.json` congelado; guion impreso; panel de métricas; plan B en 3 niveles |
-| **Criterio de hecho** | 3 corridas cronometradas ≤ 7 min, todas verdes; modo avión desde el segundo 0; JS inicial ≤ 250 KB gzip; TTI < 3 s con CPU 4× ralentizada; disclaimer visible en la pantalla de ración; `pnpm demo:reset` deja el estado inicial en < 2 s |
+| **Criterio de hecho** | 3 corridas cronometradas ≤ 3 min (+2 de anexo), todas verdes; modo avión desde el segundo 0; JS inicial ≤ 250 KB gzip; TTI < 3 s con CPU 4× ralentizada; disclaimer visible en la pantalla de ración; `pnpm demo` deja el estado inicial reproducible |
 | **Dueño** | A, con B en deploy/backup y C en validación de textos nutricionales |
 
 ---
@@ -147,8 +149,8 @@ Ese camino es el **producto mínimo demostrable del ODS**. Todo lo demás (despe
 Mockear es aceptable cuando el mock se tira sin tocar a nadie. Estas siete, si se mockean, obligan a reescribir el 30 % del código en el día 2:
 
 1. **Persistencia real en IndexedDB** (Dexie), no `useState` ni `localStorage`. Es la promesa central y es lo que se demuestra.
-2. **IDs y columnas de sync desde el registro #1**: `id` (UUID v4), `created_at`, `updated_at`, `deleted_at`, `device_id`. Agregarlas después toca todas las tablas y todos los formularios.
-3. **`calcularRacion()` puro y separado de React**: `(persona, contexto) → Ration`. Si vive dentro del componente, no se puede probar ni reutilizar para el menú.
+2. **IDs y columnas de sync desde el registro inicial**: `id` (UUIDv7), `lamport`, `device_id`, `created_at`, `updated_at`, `deleted_at`. Agregarlas después toca todas las tablas y todos los formularios.
+3. **El menú firmado y la porción por grupo, separados de React**: `validarMenu` y `porcionParaGrupo` (D3). Si viven dentro del componente, no se pueden probar ni reutilizar.
 4. **Forma del payload de explicabilidad**: `reasons: string[]` + `coverage`. Se pueden inventar los números; no la estructura.
 5. **Unidades canónicas** (g / ml / unidad) y conversión declarada por insumo. Cambiar de "kilos" a "gramos" a mitad de camino rompe stock, recetas y raciones a la vez.
 6. **Frontera de storage** (`PersonRepo`, `StockRepo`, `RequestRepo`): la UI no conoce Dexie. Es lo que permite que M5 entre sin tocar pantallas.
@@ -158,12 +160,12 @@ Mockear es aceptable cuando el mock se tira sin tocar a nadie. Estas siete, si s
 
 | Se mockea | Cómo | Cuándo se reemplaza | Costo de tirarlo |
 |---|---|---|---|
-| Tabla de requerimientos nutricionales | 6 filas en `fixtures/requerimientos-v0.json`, con `version: "v0-borrador"` | M3 (#9) | 0: es un JSON |
+| Menú firmado de ejemplo | `MENU_VERSION = "v0-borrador"` | M3 | 0: es un JSON |
 | Autenticación / usuarios | Un solo usuario local "organizadora", `device_id` en localStorage | Post-MVP (fuera del hackathon) | 0 |
-| Backend y sync | `NoopSyncAdapter` que registra en consola | M5 (#19) | 1 archivo, si el contrato existe |
-| Recetas y menú | 3 recetas estáticas en fixture | M4 (#15) | 0 |
-| Catálogo de insumos | 20 insumos con unidad y densidad | M2 (#12) | 0 |
-| Impresión | `@media print` básico, sin plantilla | M4 (#17) | bajo |
+| Backend y sync | `NoopSyncAdapter` que registra en consola | M5 | 1 archivo, si el contrato existe |
+| Recetas y menú | 3 recetas estáticas en fixture | M4 | 0 |
+| Catálogo de insumos | 20 insumos con unidad y densidad | M2 | 0 |
+| Impresión | `@media print` básico, sin plantilla | M4 | bajo |
 | Escaneo de códigos/tickets | No se hace en el skeleton | Opcional post-M4 | — |
 
 ### 2.4 Qué NO se puede mockear aunque el reloj apriete
@@ -181,8 +183,8 @@ Mockear es aceptable cuando el mock se tira sin tocar a nadie. Estas siete, si s
 | Toques hasta ver la ración | ≤ 6 | conteo manual en el e2e |
 | Requests de red en el camino | 0 | DevTools offline + log del Service Worker |
 | Persistencia tras recarga | 100 % | `e2e/skeleton.spec.ts` |
-| Tiempo de `calcularRacion()` | < 5 ms | benchmark en el test de dominio |
-| Líneas totales del skeleton | ≤ 900 (sin lockfile) | `git diff --stat` del PR #6 |
+| Tiempo de `validarMenu()` | < 5 ms | benchmark en el test de dominio |
+| Líneas totales del skeleton | ≤ 900 (sin lockfile) | `git diff --stat` del PR del walking skeleton |
 
 ---
 
@@ -192,86 +194,35 @@ Mockear es aceptable cuando el mock se tira sin tocar a nadie. Estas siete, si s
 
 | Stream | Persona | Área(s) (`area:*`) | Carpetas (dueño único) | Revisa |
 |---|---|---|---|---|
-| **A — Web, offline, UX** | Ana | `web` | `apps/web/**` | `api`, `domain` |
-| **B — Datos, backend, sync** | Beto | `api`, `infra` | `packages/db/**`, `packages/sync/**`, `supabase/**`, `.github/**`, `scripts/**`, `infra/**` | `web`, `domain` |
-| **C — Dominio, nutrición, impresión** | Caro | `domain` | `packages/domain/**`, `fixtures/**`, `docs/nutricion/**`, `apps/web/src/print/**` (por convenio, avisando a A) | `web`, `api` |
-| **Compartido** | las tres | `contracts` | `packages/contracts/**` | 2 aprobaciones (una de cada consumidor) |
+| **A — Web, offline, UX** | A | `web` | `apps/web/**`, `packages/ui/**`, `packages/printing/**` | `api`, `contracts` |
+| **B — Datos y backend** | B | `api` | `supabase/**` | `web`, `contracts` |
+| **C — Dominio, nutrición, sync y docs** | C | `contracts`, `infra` | `packages/contracts/**`, `packages/domain/**`, `packages/nutrition/**`, `packages/sync/**`, `docs/**`, `scripts/**`, `.github/**` | `web`, `api` |
+
+Las áreas son solo las cuatro de `docs/PROTOCOL.md` / `.github/labels.yml`: `web`, `api`, `infra`,
+`contracts`. No existen `area:domain`, `area:nutricion` ni `area:docs`.
 
 `packages/contracts/**` es caro a propósito: **un PR chico, solo contratos, mergeado antes** del código que lo usa. Nunca "aprovecho y agrego el tipo en el PR de la pantalla".
-
-**Nota de adaptación al protocolo:** se agrega `area:domain` (C) y `infra` queda en B para que toda carpeta tenga un dueño. El resto de labels, claims y gate no cambia.
 
 ### 3.2 Contratos que se congelan antes de paralelizar (hito: D0 12:00)
 
 Sin estos cinco archivos mergeados, **no se abre ningún claim de feature**. Los primeros 3 h del día 1 son la ventana más rentable del hackathon: dos días de paralelismo dependen de ellas.
 
-**a) `packages/contracts/src/domain.ts`** — entidades y enums
+**a) `packages/contracts/src/domain.ts`** — entidades y enums (tipos inferidos de Zod):
+`Persona` (`codigoP` `P-XXXX`, sin nombre), `Olla` (+ `tipo`), `Insumo`, `Receta`, `Servicio`,
+`Movimiento`, `Comprobante`, `Presupuesto`, `Captura`. Toda entidad sincronizable lleva `SyncMeta`
+con `(lamport, deviceId)`.
 
-```ts
-export type Categoria = 'adulto' | 'adulto_mayor' | 'nino' | 'gestante' | 'lactante';
-export type AnemiaReportada = 'si' | 'no' | 'sin_dato';
-export type UnidadBase = 'g' | 'ml' | 'unidad';
+**b) `packages/contracts/src/finanzas.ts`, `captura.ts`, `compute.ts`** — dinero entero
+(`Centimos`, `Milesimas`), comprobantes e ítems, captura por texto/voz y `ComputePort`.
 
-export interface Persona {
-  id: string;                 // UUID v4, generado en el cliente
-  ollaId: string;
-  alias: string;              // nombre o apodo; NUNCA apellidos completos en v1
-  anioNacimiento: number;     // solo año: menos dato, misma utilidad
-  categoria: Categoria;
-  anemia: AnemiaReportada;    // "reportada por la organización", no diagnóstico
-  pesoKg?: number;
-  notas?: string;
-  createdAt: string; updatedAt: string; deletedAt?: string | null;
-  deviceId: string;
-}
+**c) `packages/contracts/src/index.ts`** — `SCHEMA_VERSION`, `MENU_VERSION`, `LOTE_MAXIMO` y los
+schemas Zod. Sin tipos escritos dos veces.
 
-export interface Insumo {
-  id: string; nombre: string; unidadBase: UnidadBase;
-  gramosPorUnidad?: number;   // equivalencia declarada, no inferida
-  stockMinimo: number; perecedero: boolean;
-}
+**d) `supabase/migrations/20261123150000_modelo_base.sql`** — esquema SQL. Los tests de paridad
+comparan tablas y columnas contra los contratos y fallan si divergen.
 
-export interface MovimientoStock {
-  id: string; insumoId: string; delta: number;  // en unidadBase, +/- 
-  motivo: 'entrada' | 'salida' | 'ajuste' | 'merma';
-  autor: string; at: string; createdAt: string; updatedAt: string; deletedAt?: string | null;
-}
-
-export interface Ration {
-  personaId: string;
-  components: Array<{ insumoId: string; gramos: number; grupo: string }>;
-  totalKcal: number;
-  coverage: { energia: number; proteina: number; hierro: number; vitC: number }; // 0..1+
-  reasons: string[];          // ≥ 2, en español legible por la organizadora
-  mode: 'automatico' | 'nutricionista';
-  override?: { por: string; justificacion: string; at: string };
-  tablaVersion: string;       // "v0-borrador" | "v1-revisada"
-}
-```
-
-**b) `packages/contracts/src/ports.ts`** — las tres fronteras
-
-```ts
-export interface NutritionPort {
-  calcularRacion(p: Persona, ctx: { stock: Record<string, number>; tabla: TablaRequerimientos }): Ration;
-}
-export interface PersonRepo {
-  list(): Promise<Persona[]>;
-  upsert(p: Persona): Promise<void>;
-  softDelete(id: string): Promise<void>;
-}
-export interface SyncPort {
-  push(): Promise<{ enviados: number; pendientes: number; error?: string }>;
-  pull(cursor?: string): Promise<{ aplicados: number; cursor: string }>;
-  status(): { pendientes: number; ultimaSync?: string };
-}
-```
-
-**c) `packages/contracts/src/schemas.ts`** — zod espejo, más `TABLA_VERSION` y `SCHEMA_VERSION`.
-
-**d) `packages/db/src/schema.ts` + `supabase/migrations/0001_init.sql`** — espejo exacto. Prueba obligatoria: `schema-parity.spec.ts` compara la lista de tablas y columnas de Dexie contra el SQL y falla si divergen. Es el antídoto contra "en local anda".
-
-**e) `packages/contracts/src/seed.ts`** — tipos del seed, no los datos. Los datos viven en `fixtures/demo-v1.json`.
+**e) `packages/nutrition/src/contrato.ts`** — menú firmado: `validarMenu`, `porcionParaGrupo`,
+`sustituirInsumo`, `explicar` (D3). Sin cifras.
 
 ### 3.3 Decisiones que se toman el día 1 y no se reabren (ADR-001..005)
 
@@ -279,7 +230,7 @@ export interface SyncPort {
 |---|---|---|
 | 001 | **Offline-first real**: IndexedDB es la fuente de verdad; el backend es solo transporte | La olla no tiene internet. Si el backend es la verdad, el producto no existe en el 80 % de los casos |
 | 002 | **Backend = Supabase (Postgres + RLS)**, sin servidor propio | CRUD + RLS en horas, no en días. Cloudflare Workers habría exigido escribir API y auth |
-| 003 | **Sync = LWW por registro + tombstones**, no CRDT | Con 30 registros y 1 escritor por olla, un CRDT es sobre-ingeniería; LWW es explicable en la demo |
+| 003 | **Sync = Lamport + `device_id` + tombstones**, no CRDT | Con 30 registros y 1 escritor por olla, un CRDT es sobre-ingeniería; “gana el cierre válido más antiguo” es explicable en la demo (D5) |
 | 004 | **Unidades canónicas g/ml/unidad** con equivalencia declarada | Evita el bug clásico de kilos vs gramos en stock, recetas y raciones a la vez |
 | 005 | **Privacidad mínima**: alias, año de nacimiento, sin DNI/dirección/foto; anemia = "reportada" | Dato de salud de menores en un celular compartido. Menos dato, menos riesgo y menos liability |
 
@@ -294,12 +245,10 @@ Máximo 3 hijos simultáneos por orquestador; **un solo escritor por carpeta**. 
 | A | `a-sub-ui` | `apps/web/src/**` | `packages/**` |
 | A | `a-sub-e2e` | `apps/web/e2e/**` | `apps/web/src/**` |
 | A | `a-sub-pwa` | `apps/web/vite.config.ts`, `apps/web/public/**` | resto |
-| B | `b-sub-storage` | `packages/db/**` | `supabase/**` |
-| B | `b-sub-sync` | `packages/sync/**` | `packages/db/**` |
-| B | `b-sub-sql` | `supabase/**`, `scripts/**` | `packages/**` |
-| C | `c-sub-nutrition` | `packages/domain/**` | `fixtures/**` |
-| C | `c-sub-fixtures` | `fixtures/**` | `packages/domain/**` |
-| C | `c-sub-print` | `apps/web/src/print/**` (por convenio, con aviso a A) | resto de `apps/web` |
+| B | `b-sub-sql` | `supabase/**` | `packages/**` |
+| C | `c-sub-domain` | `packages/domain/**` | `supabase/**` |
+| C | `c-sub-sync` | `packages/sync/**` | `apps/web/**` |
+| C | `c-sub-nutrition` | `packages/nutrition/**` | `packages/domain/**` |
 
 ---
 
@@ -319,83 +268,72 @@ M3 necesita M1 (personas con categoría) y M2 (stock, si la ración considera di
 
 ### 4.2 Matriz de dependencias entre streams
 
-| Necesita → | A (web) | B (api/db/sync) | C (domain) | contracts |
+| Necesita → | A (web) | B (api) | C (contratos/dominio/sync) | contracts |
 |---|---|---|---|---|
-| **A (web)** | — | `PersonRepo`, `StockRepo`, `SyncPort` (firmas) | `calcularRacion()`, `Ration` | tipos, zod, versión de esquema |
-| **B (api/db/sync)** | nada (solo consume el esquema) | — | nada | tipos + `SCHEMA_VERSION` |
-| **C (domain)** | nada (función pura) | nada | — | `Persona`, `Insumo`, unidades |
+| **A (web)** | — | datos y RLS | `validarMenu`, `SyncPort` (firmas) | tipos, zod, versión de esquema |
+| **B (api)** | nada (solo consume el esquema) | — | nada | tipos + `SCHEMA_VERSION` |
+| **C (contratos)** | nada (reglas puras) | nada | — | `Persona`, `Insumo`, unidades |
 | **contracts** | 1 aprobación | 1 aprobación | 1 aprobación | — |
 
-**Lectura:** B es el stream menos acoplado (solo depende de contratos) y por eso es el que puede absorber el trabajo largo (sync). C tampoco depende de nadie si la función es pura. **A es el integrador**: siempre está esperando algo, y por eso su presupuesto incluye 30 % de slack.
+**Lectura:** B es el stream menos acoplado (solo depende de contratos). C tampoco depende de nadie si
+la regla es pura. **A es el integrador**: siempre está esperando algo, y por eso su presupuesto incluye
+30 % de slack.
 
 ### 4.3 Camino crítico
 
 ```
-#2 contratos ─► #3 esquema ─► #4 calcularRacion ─► #6 walking skeleton ─► #8 padrón ─► #32 métricas ─► DEMO
-                                    │                                    ▲
-#5 seed ────────────────────────────┴────────────────────────────────────┘
+contratos ─► esquema ─► menú firmado ─► walking skeleton ─► padrón ─► métricas ─► DEMO
+                                  │                              ▲
+seed ─────────────────────────────┴──────────────────────────────┘
 
 Rama de riesgo (no crítica, pero la que rompe el reloj):
-#3 ─► #19 sync ─► #20 pull ─► #22 solicitudes ─► #23 bandeja
+esquema ─► sync ─► pull ─► solicitudes ─► bandeja
 ```
 
-**El camino crítico no incluye sync.** Ese es el hallazgo que ordena todo el plan: si sync falla, la demo sigue en pie; si `#4` o `#6` fallan, no hay demo.
+**El camino crítico no incluye sync.** Ese es el hallazgo que ordena todo el plan: si sync falla, la demo sigue en pie; si el menú firmado o el walking skeleton fallan, no hay demo.
 
 ### 4.4 Orden de merge por día (evita el "main rojo")
 
 | Momento | Qué se mergea | Regla |
 |---|---|---|
-| D0 09:00–12:00 | Contratos `#2`, `#3` | 2 aprobaciones, nadie más pushea a `packages/contracts` |
-| D0 12:00–17:00 | `#4`, `#5`, `#7`, `#6` (en ese orden) | `#6` es el último: es el que integra todo |
-| D1 mañana | `#8`, `#9`, `#1` (si quedó) | 1 PR por stream por franja |
-| D1 tarde | `#12`, `#13`, `#15` | B y C nunca mergean en la misma franja si tocan fixtures |
-| D2 mañana | `#19`, `#20`, `#17`, `#18` | congelamiento de contratos ya vigente |
-| D2 tarde | solo `fix/*` y `#34` | **nada de migraciones ni esquema** |
+| D0 09:00–12:00 | Contratos y esquema | 2 aprobaciones, nadie más pushea a `packages/contracts` |
+| D0 12:00–17:00 | Menú firmado, seed y walking skeleton (en ese orden) | el skeleton es el último: integra todo |
+| D1 mañana | Padrón y PWA instalable | 1 PR por stream por franja |
+| D1 tarde | Despensa y recetas | B y C nunca mergean en la misma franja si tocan fixtures |
+| D2 mañana | Sync, solicitudes, impresión y accesibilidad | congelamiento de contratos ya vigente |
+| D2 tarde | solo `fix/*` y hardening de demo | **nada de migraciones ni esquema** |
 
 ---
 
-## 5. Backlog inicial (34 issues)
+## 5. Backlog
 
-**Leyenda.** Tamaño: **S** ≤ 3 h · **M** ≤ 1 día · **L** ≤ 2 días (en S72, un L es una bandera roja: tiene que arrancar el D1 antes de las 12:00 o se corta). `blocked_by` usa los IDs de esta tabla. Los 6 primeros se abren el día 1 en `status:ready`; el resto se abre en `status:triage` **pero ya con criterio y prueba escritos**, así promoverlos es un cambio de label, no una reescritura.
+**El backlog vive en GitHub Issues.** Los números de este plan (si quedan en algún ejemplo) **no son
+números de issue**. Para ver el trabajo real:
 
-| # | Título | Área | Tam | blocked_by | status | Criterio de aceptación (1 línea) | Prueba exigida |
-|---|---|---|---|---|---|---|---|
-| 1 | `[infra] Monorepo, CI, labels, plantillas y protección de main` | infra | S | — | **ready** | `main` protegida + labels + plantillas + CI que corre `typecheck` y `test` en cada PR | `gh pr checks` verde en un PR de prueba; `gh label list` con los 22 labels |
-| 2 | `[contracts] Contratos v1 del dominio (tipos + zod)` | contracts | M | — | **ready** | `packages/contracts` exporta `Persona`, `Insumo`, `Ration`, `SyncPort` y zod valida los fixtures del seed | `pnpm -F contracts test` → `contracts.spec.ts` |
-| 3 | `[contracts] Esquema de almacenamiento v1 (Dexie + SQL espejo + columnas de sync)` | contracts | M | 2 | **ready** | `schema.ts` y `0001_init.sql` declaran las mismas tablas/campos, con `id/created_at/updated_at/deleted_at/device_id` | `schema-parity.spec.ts` falla si divergen |
-| 4 | `[domain] calcularRacion() puro + tabla de requerimientos v0` | domain | M | 2 | **ready** | 4 categorías devuelven `Ration` con ≥ 2 `reasons` y `coverage`, determinista y sin IO | `racion.spec.ts` (12 casos) |
-| 5 | `[api] Seed de demo idempotente (1 olla, 8 personas, 20 insumos, 5 recetas)` | api | S | 2, 3 | **ready** | `pnpm seed` dos veces deja el mismo estado y `demo-v1.json` valida contra zod | `seed.spec.ts` |
-| 6 | `[web] Walking skeleton: alta de persona → ración, offline` | web | M | 2, 3, 4, 5 | **ready** | Alta real, ración con explicación, y tras recargar con red apagada los datos siguen | `e2e/skeleton.spec.ts` con `context.setOffline(true)` |
-| 7 | `[web] PWA instalable + cache del shell` | web | S | 1 | triage | Lighthouse "installable" y recarga offline sirve el shell | `lighthouse --only-categories=pwa` + captura |
-| 8 | `[web] Padrón: listado, búsqueda, edición y baja lógica` | web | M | 6 | triage | 8 personas dadas de alta por UI en < 3 min, búsqueda por alias y baja que no borra historial | `e2e/padron.spec.ts` |
-| 9 | `[domain] Requisitos por categoría y anemia reportada (tabla v1)` | domain | M | 4 | triage | Cada (categoría, anemia) tiene requerimiento declarado y trazable a fuente citada | `requisitos.spec.ts` + tabla con columna `fuente` |
-| 10 | `[contracts] NutritionPort v1 + forma de Explanation` | contracts | S | 2 | triage | `Ration.reasons` y `coverage` congelados; cambio incompatible obliga a v2 | `contracts.spec.ts` con snapshot del tipo |
-| 11 | `[domain] Modo nutricionista: override con justificación y autor` | domain | M | 10 | triage | Override exige justificación ≥ 20 caracteres y registra autor/fecha; sin override no hay campo | `override.spec.ts` |
-| 12 | `[api] Inventario: movimientos de stock offline-first` | api | M | 3 | triage | Saldo derivado de movimientos inmutables; nunca se escribe un saldo a mano | `stock.spec.ts` (entrada/salida/ajuste/merma) |
-| 13 | `[web] Despensa: semáforo, mínimos y último movimiento` | web | M | 12 | triage | Semáforo correcto contra 6 casos de fixture y movimiento nuevo visible sin recargar | `e2e/despensa.spec.ts` |
-| 14 | `[api] Alertas de stock mínimo y vencimiento próximo` | api | S | 12 | triage | Alerta por insumo bajo mínimo y por lote que vence en ≤ 7 días, sin duplicados | `alertas.spec.ts` |
-| 15 | `[domain] Recetas: escalado por raciones y aporte nutricional` | domain | M | 4, 9 | triage | Escalar de 10 a 78 raciones mantiene proporciones (±1 g) y recalcula cobertura | `recetas.spec.ts` |
-| 16 | `[web] Menú del día desde stock + raciones` | web | M | 13, 15 | triage | El menú marca faltantes cuando el stock no alcanza y no propone insumos con stock 0 como disponibles | `e2e/menu.spec.ts` |
-| 17 | `[domain] Hoja de reparto A5: modelo de datos + componente de impresión` | domain | M | 8 | triage | El modelo de hoja es puro y testeable; el componente imprime 1 página A5 legible en B/N, sin internet, con aviso a A por `files:` | `print.spec.ts` (modelo) + snapshot de página A5 |
-| 18 | `[web] Modo baja alfabetización: iconos, texto grande y flujo de 3 toques` | web | M | 8 | triage | Alta completa en ≤ 6 toques con iconos y targets ≥ 44 px; texto base ≥ 18 px | `e2e/accesibilidad.spec.ts` + revisión visual |
-| 19 | `[api] SyncPort + adapter Supabase (outbox, LWW, tombstones)` | api | L | 3 | triage | Outbox sobrevive recarga; push idempotente por `id`; sin duplicados tras 3 reintentos | `sync.spec.ts` con adapter en memoria |
-| 20 | `[api] Pull incremental por cursor + resolución de conflictos` | api | M | 19 | triage | Dos dispositivos convergen al mismo estado; gana `updated_at` mayor; tombstone borra en ambos | `convergencia.spec.ts` (2 clientes simulados) |
-| 21 | `[web] Estado de sync visible (pendientes, última sync, reintentar)` | web | S | 19, 20 | triage | Badge con pendientes reales; error de red no bloquea la app ni pierde datos | `e2e/sync-badge.spec.ts` |
-| 22 | `[api] Solicitudes de insumos entre ollas` | api | M | 19 | triage | Crear/aceptar/rechazar con estados y autor; aceptar descuenta stock del que entrega | `solicitudes.spec.ts` |
-| 23 | `[web] Bandeja de solicitudes entre ollas` | web | S | 22 | triage | Bandeja con 3 estados y acción de aceptar en ≤ 2 toques | `e2e/bandeja.spec.ts` |
-| 24 | `[infra] Migraciones Supabase + RLS por olla` | infra | M | 3 | triage | Un usuario de la olla A no puede leer datos de la olla B (probado, no asumido) | `rls.spec.ts` contra instancia local |
-| 25 | `[infra] Deploy preview por PR + URL de demo estable` | infra | S | 1 | triage | Cada PR tiene URL; `main` tiene URL fija usada en la demo | comentario automático del bot + `curl -I` 200 |
-| 26 | `[web] Exportar/importar backup JSON` | web | S | 3 | triage | Export produce JSON válido contra zod; importar restaura sin duplicar IDs | `backup.spec.ts` |
-| 27 | `[web] Accesibilidad: contraste, foco y lector de pantalla básico` | web | S | 8 | triage | 0 violaciones críticas de axe y navegación completa por teclado | `axe` en CI sobre 3 pantallas |
-| 28 | `[infra] Presupuesto de rendimiento en gama baja` | infra | S | 7 | triage | JS inicial ≤ 250 KB gzip y TTI < 3 s con CPU 4× | `lighthouse-ci` con umbrales que fallan el PR |
-| 29 | `[contracts] Versionado y migración de esquema local (v1→v2)` | contracts | S | 3 | triage | Una DB v1 migra a v2 sin perder filas; `SCHEMA_VERSION` se lee en runtime | `migracion.spec.ts` con DB sembrada v1 |
-| 30 | `[docs] ADR-001..005 (offline-first, Supabase, LWW, unidades, privacidad)` | infra | S | — | triage | 5 ADRs de ≤ 10 líneas, mergeados antes del código que los usa | link en cada PR consumidor |
-| 31 | `[docs] Guion de demo y demo-v1.json congelado` | infra | S | 5 | triage | Guion cronometrado ≤ 7 min y seed que reproduce exactamente lo que muestra el guion | 3 corridas cronometradas |
-| 32 | `[web] Panel de métricas del demo` | web | S | 6, 17 | triage | Muestra personas, raciones del día, cobertura media y pendientes de sync, calculado del dato real | `e2e/metricas.spec.ts` |
-| 33 | `[domain] Validación de la tabla nutricional con nutricionista` | domain | M | 9 | triage | Tabla revisada, con nombre y fecha de quien revisó; `tablaVersion = "v1-revisada"` | acta firmada en `docs/nutricion/` + test de versión |
-| 34 | `[infra] Hardening de demo: reset, modo avión y plan B` | infra | S | 6, 21, 31 | triage | `pnpm demo:reset` deja estado inicial en < 2 s y la demo corre 3 veces seguidas sin internet | 3 corridas + checklist firmado |
+```bash
+gh issue list --state open --label status:ready
+gh issue list --state open --label status:claimed
+```
 
-**Dependencias que más importan** (si se rompen, se rompe el día): `2 → 3 → 4 → 6` es la cadena del día 1; `3 → 19 → 20 → 22` es la rama que se corta primero; `9 → 33` es la única que necesita un humano externo (nutricionista) y hay que agendarla **el día 1**, no el día 3.
+Lo que el plan aporta son los **temas** y el orden de madurez. Cada issue real se acota con criterio
+de aceptación y prueba esperada antes de pasar a `status:ready` (`docs/PROTOCOL.md` §3.7).
+
+| Tema | Área | Entregable | Depende de |
+|---|---|---|---|
+| Monorepo, CI, labels y plantillas | infra | `main` protegida y CI que corre `typecheck` + `test` | — |
+| Contratos del dominio y esquema | contracts | tipos Zod + SQL espejo + paridad | — |
+| Menú firmado y porción por grupo | contracts | `validarMenu`, `porcionParaGrupo`, sello | contratos |
+| Walking skeleton offline | web | alta P-XXXX → ración con explicación, sin red | contratos, seed |
+| Padrón | web | listado, búsqueda, edición, baja lógica | skeleton |
+| Despensa | api/web | movimientos append-only y saldo derivado | esquema |
+| Comprobantes y presupuesto | contracts/api | ítems revisados, serie de precios, presupuesto | contratos D8 |
+| Captura por texto o voz | web | parser + confirmación humana | ComputePort |
+| Sync y solicitudes entre ollas | contracts/api | outbox, pull por Lamport, bandeja | esquema |
+| Impresión A5 y demo | web/infra | hoja imprimible y guion de 3 min | padrón, menú |
+
+Dependencias que más importan: contratos → esquema → menú firmado → walking skeleton es la cadena
+del día 1; sync es la rama que se corta primero; la firma de la nutricionista es la única que necesita
+un humano externo y se agenda el día 1.
 
 ---
 
@@ -408,14 +346,14 @@ Rama de riesgo (no crítica, pero la que rompe el reloj):
 | `supabase/migrations/**` | B | Una migración a la vez; se mergea sola; la siguiente espera. Nunca dos PRs con migración abiertos |
 | `pnpm-lock.yaml` + `package.json` raíz + `pnpm-workspace.yaml` | B | Solo B los toca, en PR propio con título `chore(infra): deps`. Un conflicto de lockfile cuesta 40 min y no produce valor |
 | `packages/contracts/**` | las tres | PR chico + 2 aprobaciones + merge antes del consumidor. Después de D0 12:00, **solo cambios aditivos** (agregar campo opcional); cambio incompatible = v2 |
-| `packages/db/src/schema.ts` | B | Cambio de esquema = PR de contratos, no de feature |
+| `packages/contracts/**` + `supabase/migrations/**` | C / B | Cambio de esquema = PR de contratos (C) + migración (B), no de feature |
 | `apps/web/src/app/router.tsx` y el layout raíz | A | Archivo caliente: cambios por A, o por shim (el otro agrega su ruta en su propio módulo) |
-| `fixtures/demo-v1.json` | C | Congelado al cierre del D1. Después, solo `#31` puede tocarlo, y avisa en `coordination` |
+| `fixtures/demo-v1.json` | C | Congelado al cierre del D1. Después, solo el issue de demo puede tocarlo, y avisa en `coordination` |
 | `scripts/claim.sh`, `preflight`, `.github/**` | B | Cambiarlos a mitad de hackathon rompe a los otros dos |
 
 ### 6.2 Sí en paralelo, sin fricción
 
-Pantallas de A (una por archivo de ruta) · reglas y casos de C en `packages/domain` (funciones puras, tests propios) · fixtures y docs de cada stream · tests e2e (archivo por flujo) · ADRs · el adapter de sync de B (no toca pantallas si `SyncPort` está congelado).
+Pantallas de A (una por archivo de ruta) · reglas y casos de C en `packages/domain` (funciones puras, tests propios) · fixtures y docs de cada stream · tests e2e (archivo por flujo) · ADRs · el adapter de sync de C (no toca pantallas si `SyncPort` está congelado).
 
 **Regla de oro del paralelismo:** dos agentes pueden escribir a la vez si y solo si (a) no comparten archivo, (b) no comparten esquema, y (c) el consumidor ya tiene el contrato mergeado. Si falta (c), el segundo escribe contra un stub en **su** carpeta y lo cambia después; nunca espera idle.
 
@@ -436,15 +374,16 @@ Cinco estrategias, de la más barata a la más cara. Se elige la primera que fun
 | Ventana | Qué se congela | Excepción |
 |---|---|---|
 | D0 12:00 | contratos v1 (solo aditivo después) | — |
-| Cierre del D1 | `fixtures/demo-v1.json` | #31 |
+| Cierre del D1 | `fixtures/demo-v1.json` | el issue de demo |
 | Últimas 6 h (S72) / último día (S14) | esquema, migraciones, dependencias, CI | `fix/*` con revisión de otro |
 | Durante la demo | todo | nada |
 
 ---
 
-## 7. Guion de demo (5–7 min)
+## 7. Guion de demo (3 min + anexo de 2, D6)
 
-**Setup previo (no se muestra):** PWA instalada en el Android de gama baja, `pnpm demo:reset` ejecutado, **modo avión activado desde antes de entrar**. El escenario es una olla común de Villa El Salvador con 78 personas. Todos los nombres son ficticios y el cartel "datos simulados" está visible en el pie.
+**Setup previo (no se muestra):** PWA instalada en el Android de gama baja, estado inicial del seed
+cargado, **modo avión activado desde antes de entrar**. El escenario es una olla común de Villa El Salvador con 78 personas. Todos los nombres son ficticios y el cartel "datos simulados" está visible en el pie.
 
 | Tiempo | Qué se ve | Qué se dice | Por qué está acá |
 |---|---|---|---|
@@ -499,9 +438,9 @@ El guion **asume** modo avión: internet no es parte del camino feliz. Entonces:
 |---|---|---|---|---|---|---|
 | R1 | Técnico | Sync multi-dispositivo consume el doble de lo estimado (el clásico) | Alta | Alto | `SyncPort` mockeado desde D0; sync arranca recién con contratos congelados; se corta el D2 10:00 sin culpa | B |
 | R2 | Técnico | Conflicto de lockfile / versiones distintas de Node en 3 PCs | Alta | Medio | `.nvmrc` + `packageManager` fijado + CI que falla si difieren; solo B toca deps | B |
-| R3 | Técnico | Migración de esquema a mitad de camino obliga a reescribir storage | Media | Alto | Esquema v1 con columnas de sync desde el registro #1; `schema-parity.spec.ts`; `#29` para v1→v2 | B |
-| R4 | Técnico | Service Worker sirve build viejo y la demo muestra una pantalla que ya no existe | Media | Alto | `skipWaiting` desactivado + `pnpm demo:reset` + verificación de versión visible en el pie | A |
-| R5 | Técnico | Rendimiento en gama baja (JS pesado, mapa/gráficos) | Media | Medio | Presupuesto en CI (`#28`); cero librerías de gráficos; iconos SVG inline | A |
+| R3 | Técnico | Migración de esquema a mitad de camino obliga a reescribir storage | Media | Alto | Esquema v1 con columnas de sync desde el registro inicial; `schema-parity.spec.ts`; issue de versionado para v1→v2 | B |
+| R4 | Técnico | Service Worker sirve build viejo y la demo muestra una pantalla que ya no existe | Media | Alto | `skipWaiting` desactivado + seed reproducible + verificación de versión visible en el pie | A |
+| R5 | Técnico | Rendimiento en gama baja (JS pesado, mapa/gráficos) | Media | Medio | Presupuesto en CI (issue de rendimiento); cero librerías de gráficos; iconos SVG inline | A |
 | R6 | Técnico | Impresión A5 sale distinta en cada navegador | Media | Bajo | Se imprime desde un solo dispositivo y se lleva impreso el resultado | C |
 | R7 | Tiempo | M5 se come el D2 y arrastra M6 | Alta | Alto | Corte duro D2 10:00 con criterio escrito; M6 no se negocia | A |
 | R8 | Tiempo | La validación con nutricionista no llega (persona externa) | Alta | Medio | Se agenda el D0; si no llega, `tablaVersion: "v0-borrador"` **visible en la demo** y se dice | C |
@@ -526,14 +465,14 @@ Se corta **de arriba hacia abajo**, y cada corte se anuncia en `coordination` y 
 
 | Orden | Qué se sacrifica | Disparador | Qué se muestra en su lugar | Costo en la demo |
 |---|---|---|---|---|
-| 1 | #20, #22, #23 (pull incremental, solicitudes, bandeja) | D2 10:00 y sync no converge | Solicitud creada offline + badge "1 pendiente de subir" | Bajo: el offline se sigue demostrando |
-| 2 | #19 completo (sync real) | D1 22:00 sin `sync.spec.ts` verde | Badge honesto + "el diseño está, la sincronización es lo próximo" | Bajo si se dice claro |
-| 3 | #11 (modo nutricionista) | D1 20:00 | Solo modo automático; se nombra como próximo paso | Medio: se pierde el "humano en el loop" |
-| 4 | #16, #15 recortado a 3 recetas fijas | D2 10:00 | Menú de 3 recetas, sin escalado libre | Bajo |
-| 5 | #18 (baja alfabetización) recortado a texto grande + iconos | D2 11:00 | Se mantiene el flujo de 6 toques | Medio: es un diferenciador del ODS 10 |
-| 6 | #17 (impresión) a hoja simple sin diseño | D2 12:00 | Hoja A5 en B/N, funcional | Bajo |
-| 7 | #27, #28 (a11y avanzada y presupuesto de perf) | D2 12:00 | Se mide una vez y se reporta el número real | Bajo |
-| **Nunca** | Offline real, `calcularRacion()` con `reasons`, seed, guion, panel de métricas, disclaimers, datos ficticios | — | — | Si falta esto, no hay demo: se cancela la demo y se presenta el diseño |
+| 1 | Pull incremental, solicitudes y bandeja | D2 10:00 y sync no converge | Solicitud creada offline + badge "1 pendiente de subir" | Bajo: el offline se sigue demostrando |
+| 2 | Sync real completo | D1 22:00 sin `sync.spec.ts` verde | Badge honesto + "el diseño está, la sincronización es lo próximo" | Bajo si se dice claro |
+| 3 | Modo nutricionista (override) | D1 20:00 | Solo modo automático; se nombra como próximo paso | Medio: se pierde el "humano en el loop" |
+| 4 | Menú libre recortado a 3 recetas fijas | D2 10:00 | Menú de 3 recetas, sin escalado libre | Bajo |
+| 5 | Baja alfabetización recortada a texto grande + iconos | D2 11:00 | Se mantiene el flujo de 6 toques | Medio: es un diferenciador del ODS 10 |
+| 6 | Impresión a hoja simple sin diseño | D2 12:00 | Hoja A5 en B/N, funcional | Bajo |
+| 7 | Accesibilidad avanzada y presupuesto de rendimiento | D2 12:00 | Se mide una vez y se reporta el número real | Bajo |
+| **Nunca** | Offline real, menú firmado con explicación, seed, guion, panel de métricas, disclaimers, datos ficticios | — | — | Si falta esto, no hay demo: se cancela la demo y se presenta el diseño |
 
 **Corte de emergencia (2 personas, < 12 h):** M0 + M1 + M3 recortado + guion. Seis pantallas, cero sync, cero recetas. Es una demo de 4 minutos y sigue siendo un producto coherente.
 
@@ -562,7 +501,7 @@ Se corta **de arriba hacia abajo**, y cada corte se anuncia en `coordination` y 
 |---|---|---|
 | Ciclo issue → merge | ≤ 8 h (S72) / ≤ 2 días (S14) | `gh issue list --json closedAt` vs `createdAt` |
 | PRs con gate completo | 100 % | chequeo en el cierre del día |
-| PRs ≤ 250/400 líneas | ≥ 90 % | `gh pr diff --name-only` + `--stat` |
+| PRs ≤ 400 líneas | ≥ 90 % | `gh pr diff --name-only` + `--stat` |
 | Tiempo de review | ≤ 45 min | timestamps del `review/v1` |
 | Claims huérfanos | 0 al cierre del día | `preflight` sobre `status:claimed` |
 | CI verde a la primera | ≥ 80 % | historial de runs |
@@ -580,9 +519,9 @@ Formato fijo, escrito en el issue `coordination` **antes** de hablar. Cinco lín
 
 ```
 sync/2026-11-23T09:00Z @ana agent:ana-lead-3f2a
-doing: #8 (claimed), #6 (in-review)
-next: #18 después de #8; revisar #19 de @beto
-blocked: #16 espera #15 (blocked-by), sin acción
+doing: «padrón» (claimed), «walking skeleton» (in-review)
+next: «accesibilidad» después de padrón; revisar «sync» de @C
+blocked: «menú del día» espera «recetas» (blocked-by), sin acción
 risk: main se movió 9 commits, 2 ramas necesitan rebase
 cut: ninguna hoy
 ```
@@ -635,7 +574,7 @@ Sin `PRUEBA` no se lanza. Sin `WRITE-SET` no se lanza. Hijo que vuelve vacío = 
 [ ] repo creado, main protegida (1 aprobación, checks, sin force)
 [ ] 22 labels + plantilla de issue + plantilla de PR + CODEOWNERS
 [ ] .nvmrc, packageManager, pnpm-workspace.yaml, CI mínimo
-[ ] 6 issues en status:ready (backlog #1..#6)
+[ ] 6 issues reales en status:ready (ver GitHub)
 [ ] issue coordination creado y fijado
 [ ] contracts v1 + schema v1 mergeados (2 aprobaciones)  ← hito 12:00
 [ ] pnpm seed corre 2 veces y es idempotente
@@ -649,12 +588,13 @@ Sin `PRUEBA` no se lanza. Sin `WRITE-SET` no se lanza. Hijo que vuelve vacío = 
 ## Anexo C — Nombres de rama y PR en este proyecto
 
 ```
-feat/web-6-walking-skeleton
-feat/domain-4-calcular-racion
-feat/api-19-sync-outbox
-chore/infra-1-monorepo-ci
-docs-30-adr-offline-first
-fix/web-13-semaforo-stock
+feat/web-<issue>-walking-skeleton
+feat/contracts-<issue>-menu-firmado
+feat/api-<issue>-sync-outbox
+chore/infra-<issue>-monorepo-ci
+docs-<issue>-adr-offline-first
+fix/web-<issue>-semaforo-stock
 ```
 
-`<area>` ∈ `web | api | domain | infra | contracts`. El número de issue en la rama es lo que permite encontrar el trabajo desde `git branch -r` en dos segundos.
+`<area>` ∈ `web | api | infra | contracts` (las mismas de `docs/PROTOCOL.md`). `<issue>` es el número
+real de GitHub. Es lo que permite encontrar el trabajo desde `git branch -r` en dos segundos.

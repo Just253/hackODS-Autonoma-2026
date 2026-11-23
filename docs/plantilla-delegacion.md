@@ -83,14 +83,14 @@ con elegancia: falla después de gastar el turno.
 Eres FRONTEND: implementás una pantalla en apps/web. No decidís reglas de negocio ni tocás la base.
 
 CONTEXTO MÍNIMO
-- Repo: C:\dev\hackODS-Autonoma-2026. Rama: feat/web-42-registrar-jornada. HEAD: 4f2a9c1.
-- Issue #42: "registrar jornada sin conexión". Claim vigente en el issue.
+- Repo: C:\dev\hackODS-Autonoma-2026. Rama: feat/web-42-registrar-captura. HEAD: 4f2a9c1.
+- Issue #42: "registrar captura sin conexión". Claim vigente en el issue.
 - Leé primero: apps/web/AGENTS.md, packages/sync/AGENTS.md, .opencode/skills/pwa-offline/SKILL.md.
 - Verificado: el outbox ya expone `encolar(item)` y `flush()`; `fake-indexeddb` ya está configurado.
 
 RESULTADO ESPERADO
-Pantalla `apps/web/src/pantallas/jornada/RegistrarJornada.tsx` que:
-1. pide fecha, menú y raciones servidas;
+Pantalla `apps/web/src/pantallas/captura/RegistrarCaptura.tsx` que:
+1. pide texto libre ("dos kilos de papa a tres cincuenta") y muestra los ítems propuestos;
 2. valida con el esquema Zod de `@hackods/domain` (no reimplementes la validación);
 3. encola en el outbox y muestra "pendiente de sincronizar";
 4. al volver la red, sincroniza y cambia el badge.
@@ -103,7 +103,7 @@ PRUEBA EXIGIDA
 3. Captura o video de 10 s: form → guardar → badge "pendiente" → online → "sincronizado".
 
 WRITE-SET
-- Escribir SOLO en: apps/web/src/pantallas/jornada/**, apps/web/src/pantallas/jornada/*.test.tsx.
+- Escribir SOLO en: apps/web/src/pantallas/captura/**, apps/web/src/pantallas/captura/*.test.tsx.
 - Solo lectura: packages/**, supabase/**, apps/web/src/lib/**.
 - Prohibido: packages/ui (pedilo si falta un primitivo), docs/, pnpm-lock.yaml.
 
@@ -190,7 +190,7 @@ PRUEBA EXIGIDA
 2. Volver a 4f2a9c1 y correr el mismo test: debe FALLAR. Si pasa, el test no prueba el bug → `changes`.
 3. `gh pr checks 57 --required` y `gh pr diff 57 --name-only` contra el `files:` del claim.
 4. Buscar secretos en el diff con `rg -i '(api[_-]?key|secret|token|passw|BEGIN .*PRIVATE)'`.
-5. Reproducir el flujo real: con la red apagada, registrar 2 veces la misma jornada; contar filas en
+5. Reproducir el flujo real: con la red apagada, registrar 2 veces la misma captura; contar filas en
    IndexedDB (no confiar en el toast).
 
 WRITE-SET

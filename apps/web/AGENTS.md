@@ -5,7 +5,7 @@ la app arranca sin red y escribe sin red.
 
 ## Qué es de este paquete
 
-- Rutas, pantallas y formularios (`jornada`, `raciones`, `despensa`, `aportes`, `reportes`).
+- Rutas, pantallas y formularios (padrón, menú firmado, despensa, comprobantes, captura, reportes).
 - Service worker (precache del shell, estrategias de red).
 - Acceso a IndexedDB y encolado en el outbox de `@hackods/sync`.
 - Cámara, impresión y demás APIs del navegador.
@@ -35,7 +35,7 @@ pnpm --filter @hackods/web typecheck
 | Unidad | Vitest | hooks, mapeos, formateo |
 | Componente | Testing Library | formulario válido/inválido, estados vacíos |
 | Offline | `fake-indexeddb` | encolar, reintentar, no duplicar |
-| E2E | Playwright | `context.setOffline(true)` → registrar jornada → volver online → sincroniza |
+| E2E | Playwright (pendiente de instalar) | `context.setOffline(true)` → alta/captura → volver online → sincroniza |
 
 Regla: toda pantalla que escribe debe tener **un test con la red apagada**. Si el test necesita red,
 no está probando lo que importa.

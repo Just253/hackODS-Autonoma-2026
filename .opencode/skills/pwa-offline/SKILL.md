@@ -7,7 +7,7 @@ description: Cómo se guarda y sincroniza sin red, cómo se evitan duplicados y 
 
 ## Cuándo se carga
 
-- Agregás una pantalla que **escribe** (jornada, ración, aporte, compra).
+- Agregás una pantalla que **escribe** (persona, servicio, movimiento, comprobante, captura).
 - Tocás el service worker, el precache o una estrategia de red.
 - Aparece "se duplicó", "se perdió", "quedó pendiente" o "dos teléfonos muestran distinto".
 
@@ -30,8 +30,8 @@ Nadie escribe en Supabase desde una pantalla. Si hay un `fetch` en un componente
 ## IndexedDB
 
 - Una base por olla (`hackods-<olla_id>`), versión explícita y migraciones por `onupgradeneeded`.
-- Stores: `jornadas`, `raciones`, `movimientos`, `insumos`, `recetas`, `outbox`, `meta`.
-- Índices mínimos: `por_fecha` en jornadas, `por_jornada` en raciones, `por_estado` en outbox.
+- Stores: `personas`, `servicios`, `movimientos`, `insumos`, `recetas`, `comprobantes`, `outbox`, `meta`.
+- Índices mínimos: `por_fecha` en servicios, `por_servicio` en raciones, `por_estado` en outbox.
 - Los blobs (foto de voucher) van aparte y se referencian por id; no se duplican en cada lista.
 - `navigator.storage.persist()` al primer uso y un botón de **exportar respaldo JSON**.
 
@@ -39,24 +39,27 @@ Nadie escribe en Supabase desde una pantalla. Si hay un `fetch` en un componente
 
 ```ts
 type OutboxItem = {
-  id: string;            // UUIDv7 generado en el dispositivo = clave de idempotencia
-  entity: 'jornada' | 'racion' | 'movimiento' | 'insumo';
-  entity_id: string;
+  eventUuid: string;      // UUIDv7 del dispositivo
+  idempotencyKey: string; // = eventUuid
+  lamport: number;        // reloj de Lamport, no Date.now()
+  deviceId: string;       // desempate
+  ollaId: string;
+  entity: 'personas' | 'servicios' | 'movimientos' | 'comprobantes' | 'precios';
   op: 'create' | 'update' | 'delete';
-  payload: unknown;      // ya validado con Zod
-  base_version: number;  // versión local sobre la que se aplicó
-  created_at: string;
+  payload: unknown;       // ya validado con Zod
+  estado: 'pendiente' | 'enviado' | 'aplicado' | 'conflicto' | 'rechazado';
+  creadoEn: string;       // solo para mostrar
   attempts: number;
-  last_error: string | null;
-  status: 'pending' | 'sending' | 'failed';
+  lastError: string | null;
 };
 ```
 
 Reglas:
 
-1. **Idempotencia**: reenviar el mismo `id` no crea otra fila. El servidor hace `upsert` por ese id.
-2. **Orden**: se envía en orden de `created_at`; un `failed` no bloquea a los demás si son de otra
-   entidad.
+1. **Idempotencia**: reenviar el mismo `idempotencyKey` no crea otra fila. El servidor hace `upsert`
+   por esa clave.
+2. **Orden**: se envía y aplica en orden `(lamport, deviceId)`; `creadoEn` es solo para mostrar. Un
+   `failed` no bloquea a los demás si son de otra entidad.
 3. **Reintento**: backoff exponencial con tope; **4xx de validación no se reintenta** (pasa a `failed`
    con motivo visible). 5xx y red sí.
 4. **No se descarta en silencio**: `failed` se muestra con un botón "reintentar" y "exportar".
@@ -66,11 +69,11 @@ Reglas:
 
 | Clase | Ejemplo | Solución |
 |---|---|---|
-| **Evento** (append-only) | ración servida, aporte, compra | No hay conflicto: se suman. Ids de cliente evitan duplicados. |
-| **Maestro editable** | nombre de receta, precio de insumo, menú | LWW **por campo** con `updated_at` + `device_id`; si la `base_version` no coincide, se avisa "cambió en otro dispositivo" y se muestra el valor remoto. |
+| **Evento** (append-only) | ración servida, movimiento, compra | No hay conflicto: se suman. Los ids de cliente evitan duplicados. |
+| **Maestro editable** | receta, precio de insumo, menú | **Gana el cierre válido más antiguo** por `(lamport, device_id)` (D5); el otro queda como conflicto visible con "cambió en otro dispositivo". |
 
-Prohibido resolver un evento con LWW: si dos teléfonos registran 40 y 35 raciones, la respuesta correcta
-es 75 (o una revisión humana), nunca "la última gana".
+Prohibido resolver un evento con "el último gana": si dos teléfonos registran 40 y 35 raciones, la
+respuesta correcta es 75 (o una revisión humana).
 
 ## Service worker
 
@@ -111,6 +114,7 @@ recargar" y se aplica cuando la persona acepta (no en medio de una carga de raci
 
 ## Fuente
 
-- `packages/sync/AGENTS.md` (contrato del outbox).
-- `docs/adr/0002-sincronizacion.md` — decisión y alternativas.
+- `packages/sync/AGENTS.md` y `docs/contracts/sync.md` (contrato del outbox y del evento).
+- `docs/DECISIONES.md` D5 — reloj de Lamport y regla de conflicto.
+- `docs/adr/0001-base-monorepo.md` — base del monorepo y la PWA offline.
 - MDN: Service Worker, IndexedDB, Background Synchronization (para los límites de Safari).

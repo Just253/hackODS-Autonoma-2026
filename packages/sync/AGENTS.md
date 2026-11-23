@@ -5,11 +5,13 @@ sin red propia (la red entra por una función inyectada).
 
 ## Qué es de este paquete
 
-- Generación de ids de cliente (UUIDv7) y `device_id` estable.
-- Modelo del **outbox**: `{ id, entity, entity_id, op, payload, base_version, created_at, attempts, last_error }`.
+- Generación de ids de cliente (UUIDv7), `lamport` y `device_id` estable.
+- Modelo del **outbox**: `{ eventUuid, idempotencyKey, lamport, deviceId, ollaId, entidad, op,
+  payload, estado, creadoEn, attempts, lastError }`. Contrato exacto: `docs/contracts/sync.md` §1.
 - Reglas de reintento (backoff, tope, qué errores no se reintentan: 4xx de validación).
-- Resolución de conflictos: eventos append-only (no hay conflicto) y maestro editable (LWW por campo
-  con `updated_at` + `device_id`, aviso cuando cambió en otro dispositivo).
+- Resolución de conflictos (D5): eventos append-only no tienen conflicto; en un maestro editable
+  **gana el cierre válido más antiguo** según `(lamport, device_id)`, y el otro queda como `conflicto`
+  visible. Nunca se ordena por `created_at`/`updated_at`.
 - Contrato del adaptador remoto (`push(batch)`, `pull(since)`), que `apps/web` implementa con Supabase.
 
 ## Qué NO es de este paquete
@@ -29,14 +31,14 @@ pnpm --filter @hackods/sync typecheck
 
 - Reloj y azar inyectados: el test no depende de la hora real.
 - `fake-indexeddb` para el outbox; el adaptador remoto es un doble en memoria.
-- Casos obligatorios: reintento no duplica (misma clave de idempotencia), error 400 sale del outbox
-  como `failed`, dos dispositivos editan el mismo campo (gana el último y se avisa), pull con datos
-  más nuevos no pisa cambios locales pendientes.
+- Casos obligatorios: reintento no duplica (misma `idempotencyKey`), error 400 sale del outbox como
+  `failed`, dos dispositivos editan el mismo campo (gana el cierre válido más antiguo y el otro queda
+  como conflicto visible), pull con datos más nuevos no pisa cambios locales pendientes.
 
 ## Reglas locales
 
-1. **Idempotencia primero**: el id del evento lo genera el dispositivo; reenviar el mismo id no crea
-   una fila nueva.
+1. **Idempotencia primero**: `idempotencyKey = eventUuid`, generados en el dispositivo; reenviar el
+   mismo evento no crea una fila nueva.
 2. **Nada de "sync mágico"**: si una operación no se puede aplicar, queda `failed` con motivo y se
    muestra. No se descarta en silencio.
 3. **No se borra**: se marca `deleted_at` (tombstone) para que el borrado viaje.

@@ -60,9 +60,9 @@ Antes de lanzar la oleada, el padre escribe esta tabla en `docs/planes/oleada-<n
 
 | Hijo | Puede escribir | Solo lectura | Prohibido |
 |---|---|---|---|
-| `w2-a1-jornada` | `apps/web/src/pantallas/jornada/**` | todo el repo | `packages/**`, `supabase/**` |
+| `w2-a1-comprobantes` | `apps/web/src/pantallas/comprobantes/**` | todo el repo | `packages/**`, `supabase/**` |
 | `w2-a2-rls` | `supabase/migrations/**`, `supabase/tests/**` | `apps/web/**` | `packages/**` |
-| `w2-a3-receta` | `packages/nutrition/**` | `packages/domain/**` | `apps/**`, `supabase/**` |
+| `w2-a3-menu` | `packages/nutrition/**` | `packages/domain/**` | `apps/**`, `supabase/**` |
 
 Reglas:
 
@@ -110,7 +110,7 @@ lanzar oleada (3–5 hijos)
 
 ## 5. Nombres, bitácora y watchdog
 
-- Título del hijo: `w<oleada>-a<n>-<tema>` (`w2-a3-rls-jornadas`). Títulos repetidos = trabajo duplicado.
+- Título del hijo: `w<oleada>-a<n>-<tema>` (`w2-a3-rls-comprobantes`). Títulos repetidos = trabajo duplicado.
 - `docs/planes/wave-log.md`: `id | encargo (1 línea) | write-set | archivos producidos | veredicto | usado/descartado`.
 - Watchdog: 10 min → mirar; 30 min sin señal → probablemente muerto; 60 min → cortar, guardar lo que
   haya, reasignar.
@@ -119,7 +119,7 @@ lanzar oleada (3–5 hijos)
 
 ## 6. Reparto típico de una feature (ejemplo)
 
-Feature: "registrar jornada y ver costo por ración".
+Feature: "registrar un comprobante y ver el presupuesto de la olla".
 
 | Oleada | Hijos | Paralelo | Entregable |
 |---|---|---|---|
