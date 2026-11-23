@@ -61,6 +61,28 @@ html {
   outline-offset: 2px;
 }
 
+/* Chip de sync: mismo componente en pantalla, sin hexadecimal suelto. */
+.oc-estado {
+  display: inline-block;
+  margin: 0;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radio);
+  border: 1px solid var(--color-borde);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.oc-estado--pendiente {
+  background: var(--color-tenue);
+  color: var(--color-texto);
+  border-color: var(--color-primario);
+}
+
+.oc-estado--local {
+  background: var(--color-tenue);
+  color: var(--color-texto);
+}
+
 @media print {
   .no-print {
     display: none !important;

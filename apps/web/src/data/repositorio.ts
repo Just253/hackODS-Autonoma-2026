@@ -17,6 +17,8 @@ import {
 import { baseDeOlla } from './base.js';
 import { generarCodigoPLibre, type Azar } from './codigos.js';
 import { siguienteLamport } from './lamport.js';
+import { outboxDe } from './outbox-repo.js';
+import type { NuevoEvento } from '@hackods/sync';
 
 /**
  * Repositorio local del padron y del servicio.
@@ -44,16 +46,28 @@ const COBERTURA_SIN_CALCULO: Record<NutrienteId, number> = Object.fromEntries(
   nutrienteIdSchema.options.map((id) => [id, 0]),
 ) as Record<NutrienteId, number>;
 
-/** Reloj y azar inyectables: el test no depende de la hora ni del azar reales. */
+/**
+ * Reloj y azar inyectables: el test no depende de la hora ni del azar reales.
+ *
+ * `idEvento` es el `eventUuid` del outbox. Se inyecta para que dos corridas del
+ * mismo caso encolen el mismo id y la idempotencia se pueda probar de verdad.
+ */
 export interface Reloj {
   readonly ahora: () => string;
   readonly azar: Azar;
+  readonly idEvento?: () => string;
 }
 
 const relojGlobal: Reloj = {
   ahora: () => new Date().toISOString(),
   azar: () => Math.random(),
+  idEvento: () => crypto.randomUUID(),
 };
+
+/** `eventUuid` = `idempotencyKey` (contrato de `@hackods/sync`). */
+function idDeEvento(reloj: Reloj): string {
+  return (reloj.idEvento ?? (() => crypto.randomUUID()))();
+}
 
 export interface AltaPersona {
   readonly anioNacimiento: number;
@@ -92,10 +106,11 @@ export async function altaPersona(
   const base = baseDeOlla(ollaId);
   const ahora = reloj.ahora();
 
-  return base.transaction('rw', base.personas, base.identidadLocal, base.meta, async () => {
+  return base.transaction('rw', base.personas, base.identidadLocal, base.meta, base.outbox, async () => {
     const ocupados = new Set((await base.personas.toCollection().primaryKeys()) as string[]);
     const codigoP = generarCodigoPLibre(ocupados, reloj.azar);
     const lamport = await siguienteLamport(base);
+    const lamportEvento = await siguienteLamport(base);
 
     const persona = personaSchema.parse({
       codigoP,
@@ -124,7 +139,25 @@ export async function altaPersona(
     });
 
     await base.personas.add(persona);
+    // La identidad local (nombreLocal/alias) NO entra al evento: DEC-2026-0002.
     await base.identidadLocal.add(identidad);
+
+    // Mismo transactional scope que el alta: si el agregado falla, no queda ni
+    // persona ni evento (nunca "persona sin cambio pendiente").
+    const eventUuid = idDeEvento(reloj);
+    const evento: NuevoEvento = {
+      eventUuid,
+      idempotencyKey: eventUuid,
+      lamport: lamportEvento,
+      deviceId: DEVICE_DEMO,
+      ollaId,
+      entidad: 'personas',
+      op: 'upsert',
+      // Solo lo sincronizable: la persona ya validada por Zod, sin identidad.
+      payload: persona,
+      creadoEn: persona.updatedAt,
+    };
+    await outboxDe(base).encolarEnTransaccion(evento, base.outbox);
 
     return { persona, identidad };
   });
@@ -207,8 +240,28 @@ export async function guardarRacion(
     versionMenu: MENU_VERSION,
   });
 
+  // Una racion y su evento entran juntos: si el `add` choca con la clave
+  // compuesta, la transaccion aborta y el outbox no se queda con un pendiente
+  // de una racion que no existe.
   try {
-    await base.raciones.add(racion);
+    await base.transaction('rw', base.raciones, base.meta, base.outbox, async () => {
+      await base.raciones.add(racion);
+
+      const lamport = await siguienteLamport(base);
+      const eventUuid = idDeEvento(reloj);
+      const evento: NuevoEvento = {
+        eventUuid,
+        idempotencyKey: eventUuid,
+        lamport,
+        deviceId: DEVICE_DEMO,
+        ollaId,
+        entidad: 'raciones',
+        op: 'upsert',
+        payload: racion,
+        creadoEn: reloj.ahora(),
+      };
+      await outboxDe(base).encolarEnTransaccion(evento, base.outbox);
+    });
   } catch (error) {
     if (error instanceof Dexie.ConstraintError) {
       throw new RacionDuplicada(racion.personaCodigoP, servicioId);
