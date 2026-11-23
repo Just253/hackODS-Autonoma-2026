@@ -67,10 +67,11 @@ describe('cascaron', () => {
       .map((a) => a.textContent ?? '');
     // Cada enlace concatena `descripcion` + `tarea` sin espacio entre ambos:
     // "Entre ollasPedir o entregar...". Por eso se compara con includes.
-    expect(nombres).toHaveLength(4);
+    expect(nombres).toHaveLength(5);
     expect(nombres.some((t) => t.includes('Precios de insumos'))).toBe(true);
     expect(nombres.some((t) => t.includes('Entre ollas'))).toBe(true);
     expect(nombres.some((t) => t.includes('Reporte entre ollas'))).toBe(true);
+    expect(nombres.some((t) => t.includes('Recetario'))).toBe(true);
     expect(nombres.some((t) => t.includes('Consentimiento'))).toBe(true);
   });
 
@@ -90,11 +91,11 @@ describe('cascaron', () => {
     );
   });
 
-  it('el rail de escritorio lista las ocho secciones en dos grupos', () => {
+  it('el rail de escritorio lista las nueve secciones en dos grupos', () => {
     montarApp('/padron');
 
     const rail = enlacesDelRail();
-    expect(rail).toHaveLength(8);
+    expect(rail).toHaveLength(9);
     expect(rail.map((a) => a.textContent)).toEqual([
       'Padrón',
       'Servicio del día',
@@ -103,6 +104,7 @@ describe('cascaron', () => {
       'Precios de insumos',
       'Entre ollas',
       'Reporte entre ollas',
+      'Recetario',
       'Consentimiento',
     ]);
 

@@ -12,6 +12,7 @@ import { SolicitudPantalla } from '../features/solicitud/SolicitudPantalla.js';
 import { AHORA_DEMO, NUEVA_SOLICITUD_DEMO } from '../features/solicitud/fixtures.js';
 import { ReportePantalla } from '../features/reporte/ReportePantalla.js';
 import { MOVIMIENTOS_ENTRE_OLLAS, PERIODO_DEMO } from '../features/reporte/fixtures.js';
+import { RecetasPage } from '../features/recetas/RecetasPage.js';
 import { ConsentimientoPage } from '../features/consentimiento/ConsentimientoPage.js';
 
 /**
@@ -46,7 +47,9 @@ export const rutas = [
       // Track C · entre ollas y folio
       { path: 'solicitud', element: <SolicitudPantalla nueva={NUEVA_SOLICITUD_DEMO} ahora={AHORA_DEMO} /> },
       { path: 'reporte', element: <ReportePantalla movimientos={MOVIMIENTOS_ENTRE_OLLAS} periodo={PERIODO_DEMO} /> },
-      // #74 · consentimiento: dos permisos separados del plato
+      // Recetario: producir descuenta despensa (#72).
+      { path: 'recetas', element: <RecetasPage /> },
+      // #74 · consentimiento: dos permisos separados del plato. Al final para minimizar conflictos.
       { path: 'consentimiento', element: <ConsentimientoPage /> },
     ],
   },
