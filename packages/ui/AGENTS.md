@@ -6,6 +6,13 @@ Componentes y tokens. **Presentacional**: recibe props, dibuja, no sabe de ollas
 
 - Tokens (`colors.css`, `spacing.css`, `typography.css`) y el tema claro/oscuro.
 - Primitivos: `Button`, `Field`, `Select`, `Dialog`, `Table`, `Stat`, `EmptyState`, `SyncBadge`.
+- `EstadoSync` (`EstadoSync.tsx`): chip de estado de sincronización. Props `texto: string`
+  (copy ya redactado por la app) y `tono: 'pendiente' | 'local'`; se dibuja como `<p role="status"
+  aria-live="polite">` con las clases `oc-estado oc-estado--<tono>` (tokens en `tokens.css`). El
+  estado se distingue por el **texto**, no solo por el color: `pendiente` agrega borde primario,
+  pero nunca cambia el mensaje. Regla de la ventana offline: el badge dice siempre **"(local)"**
+  ("N cambios pendientes de sincronizar (local)" / "Sincronizado (local)"), nunca "Sincronizado" a
+  secas, porque no hay red que lo respalde.
 - Patrones de impresión (`print.css`) que comparten reportes y tickets.
 - Accesibilidad: foco visible, contraste AA, tamaños táctiles ≥ 44 px.
 
