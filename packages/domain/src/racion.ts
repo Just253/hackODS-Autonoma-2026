@@ -1,6 +1,6 @@
 import type { Movimiento, Servicio } from '@hackods/contracts';
 
-import { NoImplementado } from './errors.js';
+import { ErrorDominio, NoImplementado } from './errors.js';
 
 /**
  * Servicios vigentes de una fecha. Una racion entregada no se edita: se anula
@@ -21,13 +21,31 @@ export function serviciosDelDia(
  * Saldo de despensa derivado de movimientos append-only.
  * Regla del proyecto: el saldo NUNCA se escribe a mano (docs/DECISIONES.md D4).
  *
- * TODO(M2): sumar deltas por insumoId, incluyendo `transferencia` entre ollas.
+ * Suma todos los deltas del insumo: `entrada`, `salida`, `merma`, `ajuste` y
+ * `transferencia` ya traen su signo (una transferencia que entra es positiva).
+ * Las bajas logicas (`deletedAt !== null`) no cuentan: en una tabla append-only
+ * no deberia haberlas, pero si aparecen no pueden mover el stock en silencio.
+ *
+ * El llamador pasa los movimientos de UNA olla (y del periodo que quiera
+ * mostrar); esta funcion no filtra por `ollaId` para no esconder un error de
+ * alcance detras de una suma vacia.
  */
 export function saldoDespensa(
   movimientos: readonly Movimiento[],
 ): Readonly<Record<string, number>> {
-  void movimientos;
-  throw new NoImplementado('saldoDespensa');
+  const saldo: Record<string, number> = {};
+
+  for (const movimiento of movimientos) {
+    if (movimiento.deletedAt !== null) continue;
+    if (!Number.isFinite(movimiento.delta)) {
+      throw new ErrorDominio(
+        `movimiento ${movimiento.id}: delta no numerico ("${movimiento.delta}")`,
+      );
+    }
+    saldo[movimiento.insumoId] = (saldo[movimiento.insumoId] ?? 0) + movimiento.delta;
+  }
+
+  return saldo;
 }
 
 /**
