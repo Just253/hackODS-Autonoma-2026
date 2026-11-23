@@ -5,11 +5,16 @@
 lista de personas porque son el requisito de la acción. Debajo va el resumen del menú firmado del
 día como referencia, no como acción.
 
-**Qué lee:** `listarPersonas(OLLA_DEMO)` y `racionDe(codigoP, OLLA_DEMO)` de
-`src/data/repositorio.ts`, para saber quién está en el padrón y si ya tiene ración del servicio de
-hoy (`servicio-AAAA-MM-DD`). El menú firmado sale de `menusDelDiaDemo()` de
-`src/fixtures/servicio-demo.ts`; `ServicioResumen` lo procesa con `servirDelDia(menus, personas)` de
-`@hackods/domain`.
+**Qué lee:** `listarPersonas(OLLA_DEMO)` y `racionDe(codigoP, OLLA_DEMO, servicioId)` de
+`src/data/repositorio.ts`, para saber quién está en el padrón y si ya tiene ración de **ese**
+servicio. El menú firmado lo resuelve `menu-del-dia.ts` (`menuDelDia()`), **una sola vez**: de ahí
+salen el `servicioId` que se guarda y los `menus` que pinta `ServicioResumen` (que los procesa con
+`servirDelDia` de `@hackods/domain`). Hoy la fuente es `menusDelDiaDemo()`, pero el `servicioId` es
+el `template.id` de la plantilla que se sirve (estable), **no** un id por fecha (#90); conectar
+`menu_template` de Supabase es deuda de `data/remoto.ts`.
+
+**Sin menú servible:** no se registra nada. La pantalla dice "Sin menú firmado del día, no se
+registra servicio", muestra el motivo y deshabilita "Servir ración". Nunca se guarda con `null`.
 
 **Qué escribe:** `guardarRacion()`, un `add` append-only en la tabla `raciones` de
 `hackods-<ollaId>` validado con `racionSchema`, más su evento en el outbox de `@hackods/sync` en la
