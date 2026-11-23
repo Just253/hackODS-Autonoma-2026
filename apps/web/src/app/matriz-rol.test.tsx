@@ -1,4 +1,4 @@
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { act, cleanup, render, screen, within } from '@testing-library/react';
 import { RouterProvider } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -112,5 +112,28 @@ describe('coherencia de la matriz', () => {
 
   it('admin ve todas las rutas', () => {
     expect([...MATRIZ_ROL.admin].sort()).toEqual([...RUTAS].sort());
+  });
+});
+
+describe('cambio de rol en vivo (sin recargar)', () => {
+  it('la guarda lee el rol nuevo: lo que era permitido deja de pasar', async () => {
+    // Cocinera entra a comprobante (suya). Desde Ajustes se cambia a
+    // nutricionista, que NO ve comprobante. Sin recargar, la guarda tiene que
+    // aplicar el rol nuevo: antes leia la sesion una sola vez y dejaba pasar.
+    const router = crearRouterDePrueba('/comprobante');
+    render(<RouterProvider router={router} />);
+    expect(router.state.location.pathname).toBe('/comprobante');
+
+    window.localStorage.setItem(
+      CLAVE_SESION,
+      JSON.stringify({ ...SESION_INICIAL, rol: 'nutricionista' }),
+    );
+
+    await act(async () => {
+      await router.navigate('/comprobante');
+    });
+
+    expect(router.state.location.pathname).toBe(RUTA_INICIAL.nutricionista);
+    expect(screen.getByText(AVISO_SIN_ACCESO)).toBeInTheDocument();
   });
 });

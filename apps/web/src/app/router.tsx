@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import {
   createBrowserRouter,
   createMemoryRouter,
@@ -57,13 +56,13 @@ export const AVISO_SIN_ACCESO = 'Esa sección no es para tu rol.';
 
 /**
  * Guarda de ruta. Lee la sesion persistida y redirige si el rol no esta en los
- * roles del destino. Usa `leerSesion` (no `useSesion`) para no re-montar el
- * arbol entero: la sesion cambia desde la hoja de ajustes, que remonta la ruta
- * de todos modos; aca solo hace falta "quien soy AHORA".
+ * roles del destino. La lee en cada render (no en `useState`): al cambiar de
+ * rol desde la hoja de ajustes, `Shell` vuelve a renderizar y esta guarda tiene
+ * que ver el rol NUEVO sin recargar la pagina. `leerSesion` es sincrono y barato.
  */
 function GuardaDeRol() {
   const ubicacion = useLocation();
-  const [sesion] = useState(() => leerSesion());
+  const sesion = leerSesion();
   const destino = destinoDeRuta(ubicacion.pathname);
 
   // Ruta del menu: solo pasa quien esta en sus roles. Ruta desconocida (hoy,
@@ -88,7 +87,7 @@ function GuardaDeRol() {
  * suya. Ahora cada rol empieza donde trabaja (FE-03 parcial).
  */
 function RedirectInicio() {
-  const [sesion] = useState(() => leerSesion());
+  const sesion = leerSesion();
   return <Navigate to={rutaInicial(sesion)} replace />;
 }
 
