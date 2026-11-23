@@ -113,3 +113,7 @@ curl -s -X POST "http://127.0.0.1:54321/functions/v1/ingest" \
 - **Compute real**: cuando exista el túnel (`tools/compute/tunel-url.txt`),
   `curl $COMPUTE_URL/health` con `Authorization: Bearer $COMPUTE_TOKEN` debe dar `ok:true`
   antes de probar la función de punta a punta.
+
+## Audio → ítems
+
+La transcripción se pasa por `parsearDictado` (copia Deno en `supabase/functions/ingest/dictado.ts`, espejo de `packages/domain/src/ingesta.ts`): normaliza tildes, tolera errores de ASR con Levenshtein ≤2 y devuelve `items` con `arroz 2 kg`, `aceite 1 lt`; sin match cercano no inventa ítems. `categoria` sigue saliendo del embedding con umbral 0.69.
