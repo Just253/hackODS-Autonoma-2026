@@ -30,7 +30,13 @@ Modelo y alcance: `docs/DECISIONES.md` D2/D3/D4/D8.
   `lactante`→`lactante_6_23m`, `adulto`/`adulto_mayor`/`gestante` iguales.
 - **Stubs explícitos** (`serviciosDelDia`, `saldoDespensa`): lanzan
   `NoImplementado`; un stub que devuelve un número inventado es un bug.
-- Errores tipados (`OllaCerrada`, `ServicioDuplicado`, `DatoFaltante`, `NoImplementado`, `MenuNoServible`).
+- **Acta entre ollas** (`acta.ts`, #76): `codigoActa` (4 dígitos) y `hashActa` (SHA-256, orden
+  independiente de items) deterministas; `firmarActa` es puro y solo llega a `firmada` con **dos
+  firmas de puntas distintas** desde `borrador|en_revision` (si no, `ActaNoFirmable`);
+  `movimientosDeActa` genera el par `transferencia` (origen −, destino +, suma 0) solo de actas
+  firmadas; `matchExcedentes` rankea con pesos 0.3/0.5/0.2 y razones explicables; `impactoDesdeActas`
+  cuenta **solo actas firmadas** (una por `(origen, codigo)`), ignora movimientos sueltos y mermas.
+- Errores tipados (`OllaCerrada`, `ServicioDuplicado`, `DatoFaltante`, `NoImplementado`, `MenuNoServible`, `ActaNoFirmable`).
 
 ## Qué NO es de este paquete
 

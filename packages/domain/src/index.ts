@@ -10,6 +10,7 @@ export * from './comprobantes/formato.js';
 export * from './presupuesto/presupuesto.js';
 export * from './solicitud.js';
 export * from './reporte.js';
+export * from './acta.js';
 export * from './metricas.js';
 export * from './precios/serie.js';
 export * from './captura/parser.js';
