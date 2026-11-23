@@ -42,6 +42,80 @@ export interface CapturaIngest {
 }
 
 /**
+ * Plan B: compute directo. Si `VITE_COMPUTE_URL` y `VITE_COMPUTE_TOKEN` están
+ * configurados, la captura va derecho al compute y no depende de la Edge. La
+ * URL es temporal y el token queda en el bundle: aceptado solo para la demo,
+ * nunca para producción.
+ */
+interface ConfigDirecta {
+  readonly url: string;
+  readonly token: string;
+}
+
+function configDirecta(): ConfigDirecta | null {
+  const entorno = import.meta.env as unknown as Record<string, string | undefined>;
+  const url = entorno.VITE_COMPUTE_URL?.trim();
+  const token = entorno.VITE_COMPUTE_TOKEN?.trim();
+  if (url === undefined || url === '' || token === undefined || token === '') return null;
+  return { url: url.replace(/\/+$/, ''), token };
+}
+
+export function hayComputeDirecto(): boolean {
+  return configDirecta() !== null;
+}
+
+async function capturarDirecto(
+  archivo: File,
+  tipo: 'audio' | 'boleta',
+  config: ConfigDirecta,
+): Promise<RespuestaFuncion<CapturaIngest>> {
+  const ruta = tipo === 'audio' ? '/transcribe' : '/extract';
+  try {
+    const respuesta = await fetch(`${config.url}${ruta}`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${config.token}`,
+        'content-type': archivo.type === '' ? 'application/octet-stream' : archivo.type,
+      },
+      body: archivo,
+    });
+    const cuerpo = (await respuesta.json()) as {
+      texto?: unknown;
+      items?: unknown;
+    };
+    if (!respuesta.ok) {
+      return { datos: null, error: `el compute respondió ${respuesta.status}` };
+    }
+    const texto = typeof cuerpo.texto === 'string' ? cuerpo.texto : '';
+    const crudos = Array.isArray(cuerpo.items) ? cuerpo.items : [];
+    const items: ItemIngest[] = crudos.map((crudo, indice) => {
+      const fila = crudo as Record<string, unknown>;
+      const textoCrudo = String(fila.texto ?? fila.descripcion ?? fila.textoCrudo ?? '');
+      return {
+        linea: indice + 1,
+        textoCrudo,
+        cantidad: typeof fila.cantidad === 'number' ? fila.cantidad : null,
+        unidad: typeof fila.unidad === 'string' ? fila.unidad : null,
+        precioUnitarioMicrocent:
+          typeof fila.precioUnitarioMicrocent === 'number' ? fila.precioUnitarioMicrocent : null,
+      };
+    });
+    return {
+      datos: {
+        capturaId: 'directo',
+        estado: 'extraida',
+        texto,
+        categoria: 'sin_clasificar',
+        items,
+      },
+      error: null,
+    };
+  } catch (fallo) {
+    return { datos: null, error: await mensajeDeError(fallo) };
+  }
+}
+
+/**
  * Manda audio o foto a la Edge `ingest` con el JWT de la sesión. La función
  * guarda el binario en Storage, llama al compute con SU token y devuelve los
  * ítems. El navegador nunca ve `COMPUTE_URL` ni `COMPUTE_TOKEN`.
@@ -50,6 +124,9 @@ export async function capturarConIngest(
   archivo: File,
   tipo: 'audio' | 'boleta',
 ): Promise<RespuestaFuncion<CapturaIngest>> {
+  const directa = configDirecta();
+  if (directa !== null) return capturarDirecto(archivo, tipo, directa);
+
   const cliente = clienteSupabase();
   if (cliente === null) return { datos: null, error: 'Supabase no configurado' };
 

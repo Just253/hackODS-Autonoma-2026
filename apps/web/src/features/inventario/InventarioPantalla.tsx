@@ -12,8 +12,9 @@ import {
 import { BotonGrande, EncabezadoPantalla, EstadoPantalla } from '@hackods/ui';
 
 import { INSUMOS_DEMO, TEXTO_ENTRADA_DEMO } from '../../fixtures/inventario-demo.js';
+import { aWav } from '../../data/audio-wav.js';
 import type { Lote } from '../../data/base.js';
-import { capturarConIngest } from '../../data/funciones-supabase.js';
+import { capturarConIngest, hayComputeDirecto } from '../../data/funciones-supabase.js';
 import {
   listarInsumos,
   listarLotes,
@@ -217,7 +218,7 @@ export function prepararEntrada(
  * deshabilitado y se escribe a mano; el navegador no conoce el compute.
  */
 export function puedeCapturar(): boolean {
-  return estadoConexion() === 'autenticado';
+  return estadoConexion() === 'autenticado' || hayComputeDirecto();
 }
 
 interface Formulario {
@@ -521,8 +522,12 @@ export function InventarioPantalla({
         setGrabando(false);
         const tipo = rec.mimeType === '' ? 'audio/webm' : rec.mimeType;
         const blob = new Blob(trozosAudio.current, { type: tipo });
-        const archivo = new File([blob], 'dictado.webm', { type: tipo });
-        void enviarCaptura(archivo, 'audio');
+        void aWav(blob)
+          .then((archivo) => enviarCaptura(archivo, 'audio'))
+          .catch(() => {
+            setDictado('error');
+            setError('No se pudo convertir el audio grabado a WAV.');
+          });
       };
       grabador.current = rec;
       rec.start();
