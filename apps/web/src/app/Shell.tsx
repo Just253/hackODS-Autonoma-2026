@@ -483,11 +483,12 @@ const TAMANOS: readonly { valor: TamanoTexto; texto: string; nota: string }[] = 
 /**
  * Selector de contexto (FE-01): olla y rol.
  *
- * Solo en modo demo. En `cloud` la sesion sale del JWT (TODO #62): el control
- * no se ofrece y se dice el motivo, porque un boton apagado sin explicacion
- * deja a la persona sin saber por que no puede cambiar de rol. La UI nunca es
- * la barrera de autorizacion (DEC-20261123-1358-8feaf9): el servidor vuelve a decidir
- * con `olla_members`.
+ * Solo en modo demo. En `cloud` la sesion sale de las RPC `app.mis_ollas()`
+ * y `app.mi_rol()` (`sesion-remota.ts`), no de la UI. El control no se ofrece
+ * y se dice el motivo, porque un boton apagado sin explicacion deja a la
+ * persona sin saber por que no puede cambiar de rol. La UI nunca es la
+ * barrera de autorizacion (DEC-20261123-1358-8feaf9): el servidor vuelve a
+ * decidir con `olla_members` y, sin red, se queda la sesion local.
  */
 function SelectorSesion({ control }: { readonly control: ControlSesion }) {
   const { sesion, cambiarRol, cambiarOlla } = control;

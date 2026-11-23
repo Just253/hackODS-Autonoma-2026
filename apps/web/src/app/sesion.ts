@@ -13,11 +13,10 @@ import { useCallback, useEffect, useState } from 'react';
  * - `demo` → la elige la persona desde el selector de la hoja de ajustes y se
  *   persiste en `localStorage`, igual que el tamano de letra (`app/texto.ts`).
  *   El rol se puede cambiar sin red y sin sesion de servidor: es una demo.
- * - `cloud` → sale del JWT (`olla_members`), no de la UI. Mientras el
- *   enrolamiento no este conectado, `cloud` es solo un modo en el que el
- *   selector de rol NO se ofrece: no se puede "ascender" tocando un boton.
- *   TODO(#62): leer la sesion del JWT y poblar `memberId`, `ollaId` y `rol` en
- *   vez de la demo por defecto.
+ * - `cloud` → sale de las RPC `app.mis_ollas()` y `app.mi_rol()`, no de la UI
+ *   (`sesion-remota.ts`). El selector de rol NO se ofrece: no se puede
+ *   "ascender" tocando un boton. Sin red o si la RPC falla, la app se queda con
+ *   la sesion local (demo) y lo dice; nunca fabrica una sesion.
  *
  * Persistencia y por que `localStorage` y no Dexie:
  *
@@ -161,9 +160,20 @@ export function cambiarRol(sesion: Sesion, rol: Rol): Sesion {
   return { ...sesion, rol };
 }
 
-/** Cambia la olla. Solo en demo: en cloud la olla sale del JWT. */
-export function cambiarOlla(sesion: Sesion, ollaId: string): Sesion {
-  if (sesion.modo === 'cloud') return sesion;
+/**
+ * Cambia la olla.
+ *
+ * En demo solo entre `OLLAS_DEMO`. En cloud la olla la asigna el servidor:
+ * solo se acepta si llega CON su nombre (lo trae `sesion-remota.ts` desde
+ * `ollas.titulo`). Un id suelto desde la UI no basta, y el rol nunca cambia
+ * aca: en cloud lo decide `sub`/`mi_rol()`, no un boton.
+ */
+export function cambiarOlla(sesion: Sesion, ollaId: string, nombreOlla?: string): Sesion {
+  if (ollaId === '' || ollaId === sesion.ollaId) return sesion;
+  if (sesion.modo === 'cloud') {
+    if (nombreOlla === undefined) return sesion;
+    return { ...sesion, ollaId, nombreOlla };
+  }
   const olla = OLLAS_DEMO.find((o) => o.ollaId === ollaId);
   if (olla === undefined) return sesion;
   return { ...sesion, ollaId: olla.ollaId, nombreOlla: olla.nombreOlla };
