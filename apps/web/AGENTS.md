@@ -28,6 +28,24 @@ pnpm --filter @hackods/web test:e2e     # requiere `pnpm build` antes
 pnpm --filter @hackods/web typecheck
 ```
 
+### Antes de testear código que usa `@hackods/domain`
+
+El paquete se resuelve por `dist/`, no por `src/`: si cambiás algo en `packages/domain`, construilo
+primero o los tests verán la versión vieja.
+
+```bash
+pnpm --filter @hackods/domain build
+```
+
+### Correr un test concreto del paquete
+
+Desde la raíz, `pnpm exec vitest run <ruta>` **no** carga `apps/web/vite.config.ts` y falla con
+`document is not defined`. Usá el filtro del paquete, que sí lo carga:
+
+```bash
+pnpm --filter @hackods/web exec vitest run src/features/comprobante
+```
+
 ## Cómo se testea
 
 | Capa | Herramienta | Qué se prueba |

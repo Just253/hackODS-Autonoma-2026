@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   identidadLocalSchema,
+  menuTemplateSchema,
   personaSchema,
   precioSchema,
   solicitudSchema,
@@ -84,5 +85,25 @@ describe('contracts v1', () => {
     expect(solicitudSchema.safeParse({ ...base, items: [{ insumoId: 'arroz' }] }).success).toBe(
       false,
     );
+  });
+
+  it('menuTemplate exige hash sha256 hex de 64 caracteres', () => {
+    const base = {
+      id: '00000000-0000-4000-8000-000000000301',
+      ollaId: 'olla_demo',
+      perfil: 'general',
+      opcion: 'A',
+      estado: 'publicado',
+      sello: null,
+      version: 1,
+      hash: 'cd78df14a1e79cb92c9eb73047c32220e2aaff23339243d0ca78b524dfbcec39',
+    };
+    expect(menuTemplateSchema.parse(base).hash).toMatch(/^[0-9a-f]{64}$/);
+    // El hash viejo (`digest('...')` o texto libre) ya no pasa.
+    expect(menuTemplateSchema.safeParse({ ...base, hash: 'menu-demo-general-A' }).success).toBe(
+      false,
+    );
+    expect(menuTemplateSchema.safeParse({ ...base, hash: 'F'.repeat(64) }).success).toBe(false);
+    expect(menuTemplateSchema.safeParse({ ...base, hash: 'abc' }).success).toBe(false);
   });
 });

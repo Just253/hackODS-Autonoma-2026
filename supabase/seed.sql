@@ -67,16 +67,23 @@ insert into precios (id, olla_id, insumo_id, canal, unidad, precio, fecha, fuent
   ('00000000-0000-4000-8000-000000000206', '00000000-0000-4000-8000-000000000003', 'quinua', 'mayorista', 'g', 940000, '2026-11-01', 'demo-ficticio', null)
 on conflict (id) do nothing;
 
--- Menu demo firmado (hash calculado sobre un literal de demo, no es un menu clinico).
+-- Menu demo firmado. El hash de cada plantilla es sha256 hex del contenido canonico
+-- (`sha256Hex(serializarContenido(template, platos))` en packages/domain/src/servicio.ts):
+--   301 general/A -> sha256("menu:<301>|perfil:general|opcion:A|0000…0501|almuerzo|Guiso demo de lentejas|adulto:280:g,gestante:320:g,menor_5:180:g")
+--                    = cd78df14a1e79cb92c9eb73047c32220e2aaff23339243d0ca78b524dfbcec39
+--   302 especial/A (sin platos en el seed) -> sha256("menu:<302>|perfil:especial|opcion:A|")
+--                    = c04067aad4bfd6296660faf68af661c65a733b072661db6e380aff606d93efb7
+-- Recalculo: `node /tmp/opencode/calc-hash.mjs` sobre packages/domain/dist. Ver
+-- packages/domain/src/servicio-seed.test.ts (fija ambos literales contra el SQL).
 insert into menu_template
   (id, olla_id, perfil, opcion, estado, sello_nutricionista, sello_cnp, sello_fecha, version, hash)
 values
   ('00000000-0000-4000-8000-000000000301', '00000000-0000-4000-8000-000000000001',
    'general', 'A', 'publicado', 'Nutricionista Demo', 'CNP-DEMO-0001', '2026-11-01T10:00:00Z', 1,
-   encode(digest('menu-demo-general-A', 'sha256'), 'hex')),
+   'cd78df14a1e79cb92c9eb73047c32220e2aaff23339243d0ca78b524dfbcec39'),
   ('00000000-0000-4000-8000-000000000302', '00000000-0000-4000-8000-000000000001',
    'especial', 'A', 'aprobado', 'Nutricionista Demo', 'CNP-DEMO-0001', '2026-11-01T10:00:00Z', 1,
-   encode(digest('menu-demo-especial-A', 'sha256'), 'hex'))
+   'c04067aad4bfd6296660faf68af661c65a733b072661db6e380aff606d93efb7')
 on conflict (id) do nothing;
 
 insert into menu_day (id, olla_id, template_id, dia_semana, fecha, version, hash) values

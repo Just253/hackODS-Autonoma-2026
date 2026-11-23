@@ -31,6 +31,7 @@ Cada olla fotografía o sube sus boletas/facturas; el sistema lee los ítems, **
 - **Supabase sigue siendo el único backend** (ADR-004). Cloudflare Workers AI se usa **solo como inferencia sin estado** (visión + embeddings) desde una Edge Function; no guarda datos, no reemplaza Postgres, no crea una segunda fuente de verdad.
 - **Local-first** (ADR-003): capturar y confirmar funciona sin red. La extracción por IA **sí** necesita red; por eso la entrada manual es camino de primera clase, no fallback vergonzante.
 - **Nada entra al presupuesto sin confirmación humana** (D8). No hay auto-confirmación, ni siquiera con confianza 1.0.
+  - Contrato: `itemPresupuestableSchema` (`packages/contracts/src/comprobantes.ts`) exige `estado === 'confirmado'`; el guard `esItemPresupuestable` sirve al consumidor en memoria. Test: `comprobantes.test.ts` (#5).
 - **Precio como serie inmutable**, tendencia contra mediana (D8), no contra promedio.
 - **k ≥ 10** para agregados entre ollas, tomado del documento del usuario (`nxtqbsr` §7.6; `10-texto` §7), donde se declara **criterio de privacidad, no obligación legal**.
 
@@ -986,6 +987,21 @@ tendencia(productoId: string, t: string, cfg: TrendConfig):
 
 agregarRed(filtro: FiltroRed, k: number /* runtime: k >= 10; nunca desde el cliente */):
   AgregadoRed;
+
+// clasificarItem — movimiento desde apps/web (PR #32). Decide la revisión humana de un ítem.
+// Vive en packages/domain/src/clasificacion/clasificar.ts; la pantalla no compara umbrales propios.
+clasificarItem(item: ItemClasificable, cfg: ConfiguracionClasificacion):
+  { estado: 'confirmado' | 'por_revisar' | 'desconocido'; motivo?: MotivoRevision };
+
+// totales del comprobante — packages/domain/src/comprobantes/totales.ts.
+// La pantalla muestra; no suma. Entran los centimos tal cual, sin Number() en el JSX.
+totalDeLineasConfirmadas(items: ItemLinea[]): Centimos;   // solo `confirmado` suma (DEC-2026-0008)
+totalDelPapel(items: ItemLinea[]): Centimos;              // lo que dice la boleta, para conciliar
+
+// formato de moneda — packages/domain/src/comprobantes/formato.ts.
+// Una sola coma decimal: "S/ 1234,56". `toLocaleString('es-PE')` agrega separador de miles y
+// producia "S/ 1,234,56" al concatenar la coma decimal encima.
+formatearCentimos(centimos: Centimos | number): string;
 ```
 
 Códigos de error estables (para tests y UI): `UNIDAD_AMBIGUA`, `SIN_EQUIVALENCIA`, `CONFIANZA_BAJA`, `EMPATE`, `SUMA_NO_CUADRA`, `IGV_INCONSISTENTE`, `DUPLICADO_FUERTE`, `DUPLICADO_DEBIL`, `REUTILIZADO`, `SIN_PERIODO`, `PERIODO_CERRADO`, `SIN_PRESUPUESTO`, `K_INSUFICIENTE`, `DOMINANCIA`.

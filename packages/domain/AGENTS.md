@@ -20,9 +20,17 @@ Modelo y alcance: `docs/DECISIONES.md` D2/D3/D4/D8.
 - **Configuración de clasificación**: `CONFIG_CLASIFICACION` con los umbrales calibrados
   (`τ=0,69`, margen 0,04, piso 0,45); los tests no repiten los números.
 - **Aritmética de dominio**: `mediana()`, redondeo, comparación de instantes.
-- **Stubs explícitos** (`serviciosDelDia`, `saldoDespensa`, `esMenuServible`): lanzan
+- **Servicio del día**: `servirDelDia(menuFirmado, personas)` — porciones por grupo etario y
+  total de raciones derivado del padrón vigente (`deletedAt === null`), nunca de una constante.
+  `esMenuServible(template, platos)` cierra el TODO M3: exige estado `aprobado`/`publicado`,
+  sello y hash del sello igual al del contenido (`serializarContenido`); si falla lanza
+  `MenuNoServible` con el `campo` que no cuadra (`estado`, `sello`, `sello.hash`, `sello.version`,
+  `porcion.<grupo>`). Sustituciones: solo las aprobadas en la plantilla; el resto queda
+  `sin sustituto`, sin equivalencias inventadas. Categorías → grupo: `nino`→`menor_5`,
+  `lactante`→`lactante_6_23m`, `adulto`/`adulto_mayor`/`gestante` iguales.
+- **Stubs explícitos** (`serviciosDelDia`, `saldoDespensa`): lanzan
   `NoImplementado`; un stub que devuelve un número inventado es un bug.
-- Errores tipados (`OllaCerrada`, `ServicioDuplicado`, `DatoFaltante`, `NoImplementado`).
+- Errores tipados (`OllaCerrada`, `ServicioDuplicado`, `DatoFaltante`, `NoImplementado`, `MenuNoServible`).
 
 ## Qué NO es de este paquete
 
@@ -58,6 +66,13 @@ pnpm --filter @hackods/domain typecheck
 5. Fechas en ISO 8601 con zona explícita; el día operativo de una olla es `America/Lima`.
 6. Los nombres de campos y errores van en español peruano, como todo el repo.
 7. Identidad: `codigoP` es la clave; ningún campo de nombre, DNI, teléfono o dirección entra acá (D2).
+8. Solicitud entre ollas: transiciones `borrador→enviada→aceptada→entregada|cancelada` sin saltos
+   (`TransicionInvalida` con estado e intento); entregar devuelve el **par** de movimientos
+   `transferencia` (origen negativo, destino positivo, conservación a 0 — una solicitud nunca
+   crea stock); unidades estrictas (`kg`→g; otra unidad → `UnidadNoSoportada`).
+9. Reporte entre ollas: agrega **volumen movido** (`Math.abs(delta)`, no saldo ni neto) por
+   categoría; la única puerta por donde sale un texto de categoría es `categoriaSegura` —
+   `codigoP`, alias y proveedores no salen (test que se pone rojo si se anula).
 
 ## Dueño y revisión
 

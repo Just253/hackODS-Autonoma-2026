@@ -67,8 +67,11 @@ Deno.serve(async (req: Request): Promise<Response> => {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
+  // `v_evento_sync_pull` sanea el payload por rol (#4): a quien no es
+  // nutricionista/admin le quita anemia/pesoKg/tallaCm/notas de las personas.
+  // La frontera vive en el SQL (migración 20261123170000), no acá.
   let consulta = supabase
-    .from('evento_sync')
+    .from('v_evento_sync_pull')
     .select(
       'event_uuid, idempotency_key, lamport, device_id, olla_id, entidad, payload, estado, creado_en',
     );

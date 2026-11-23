@@ -18,11 +18,58 @@ export class DatoFaltante extends ErrorDominio {
   override name = 'DatoFaltante';
 }
 
+/**
+ * Transicion de estado no permitida en una solicitud entre ollas.
+ * Lleva el estado actual y el pedido, para que la pantalla diga que se intento.
+ */
+export class TransicionInvalida extends ErrorDominio {
+  override name = 'TransicionInvalida';
+
+  constructor(
+    readonly estadoActual: string,
+    readonly intento: string,
+  ) {
+    super(`solicitud: no se puede pasar de "${estadoActual}" a "${intento}"`);
+  }
+}
+
+/**
+ * Unidad de captura sin equivalencia fija a la unidad base (g). Se rechaza en
+ * vez de suponer un factor: `taza` de arroz no son gramos sin una tabla.
+ */
+export class UnidadNoSoportada extends ErrorDominio {
+  override name = 'UnidadNoSoportada';
+
+  constructor(
+    readonly unidad: string,
+    readonly insumoId: string,
+  ) {
+    super(`solicitud: la unidad "${unidad}" de "${insumoId}" no tiene factor a gramos`);
+  }
+}
+
 /** El esqueleto no implementa la funcion todavia: falla ruidosamente en vez de mentir. */
 export class NoImplementado extends ErrorDominio {
   override name = 'NoImplementado';
 
   constructor(fn: string) {
     super(`${fn}(): pendiente de implementacion (esqueleto M0)`);
+  }
+}
+
+/**
+ * El menu no se puede servir: falta el sello, no esta publicado o el hash no
+ * corresponde. `campo` dice exactamente que fallo (`estado`, `sello`, `sello.hash`,
+ * `sello.version`, `porcion.<grupo>`).
+ */
+export class MenuNoServible extends ErrorDominio {
+  override name = 'MenuNoServible';
+
+  constructor(
+    readonly menuId: string,
+    readonly campo: string,
+    readonly detalle: string,
+  ) {
+    super(`menu ${menuId}: no servible por "${campo}": ${detalle}`);
   }
 }
