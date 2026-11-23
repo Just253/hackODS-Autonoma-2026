@@ -95,13 +95,6 @@ export function calcularTendencia(opciones: OpcionesTendencia): Tendencia {
   };
 }
 
-/** Promedio descartado a propósito; sólo existe para demostrar el rojo→verde. */
-export function promedioParaPrueba(valores: readonly number[]): number | null {
-  if (valores.length === 0) {
-    return null;
-  }
-  return redondearMitadArriba(valores.reduce((a, b) => a + b, 0) / valores.length);
-}
 
 /** Mediana reutilizada (reexport por claridad en el test). */
 export { mediana };
