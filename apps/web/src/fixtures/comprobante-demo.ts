@@ -6,13 +6,16 @@
  * mayorista (abreviado y en mayusculas) porque lo que se muestra es justamente
  * que la app NO adivina el producto.
  *
+ * `cantidadMilesimas` va en MILESIMAS DE LA UNIDAD BASE (1 kg = 1_000_000, no
+ * 1_000). Un factor 1000 de menos hacia que 5 kg se guardara como 5 g.
+ *
  * Cuantos items quedan en `por_revisar` no se decide aca: lo decide
  * `clasificarItem()` con TAU, MARGEN y PISO del dominio. Cambia el umbral,
  * cambia el resultado.
  */
 import type { Centimos, ProductoCatalogo } from '@hackods/contracts';
 
-import type { CandidatoConProducto } from '../features/comprobante/clasificar.js';
+import type { CandidatoConProducto } from '@hackods/domain';
 
 /** Una linea tal como la imprimio la boleta, antes de clasificar. */
 export interface ItemBoleta {
@@ -20,6 +23,7 @@ export interface ItemBoleta {
   readonly lineaNo: number;
   readonly descripcionCruda: string;
   readonly cantidadTextual: string | null;
+  /** Milesimas de la unidad base: 1 kg = 1_000_000. */
   readonly cantidadMilesimas: number | null;
   readonly unidadCruda: string | null;
   readonly unidadBase: 'g' | 'ml' | 'unidad' | null;
@@ -29,6 +33,11 @@ export interface ItemBoleta {
 }
 
 const c = (valor: number): Centimos => valor as Centimos;
+
+/** 1 kg = 1_000 g = 1_000_000 milesimas de gramo. */
+const GRAMOS = 1_000;
+/** 1 L = 1_000 ml = 1_000_000 milesimas de mililitro. */
+const MILILITROS = 1_000;
 
 function producto(
   id: string,
@@ -69,14 +78,17 @@ export const CATALOGO_DEMO: readonly ProductoCatalogo[] = [
   producto('prod-sal', 'Sal', 'abarrotes', 'g'),
 ];
 
-/** Las 6 lineas de la boleta ficticia. Totales en centimos, sin floats. */
+/**
+ * Las 6 lineas de la boleta ficticia. Totales en centimos, sin floats.
+ * `cantidadMilesimas` en milesimas de la unidad base (5 kg -> 5_000_000).
+ */
 export const ITEMS_BOLETA: readonly ItemBoleta[] = [
-  { id: 'item-01', lineaNo: 1, descripcionCruda: 'ARROZ EXTRA 5KG', cantidadTextual: '1', cantidadMilesimas: 5_000, unidadCruda: 'BOLSA 5KG', unidadBase: 'g', precioUnitarioCrudoCentavos: c(2_450), totalLineaCentavos: c(2_450) },
-  { id: 'item-02', lineaNo: 2, descripcionCruda: 'ARROZ 3KG', cantidadTextual: '1', cantidadMilesimas: 3_000, unidadCruda: 'BOLSA 3KG', unidadBase: 'g', precioUnitarioCrudoCentavos: c(1_320), totalLineaCentavos: c(1_320) },
-  { id: 'item-03', lineaNo: 3, descripcionCruda: 'POLLO ENTERO KG', cantidadTextual: '4.250', cantidadMilesimas: 4_250, unidadCruda: 'KG', unidadBase: 'g', precioUnitarioCrudoCentavos: c(780), totalLineaCentavos: c(3_315) },
-  { id: 'item-04', lineaNo: 4, descripcionCruda: 'POLLO PECHUGA KG', cantidadTextual: '2.100', cantidadMilesimas: 2_100, unidadCruda: 'KG', unidadBase: 'g', precioUnitarioCrudoCentavos: c(1_450), totalLineaCentavos: c(3_045) },
-  { id: 'item-05', lineaNo: 5, descripcionCruda: 'ACEITE VEG 1L', cantidadTextual: '3', cantidadMilesimas: 1_000, unidadCruda: 'BOT 1L', unidadBase: 'ml', precioUnitarioCrudoCentavos: c(890), totalLineaCentavos: c(2_670) },
-  { id: 'item-06', lineaNo: 6, descripcionCruda: 'PAPA BLANCA KG', cantidadTextual: '8.000', cantidadMilesimas: 8_000, unidadCruda: 'KG', unidadBase: 'g', precioUnitarioCrudoCentavos: c(210), totalLineaCentavos: c(1_680) },
+  { id: 'item-01', lineaNo: 1, descripcionCruda: 'ARROZ EXTRA 5KG', cantidadTextual: '1', cantidadMilesimas: 5 * GRAMOS * 1_000, unidadCruda: 'BOLSA 5KG', unidadBase: 'g', precioUnitarioCrudoCentavos: c(2_450), totalLineaCentavos: c(2_450) },
+  { id: 'item-02', lineaNo: 2, descripcionCruda: 'ARROZ 3KG', cantidadTextual: '1', cantidadMilesimas: 3 * GRAMOS * 1_000, unidadCruda: 'BOLSA 3KG', unidadBase: 'g', precioUnitarioCrudoCentavos: c(1_320), totalLineaCentavos: c(1_320) },
+  { id: 'item-03', lineaNo: 3, descripcionCruda: 'POLLO ENTERO KG', cantidadTextual: '4.250', cantidadMilesimas: 4_250 * GRAMOS, unidadCruda: 'KG', unidadBase: 'g', precioUnitarioCrudoCentavos: c(780), totalLineaCentavos: c(3_315) },
+  { id: 'item-04', lineaNo: 4, descripcionCruda: 'POLLO PECHUGA KG', cantidadTextual: '2.100', cantidadMilesimas: 2_100 * GRAMOS, unidadCruda: 'KG', unidadBase: 'g', precioUnitarioCrudoCentavos: c(1_450), totalLineaCentavos: c(3_045) },
+  { id: 'item-05', lineaNo: 5, descripcionCruda: 'ACEITE VEG 1L', cantidadTextual: '3', cantidadMilesimas: 3 * MILILITROS * 1_000, unidadCruda: 'BOT 1L', unidadBase: 'ml', precioUnitarioCrudoCentavos: c(890), totalLineaCentavos: c(2_670) },
+  { id: 'item-06', lineaNo: 6, descripcionCruda: 'PAPA BLANCA KG', cantidadTextual: '8.000', cantidadMilesimas: 8_000 * GRAMOS, unidadCruda: 'KG', unidadBase: 'g', precioUnitarioCrudoCentavos: c(210), totalLineaCentavos: c(1_680) },
 ];
 
 /**

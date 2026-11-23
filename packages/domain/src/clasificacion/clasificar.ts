@@ -6,13 +6,18 @@
  *   s1 >= piso (sin superar la puerta) ->  por_revisar
  *   s1 <  piso                         ->  desconocido
  *
- * Los tres numeros salen de CONFIG_CLASIFICACION de @hackods/domain: aca no
- * hay 0,69 / 0,04 / 0,45 escritos a mano (DEC-2026-0008).
+ * Los tres numeros salen de CONFIG_CLASIFICACION y no hay 0,69 / 0,04 / 0,45
+ * escritos a mano (DEC-2026-0008). Esta regla vive en el dominio y no en
+ * `apps/web`: la pantalla la importa de `@hackods/domain`.
  */
-import { CONFIG_CLASIFICACION } from '@hackods/domain';
-import type { CandidatoProducto, Clasificacion, MotivoClasificacion } from '@hackods/contracts';
+import type {
+  CandidatoProducto,
+  Clasificacion,
+  MotivoClasificacion,
+  UnidadBase,
+} from '@hackods/contracts';
 
-import type { ItemBoleta } from '../../fixtures/comprobante-demo.js';
+import { CONFIG_CLASIFICACION } from '../clasificacion/config.js';
 
 /** Lo que devuelve el doble de embeddings: producto y similitud coseno. */
 export interface CandidatoConProducto {
@@ -20,6 +25,13 @@ export interface CandidatoConProducto {
   readonly nombre: string;
   readonly categoria: string;
   readonly similitud: number;
+}
+
+/** Lo minimo de una linea de comprobante que la clasificacion necesita. */
+export interface ItemClasificable {
+  readonly id: string;
+  readonly cantidadMilesimas: number | null;
+  readonly unidadBase: UnidadBase | null;
 }
 
 export interface ConfiguracionUmbrales {
@@ -40,7 +52,7 @@ function seisDecimales(valor: number): number {
  * usa el valor del dominio y no le pasa nada.
  */
 export function clasificarItem(
-  item: ItemBoleta,
+  item: ItemClasificable,
   candidatos: readonly CandidatoConProducto[],
   config: ConfiguracionUmbrales = CONFIG_CLASIFICACION,
 ): Clasificacion {
@@ -103,7 +115,10 @@ export function clasificarItem(
     confianza: seisDecimales(s1),
     motivo,
     unidadBase: item.unidadBase,
-    cantidadBase: item.cantidadMilesimas === null ? null : (item.cantidadMilesimas as NonNullable<Clasificacion['cantidadBase']>),
+    cantidadBase:
+      item.cantidadMilesimas === null
+        ? null
+        : (item.cantidadMilesimas as NonNullable<Clasificacion['cantidadBase']>),
     precioPorUnidadBase: null,
     requiereRevision: estado !== 'confirmado',
   };

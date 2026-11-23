@@ -4,9 +4,12 @@
 de que el dinero entre al presupuesto (DEC-2026-0008). Sin OCR ni cámara: los ítems llegan ya
 extraídos en `apps/web/src/fixtures/comprobante-demo.ts`.
 
-**Qué lee:** `ITEMS_BOLETA` y `CANDIDATOS_POR_ITEM` de `src/fixtures/`, más `CONFIG_CLASIFICACION` de
-`@hackods/domain`. Los umbrales `TAU`/`MARGEN`/`PISO` nunca se escriben en la pantalla:
-`clasificarItem()` es el único lugar que los aplica.
+**Qué lee:** `ITEMS_BOLETA` y `CANDIDATOS_POR_ITEM` de `src/fixtures/`, y de `@hackods/domain`:
+`CONFIG_CLASIFICACION`, `clasificarItem()`, `sumaAlPresupuesto()`, `totalDeLineasConfirmadas()`,
+`totalDelPapel()` y `formatearCentimos()`. Los umbrales `TAU`/`MARGEN`/`PISO` nunca se escriben en la
+pantalla y la pantalla no suma: la regla de dos puertas + piso vive en
+`packages/domain/src/clasificacion/clasificar.ts` y los totales en
+`packages/domain/src/comprobantes/totales.ts`.
 
 **Qué escribe:** nada. El demo es local: al confirmar se actualiza el estado en memoria
 (`confirmado` / `por_revisar`) y el total suma sólo los `confirmado`. La exportación al outbox de

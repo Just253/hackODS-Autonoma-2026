@@ -1,7 +1,14 @@
 import { useMemo, useState } from 'react';
 
 import type { Clasificacion } from '@hackods/contracts';
-import { CONFIG_CLASIFICACION } from '@hackods/domain';
+import {
+  clasificarItem,
+  CONFIG_CLASIFICACION,
+  formatearCentimos,
+  sumaAlPresupuesto,
+  totalDeLineasConfirmadas,
+  totalDelPapel,
+} from '@hackods/domain';
 import { BotonGrande } from '@hackods/ui';
 
 import {
@@ -9,26 +16,19 @@ import {
   ITEMS_BOLETA,
   type ItemBoleta,
 } from '../../fixtures/comprobante-demo.js';
-import { clasificarItem, sumaAlPresupuesto } from './clasificar.js';
+
+/** El formateo es del dominio: aca solo se reexporta para quien ya lo importaba. */
+export { formatearCentimos };
 
 /**
  * Comprobante del demo (paso 4 del guion): la cocinera fotografia una boleta y
  * revisa antes de que el dinero entre al presupuesto (DEC-2026-0008).
  *
- * La pantalla NO compara numeros propios: el estado de cada linea lo decide
- * `clasificarItem()` con TAU/MARGEN/PISO de @hackods/domain, y el total solo
- * suma las lineas en `confirmado`. Antes de confirmar no se toca un numero del
- * papel: se muestra textual.
+ * La pantalla NO compara numeros propios ni suma: el estado de cada linea lo
+ * decide `clasificarItem()` y los totales salen de `totalDeLineasConfirmadas()`
+ * / `totalDelPapel()`, todo en `@hackods/domain`. Antes de confirmar no se toca
+ * un numero del papel: se muestra textual.
  */
-
-/** Centimos -> "S/ 1.234,56", sin floats ni toFixed. */
-export function formatearCentimos(centimos: number): string {
-  const signo = centimos < 0 ? '-' : '';
-  const absoluto = Math.abs(centimos);
-  const soles = Math.trunc(absoluto / 100).toLocaleString('es-PE');
-  const resto = String(absoluto % 100).padStart(2, '0');
-  return `${signo}S/ ${soles},${resto}`;
-}
 
 function cantidadLegible(item: ItemBoleta): string {
   const partes = [item.cantidadTextual, item.unidadCruda];
@@ -70,11 +70,9 @@ export function ComprobantePage() {
 
   const lineasConfirmadas = ITEMS_BOLETA.filter((item) => confirmados.has(item.id));
   const lineasPorRevisar = ITEMS_BOLETA.filter((item) => !confirmados.has(item.id));
-  const totalConfirmado = lineasConfirmadas.reduce(
-    (suma, item) => suma + Number(item.totalLineaCentavos),
-    0,
-  );
-  const totalPapel = ITEMS_BOLETA.reduce((suma, item) => suma + Number(item.totalLineaCentavos), 0);
+  // El JSX no suma: el dominio devuelve el total ya calculado.
+  const totalConfirmado = totalDeLineasConfirmadas(lineasConfirmadas);
+  const totalPapel = totalDelPapel(ITEMS_BOLETA);
 
   return (
     <section className="flex flex-col gap-6">

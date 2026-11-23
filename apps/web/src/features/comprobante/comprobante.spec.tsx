@@ -1,11 +1,11 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { TAU, MARGEN, PISO } from '@hackods/domain';
+import { comprobanteItemSchema } from '@hackods/contracts';
+import { TAU, MARGEN, PISO, clasificarItem, sumaAlPresupuesto } from '@hackods/domain';
 
 import { CANDIDATOS_POR_ITEM, ITEMS_BOLETA } from '../../fixtures/comprobante-demo.js';
 import { ComprobantePage, formatearCentimos } from './ComprobantePage.js';
-import { clasificarItem, sumaAlPresupuesto } from './clasificar.js';
 
 /**
  * Issue #9: 6 lineas, exactamente 2 en por_revisar, y nada suma al presupuesto
@@ -15,7 +15,7 @@ import { clasificarItem, sumaAlPresupuesto } from './clasificar.js';
  * Si el umbral cambia, el test cambia con el.
  */
 
-const ATRIBUTO_TOTAL = '[data-estado=' + String.fromCharCode(34) + 'total-confirmado' + String.fromCharCode(34) + ']';
+const ATRIBUTO_TOTAL = `[data-estado="total-confirmado"]`;
 
 function clasificarTodo() {
   return ITEMS_BOLETA.map((item) => clasificarItem(item, CANDIDATOS_POR_ITEM[item.id] ?? []));
@@ -30,6 +30,61 @@ function totalEnPantalla(): number {
 
 afterEach(() => {
   cleanup();
+});
+
+describe('fixture de la boleta', () => {
+  it('cada linea pasa el esquema de item de comprobante', () => {
+    for (const item of ITEMS_BOLETA) {
+      const parsed = comprobanteItemSchema.safeParse({
+        id: item.id,
+        comprobanteId: 'comp-demo',
+        ollaId: 'olla-demo',
+        lineaNo: item.lineaNo,
+        descripcionCruda: item.descripcionCruda,
+        cantidadCruda: item.cantidadTextual,
+        unidadCruda: item.unidadCruda,
+        presentacionCruda: null,
+        cantidadMilesimas: item.cantidadMilesimas,
+        unidadBase: item.unidadBase,
+        equivalenciaId: null,
+        precioUnitarioCrudoCentavos: item.precioUnitarioCrudoCentavos,
+        totalLineaCentavos: item.totalLineaCentavos,
+        descuentoLineaCentavos: 0,
+        totalNetoCentavos: item.totalLineaCentavos,
+        igvLineaCentavos: null,
+        totalNetoConIgvCentavos: item.totalLineaCentavos,
+        esPesoVariable: false,
+        productoId: null,
+        productoConfianza: null,
+        estado: 'por_revisar',
+        motivoEstado: null,
+        origenValor: 'comprobante',
+        precioMicrocentPorBase: null,
+        excluidoDeSerie: false,
+        createdAt: '2026-11-01T00:00:00.000Z',
+        updatedAt: '2026-11-01T00:00:00.000Z',
+        version: 1,
+        lamport: 0,
+        deviceId: 'dev-demo',
+        deletedAt: null,
+      });
+      expect(parsed.success, `${item.id}: ${JSON.stringify(parsed.error?.issues)}`).toBe(true);
+    }
+  });
+
+  it('las cantidades estan en milesimas de la unidad base', () => {
+    for (const item of ITEMS_BOLETA) {
+      if (item.cantidadMilesimas === null) continue;
+      expect(Number.isInteger(item.cantidadMilesimas)).toBe(true);
+      // 5 kg son 5_000_000 milesimas, no 5_000: el factor viejo daba 5 gramos.
+      expect(item.cantidadMilesimas).toBeGreaterThanOrEqual(1_000_000);
+    }
+  });
+
+  it('ARROZ EXTRA 5KG son 5.000.000 milesimas de gramo', () => {
+    const arroz = ITEMS_BOLETA.find((item) => item.descripcionCruda === 'ARROZ EXTRA 5KG');
+    expect(arroz?.cantidadMilesimas).toBe(5_000_000);
+  });
 });
 
 describe('clasificacion del comprobante', () => {
@@ -101,7 +156,7 @@ describe('pantalla de comprobante', () => {
     const item = ITEMS_BOLETA[0];
     if (item === undefined) throw new Error('fixture vacia');
     expect(totalEnPantalla()).toBe(0);
-    fireEvent.click(screen.getByRole('button', { name: 'Confirmar ' + item.descripcionCruda }));
+    fireEvent.click(screen.getByRole('button', { name: `Confirmar ${item.descripcionCruda}` }));
     const fila = screen.getByText(item.descripcionCruda).closest('li');
     expect(fila?.getAttribute('data-estado')).toBe('confirmado');
     expect(fila?.getAttribute('data-suma')).toBe('si');
@@ -132,10 +187,11 @@ describe('pantalla de comprobante', () => {
 });
 
 describe('formato de dinero', () => {
-  it('centimos a soles sin floats', () => {
+  it('centimos a soles sin floats y sin duplicar la coma', () => {
     expect(formatearCentimos(0)).toBe('S/ 0,00');
     expect(formatearCentimos(2450)).toBe('S/ 24,50');
     expect(formatearCentimos(100)).toBe('S/ 1,00');
     expect(formatearCentimos(5)).toBe('S/ 0,05');
+    expect(formatearCentimos(123_456)).toBe('S/ 1234,56');
   });
 });
