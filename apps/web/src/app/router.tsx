@@ -126,7 +126,7 @@ export const rutas = [
           { path: 'recetas', element: <RecetasPage /> },
           // #74 · consentimiento: dos permisos separados del plato.
           { path: 'consentimiento', element: <ConsentimientoPage /> },
-          // Despensa (issue #69): ultima de la lista.
+          // Despensa (issue #69): stock derivado, vencimiento y entrada por texto.
           { path: 'inventario', element: <InventarioPantalla /> },
         ],
       },
