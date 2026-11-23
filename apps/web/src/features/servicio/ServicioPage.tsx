@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 
+import type { Persona } from '@hackods/contracts';
 import { racionSchema } from '@hackods/contracts';
 import { BotonGrande, EstadoPantalla } from '@hackods/ui';
 
@@ -11,6 +12,8 @@ import {
   listarPersonas,
   racionDe,
 } from '../../data/repositorio.js';
+import { menusDelDiaDemo } from '../../fixtures/servicio-demo.js';
+import { ServicioResumen } from './ServicioResumen.js';
 
 /**
  * Servicio del dia: una racion por persona, explicada con al menos dos razones.
@@ -44,17 +47,17 @@ interface Fila {
 export function ServicioPage() {
   const [filas, setFilas] = useState<readonly Fila[] | null>(null);
   const [cargando, setCargando] = useState(true);
+  const [personas, setPersonas] = useState<readonly Persona[] | null>(null);
   const [razones, setRazones] = useState<readonly string[]>(['', '']);
   const [error, setError] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
   const [ultimaGuardada, setUltimaGuardada] = useState<string | null>(null);
 
   const recargar = async (): Promise<void> => {
-    const personas = await listarPersonas(OLLA_DEMO);
-    const raciones = await Promise.all(personas.map((p) => racionDe(p.codigoP, OLLA_DEMO)));
-    setFilas(
-      personas.map((p, i) => ({ codigoP: p.codigoP, guardada: raciones[i] !== undefined })),
-    );
+    const lista = await listarPersonas(OLLA_DEMO);
+    const raciones = await Promise.all(lista.map((p) => racionDe(p.codigoP, OLLA_DEMO)));
+    setPersonas(lista);
+    setFilas(lista.map((p, i) => ({ codigoP: p.codigoP, guardada: raciones[i] !== undefined })));
   };
 
   useEffect(() => {
@@ -121,6 +124,10 @@ export function ServicioPage() {
         </p>
       </header>
 
+      {personas !== null && personas.length > 0 ? (
+        <ServicioResumen menus={menusDelDiaDemo()} personas={personas} />
+      ) : null}
+
       {cargando ? (
         <EstadoPantalla estado="cargando">
           Leyendo el servicio guardado en este dispositivo…
@@ -159,10 +166,6 @@ export function ServicioPage() {
       ) : null}
 
       <div className="flex flex-col gap-1 text-sm text-texto-suave" aria-label="Datos de la ración">
-        <p>
-          Grupo por edad: <strong>sin dato</strong> — el cálculo por grupo es de nutrición y todavía
-          no está conectado.
-        </p>
         <p>
           Peso y nutrientes: <strong>sin dato</strong> — no se inventan cifras.
         </p>

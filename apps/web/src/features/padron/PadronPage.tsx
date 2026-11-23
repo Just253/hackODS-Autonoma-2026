@@ -232,7 +232,7 @@ export function PadronPage() {
 
         {/* El boton ocupa el ancho: es LA accion de esta pantalla. */}
         <div className="sticky bottom-0 -mx-4 bg-fondo/95 px-4 py-3 backdrop-blur">
-          <BotonGrande disabled={guardando}>
+          <BotonGrande disabled={guardando} type="submit">
             {guardando ? 'Guardando…' : 'Guardar alta'}
           </BotonGrande>
         </div>

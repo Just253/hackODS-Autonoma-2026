@@ -73,7 +73,11 @@ export function ComprobantePage() {
   };
 
   const lineasConfirmadas = ITEMS_BOLETA.filter((item) => confirmados.has(item.id));
-  const lineasPorRevisar = ITEMS_BOLETA.filter((item) => !confirmados.has(item.id));
+  // "Por revisar" es lo que el clasificador NO confirmó, no todo lo que falta tocar a mano:
+  // las 4 líneas ya confirmadas por el clasificador no son un problema para la cocinera.
+  const lineasPorRevisar = ITEMS_BOLETA.filter(
+    (item) => clasificaciones[item.id]?.estado !== 'confirmado' && !confirmados.has(item.id),
+  );
   // El JSX no suma: el dominio devuelve el total ya calculado.
   const totalConfirmado = totalDeLineasConfirmadas(lineasConfirmadas);
   const totalPapel = totalDelPapel(ITEMS_BOLETA);
@@ -114,7 +118,7 @@ export function ComprobantePage() {
               data-estado={confirmado ? 'confirmado' : clasificacion.estado}
               data-suma={suma ? 'si' : 'no'}
               className={
-                confirmado
+                confirmado || clasificacion.estado === 'confirmado'
                   ? 'oc-tarjeta flex flex-col gap-2 border-primario'
                   : 'oc-tarjeta flex flex-col gap-2 border-l-4 border-l-error'
               }
@@ -151,8 +155,16 @@ export function ComprobantePage() {
                 </p>
               ) : (
                 <div className="flex flex-col gap-2">
-                  <p className="text-sm font-semibold text-error">
-                    Por revisar: no suma. {motivoLegible(clasificacion)}.
+                  <p
+                    className={
+                      clasificacion.estado === 'confirmado'
+                        ? 'text-sm font-semibold text-primario'
+                        : 'text-sm font-semibold text-error'
+                    }
+                  >
+                    {clasificacion.estado === 'confirmado'
+                      ? 'El clasificador lo confirmó: confirmá para sumar.'
+                      : `Por revisar: no suma. ${motivoLegible(clasificacion)}.`}
                   </p>
                   <div className="[&>button]:w-full">
                     <BotonGrande variante="secundario" onClick={() => confirmar(item.id)}>

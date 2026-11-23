@@ -16,6 +16,9 @@ Cualquier cambio acá necesita **2 aprobaciones** y se mergea **antes** de su co
    contenido no sirve de sello. El seed lo firma de verdad.
 4. Identidad: `codigoP` (`P-XXXX`); DNI, nombres, teléfono y dirección no tienen schema (D2).
 5. Cambio incompatible = `v2` en paralelo, nunca edición in-place de un schema consumido.
+6. `ItemPresupuestable` es un tipo **branded** (`.brand<'ItemPresupuestable'>()`): un
+   `ComprobanteItem` sin confirmar NO es asignable donde se exige (revisión del PR #29).
+   Los refinements de Zod no cambian el tipo — la garantía la da la marca, no el `.refine`.
 
 ## Dueño y revisión
 

@@ -1,4 +1,4 @@
-import type { MenuTemplate, Movimiento, Servicio } from '@hackods/contracts';
+import type { Movimiento, Servicio } from '@hackods/contracts';
 
 import { NoImplementado } from './errors.js';
 

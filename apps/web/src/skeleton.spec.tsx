@@ -76,7 +76,7 @@ describe('esqueleto offline', () => {
     });
 
     await act(async () => {
-      fireEvent.submit(screen.getByRole('form', { name: /Alta de persona/i }));
+      fireEvent.click(screen.getByRole('button', { name: /Guardar alta/i }));
     });
 
     const avisoAlta = await screen.findByText(/Alta guardada: P-/i);
@@ -88,6 +88,12 @@ describe('esqueleto offline', () => {
     unmount();
     montarApp('/servicio');
     await screen.findByText(/raciones registradas/i);
+    // El total sale del padron real: una persona, una racion en cada opcion (no una constante).
+    const totales = screen.getAllByTestId('total-raciones');
+    expect(totales).toHaveLength(2);
+    for (const total of totales) {
+      expect(total).toHaveTextContent('Total de raciones: 1');
+    }
 
     fireEvent.change(screen.getByLabelText(/^Razón 1$/i), {
       target: { value: 'Porción por grupo de edad según el menú firmado' },
@@ -152,6 +158,12 @@ describe('esqueleto offline', () => {
 
     montarApp('/servicio');
     await screen.findByText(/raciones registradas/i);
+    // El total sale del padron real: una persona, una racion en cada opcion (no una constante).
+    const totales = screen.getAllByTestId('total-raciones');
+    expect(totales).toHaveLength(2);
+    for (const total of totales) {
+      expect(total).toHaveTextContent('Total de raciones: 1');
+    }
     fireEvent.change(screen.getByLabelText(/^Razón 1$/i), {
       target: { value: 'Una sola razon no alcanza' },
     });

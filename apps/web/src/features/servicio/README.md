@@ -30,9 +30,10 @@ dice `sin dato` y nunca dibuja el `0`. Igual `componentes: []`, porque el cálcu
 dispositivo · ración guardada ("pendiente de sincronizar; la red no hizo falta") · faltan razones
 (error).
 
-**Qué NO hace:** no calcula peso, nutrientes ni grupo por edad —eso es de `packages/nutrition` y hoy
-dice `sin dato`— y no sincroniza: el envío y el Lamport de la ración corresponden a `packages/sync`
-(DEC-2026-0005).
+**Qué NO hace:** no calcula peso ni nutrientes por persona; la porción por grupo es la del menú
+firmado (`ServicioResumen` con `servirDelDia`) y el resto dice `sin dato`. No sincroniza: el envío y el
+Lamport de la ración corresponden a `packages/sync` (DEC-2026-0005).
 
-**En el cascarón móvil:** segundo destino en modo simple. Las opciones y el total de raciones van
-con cifras grandes; la barra inferior deja a la vista el resto del flujo sin salir de la pantalla.
+**En el cascarón móvil:** segundo destino en modo simple. El resumen del menú (sello, hash, A/B,
+porción por grupo y total) lo calcula `ServicioResumen`; la cifra de raciones registradas va aparte. La
+barra inferior deja a la vista el resto del flujo sin salir de la pantalla.

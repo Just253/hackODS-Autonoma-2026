@@ -18,7 +18,6 @@ import { SolicitudPantalla } from '../features/solicitud/SolicitudPantalla.js';
 import { AHORA_DEMO, NUEVA_SOLICITUD_DEMO } from '../features/solicitud/fixtures.js';
 import { ReportePantalla } from '../features/reporte/ReportePantalla.js';
 import { MOVIMIENTOS_ENTRE_OLLAS, PERIODO_DEMO } from '../features/reporte/fixtures.js';
-import { RutaVacia } from '../pages/RutaVacia.js';
 
 /**
  * Una ruta por feature, con lazy() cuando exista.
