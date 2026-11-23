@@ -145,7 +145,7 @@ export function ConsentimientoPage() {
           <p className="text-lg font-bold">Todavía no hay personas en el padrón</p>
           <p className="text-sm text-texto-suave">
             El consentimiento se firma sobre una persona. Primero da de alta a alguien: se
-            guarda un código P-XXXX, sin nombres ni documentos.
+            guarda un código para esa persona, sin nombres ni documentos.
           </p>
           <Link className="oc-boton oc-boton--secundario w-fit" to="/padron">
             Ir al padrón
@@ -156,7 +156,7 @@ export function ConsentimientoPage() {
           <label className="flex max-w-[var(--ancho-lectura)] flex-col gap-1">
             <span className="text-sm font-semibold">Persona</span>
             <span className="text-xs text-texto-suave">
-              Solo el código P-XXXX que está anotado en el papel del comedor.
+              Solo el código que está anotado en el papel del comedor.
             </span>
             <select
               name="persona"

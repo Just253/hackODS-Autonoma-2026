@@ -222,7 +222,7 @@ export class RacionDuplicada extends Error {
 
   constructor(codigoP: string, servicioId: string) {
     super(
-      `Ya hay una ración registrada para ${codigoP} en el servicio ${servicioId}. ` +
+      `Ya hay una ración registrada para ${codigoP} en este servicio. ` +
         'Las raciones no se editan: se anulan con otro registro.',
     );
     this.name = 'RacionDuplicada';

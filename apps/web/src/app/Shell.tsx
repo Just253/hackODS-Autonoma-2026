@@ -294,9 +294,6 @@ export function Shell() {
               </p>
             )}
             <Outlet />
-            <p className="mt-10 border-t border-borde pt-4 text-xs text-texto-suave">
-              Datos simulados. Esto apoya la decisión de la olla; no es un diagnóstico.
-            </p>
           </div>
         </main>
       </div>
@@ -532,7 +529,7 @@ function SelectorSesion({ control }: { readonly control: ControlSesion }) {
       </fieldset>
 
       <fieldset className="flex min-w-0 flex-col gap-1">
-        <legend className="text-xs font-semibold text-texto-suave">Rol (demo)</legend>
+        <legend className="text-xs font-semibold text-texto-suave">Rol</legend>
         <div className="grid grid-cols-2 gap-1">
           {ROLES.map((rol) => {
             const elegido = rol === sesion.rol;

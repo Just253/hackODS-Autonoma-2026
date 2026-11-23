@@ -111,7 +111,7 @@ export const DIARIOS: readonly Destino[] = [
     texto: 'Padrón',
     descripcion: 'Padrón',
     icono: 'padron',
-    tarea: 'Dar de alta a una persona con su código P-XXXX.',
+    tarea: 'Dar de alta a una persona con su código.',
     roles: ['organizadora', 'admin'],
   },
   {

@@ -11,9 +11,9 @@ function montar() {
 }
 
 describe('SolicitudPantalla', () => {
-  it('muestra el pedido de 20 kg de arroz y el estado pendiente', () => {
+  it('muestra el pedido de 20 kg y el estado pendiente', () => {
     montar();
-    expect(screen.getByText(/20 kg de arroz/i)).toBeInTheDocument();
+    expect(screen.getByText(/20 kg/i)).toBeInTheDocument();
     expect(screen.getByText(/Pendiente/i)).toBeInTheDocument();
   });
 

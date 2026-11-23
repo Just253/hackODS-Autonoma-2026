@@ -4,9 +4,12 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { CORTE_DEMO, MOVIMIENTOS_DEMO } from './fixtures/demo';
 import { FUENTE_PRECIOS_DEMO, PRODUCTO_DESTACADO, PRODUCTOS_DEMO } from './fixtures/precios-productos';
 import { ComprobantePage } from './features/comprobante/ComprobantePage';
+import { ConsentimientoPage } from './features/consentimiento/ConsentimientoPage';
+import { InventarioPantalla } from './features/inventario/InventarioPantalla';
 import { PadronPage } from './features/padron/PadronPage';
 import { PreciosPantalla } from './features/precios/PreciosPantalla';
 import { PresupuestoPantalla } from './features/presupuesto/PresupuestoPantalla';
+import { RecetasPage } from './features/recetas/RecetasPage';
 import { ReportePantalla } from './features/reporte/ReportePantalla';
 import { MOVIMIENTOS_ENTRE_OLLAS, PERIODO_DEMO } from './features/reporte/fixtures';
 import { ServicioPage } from './features/servicio/ServicioPage';
@@ -42,6 +45,19 @@ const PALABRAS_PROHIBIDAS: readonly { readonly patron: RegExp; readonly motivo: 
   { patron: /\bFIXME\b/, motivo: 'marca de trabajo pendiente' },
   { patron: /\bBearer\b/i, motivo: 'cabecera HTTP' },
   { patron: /\bendpoint\b/i, motivo: 'jerga de API' },
+  // Metatexto de demo que la pantalla leía en voz alta: decía cómo está hecha
+  // la app ("datos simulados", "demo", "OCR") en vez de hablar de la olla.
+  { patron: /\bsimulad[oa]s?\b/i, motivo: 'metatexto de demo' },
+  { patron: /\bde demo\b/i, motivo: 'metatexto de demo' },
+  { patron: /\boffline-first\b/i, motivo: 'jerga de arquitectura' },
+  { patron: /\bOCR\b/, motivo: 'jerga técnica' },
+  // Voseo rioplatense: la app es peruana y la cocinera tutea. El imperativo
+  // rioplatense en "-á"/"-í" (Elegí, Escribí, Revisá, comprá) no va en pantalla.
+  {
+    patron:
+      /(?:Elegí|Escribí|Revisá|Comprá|pegá|contá|registrá|necesitás|tenés|poné|andá|dictá|probá|mirá|cargá)/i,
+    motivo: 'voseo rioplatense',
+  },
 ];
 
 /** Texto visible: se quitan los tags (y con ellos los atributos y su contenido). */
@@ -54,6 +70,12 @@ function pantallas(): readonly { readonly nombre: string; readonly html: string 
     { nombre: 'padrón', html: renderToStaticMarkup(<PadronPage />) },
     { nombre: 'servicio', html: renderToStaticMarkup(<ServicioPage />) },
     { nombre: 'comprobante', html: renderToStaticMarkup(<ComprobantePage />) },
+    // Recetario, Despensa y Consentimiento quedaron afuera hasta que el voseo
+    // ("Elegí", "pegá") pasó la guardia. Se suman como el resto: sin estado
+    // global, solo el primer render (la carga en curso dice "Leyendo…").
+    { nombre: 'recetario', html: renderToStaticMarkup(<RecetasPage />) },
+    { nombre: 'despensa', html: renderToStaticMarkup(<InventarioPantalla />) },
+    { nombre: 'consentimiento', html: renderToStaticMarkup(<ConsentimientoPage />) },
     {
       nombre: 'presupuesto',
       html: renderToStaticMarkup(<PresupuestoPantalla movimientos={MOVIMIENTOS_DEMO} corte={CORTE_DEMO} />),

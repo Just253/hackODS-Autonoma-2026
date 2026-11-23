@@ -26,3 +26,5 @@ a lenguaje de cocina y el detalle queda en un "Ver detalle". No sincroniza: el e
 
 **Estados:** leyendo el servicio · sin padrón · ración registrada · faltan razones (error) ·
 duplicado (error) · fallo al leer o guardar.
+
+**Texto visible:** las porciones se leen en gramos, no en `g`.

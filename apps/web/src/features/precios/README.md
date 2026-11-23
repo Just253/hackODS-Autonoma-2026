@@ -22,3 +22,5 @@ compra en el mercado; no convierte valores.
 
 **Estados:** `listo`, `cargando`, `error` (con reintento) y `sin-conexion` ("se muestra lo último
 guardado"). Un precio muy distinto se excluye y se avisa con palabras, sin que mueva la tendencia.
+
+**Texto visible:** los precios de ejemplo se anuncian como de ejemplo; sin jerga de escaneo.

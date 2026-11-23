@@ -46,6 +46,6 @@ export const POLLO_ACTUAL: readonly ObsDemo[] = [
   { id: 'pollo_act_7', valor: micro(14_000_000), fecha: '2026-11-19' },
 ];
 
-export const FUENTE_DEMO = 'Boletas del mercado mayorista, canal mayorista';
+export const FUENTE_DEMO = 'Boletas del mercado mayorista';
 export const PRODUCTO_DEMO = 'pollo';
 export const UNIDAD_DEMO = 'kg';

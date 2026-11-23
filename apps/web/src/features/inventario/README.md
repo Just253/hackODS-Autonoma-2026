@@ -32,3 +32,5 @@ aporta la fecha de vencimiento y la cantidad con la que entró. Cuando el contra
 
 **Qué NO hace:** no edita ni borra movimientos (se corrige con un `ajuste`); no importa facturas; no
 calcula precios ni presupuesto; no inventa equivalencias para `saco`, `docena` o `atado`.
+
+**Texto visible:** las unidades se escriben completas (gramos, mililitros) y la app tutea en peruano.

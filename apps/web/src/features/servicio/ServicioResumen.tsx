@@ -44,6 +44,17 @@ function perfil(p: string): string {
   return NOMBRE_PERFIL[p] ?? p;
 }
 
+/** La unidad llega como dato (`g`, `ml`); en pantalla se lee completa. */
+const NOMBRE_UNIDAD: Readonly<Record<string, string>> = {
+  g: 'gramos',
+  ml: 'mililitros',
+  unidad: 'unidades',
+};
+
+function unidad(u: string): string {
+  return NOMBRE_UNIDAD[u] ?? u;
+}
+
 /** Hash completo, corto en pantalla pero con el valor entero en `title`. */
 function Hash({ valor }: { readonly valor: string }) {
   return (
@@ -142,10 +153,10 @@ function TarjetaOpcion({
                   <th scope="row">{grupo(fila.grupo)}</th>
                   <td className="oc-num">{fila.personas}</td>
                   <td className="oc-num">
-                    {fila.porcion} {fila.unidad}
+                    {fila.porcion} {unidad(fila.unidad)}
                   </td>
                   <td className="oc-num">
-                    {fila.raciones} {fila.unidad}
+                    {fila.raciones} {unidad(fila.unidad)}
                   </td>
                 </tr>
               ))}

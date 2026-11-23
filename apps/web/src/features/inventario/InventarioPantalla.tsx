@@ -171,7 +171,7 @@ export function prepararEntrada(
     } else if (item.unidadBase !== insumo.unidadBase) {
       // No se inventa una equivalencia: kg->g lo hace el parser, pero una
       // presentación (saco, docena) no tiene factor y no se supone.
-      motivoSinDato = `viene en ${item.unidadBase} y el catálogo lo lleva en ${insumo.unidadBase}`;
+      motivoSinDato = `viene en ${ETIQUETA_UNIDAD[item.unidadBase]} y el catálogo lo lleva en ${ETIQUETA_UNIDAD[insumo.unidadBase]}`;
     }
 
     const cantidadBase =
@@ -308,7 +308,7 @@ export function InventarioPantalla() {
       return;
     }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(formulario.fecha)) {
-      setError('Elegí la fecha del movimiento.');
+      setError('Elige la fecha del movimiento.');
       return;
     }
     const nuevoLote =
@@ -367,13 +367,13 @@ export function InventarioPantalla() {
     setAviso(null);
     setPropuesta(null);
     if (texto.trim() === '') {
-      setError('Pegá o dictá al menos un producto.');
+      setError('Pega o dicta al menos un producto.');
       return;
     }
     try {
       setPropuesta(prepararEntrada(texto, insumos));
     } catch {
-      setError('No se pudo leer el texto. Revisá que no sea demasiado largo.');
+      setError('No se pudo leer el texto. Revisa que no sea demasiado largo.');
     }
   };
 
@@ -414,7 +414,7 @@ export function InventarioPantalla() {
         setPropuesta(null);
       })
       .catch(() => {
-        setError('Alguna entrada no se pudo guardar. Revisá la lista antes de reintentar.');
+        setError('Alguna entrada no se pudo guardar. Revisa la lista antes de reintentar.');
       })
       .finally(() => {
         setGuardando(false);
@@ -748,7 +748,7 @@ export function InventarioPantalla() {
           <section className="oc-tarjeta flex flex-col gap-3" aria-label="Entrada por texto">
             <p className="text-lg font-bold">Entrada por texto</p>
             <p className="text-sm text-texto-suave">
-              Pegá lo de la compra, por ejemplo: «{TEXTO_ENTRADA_DEMO}». Se muestra lo que se
+              Pega lo de la compra, por ejemplo: «{TEXTO_ENTRADA_DEMO}». Se muestra lo que se
               entendió antes de guardar; lo que no, dice «sin dato».
             </p>
             <label className="flex flex-col gap-1">
@@ -786,8 +786,8 @@ export function InventarioPantalla() {
 
             {urlDictado === null ? (
               <p className="text-sm text-texto-suave" data-estado="dictado-no-configurado">
-                Dictado: <strong>dictado no configurado</strong>. Falta el servicio de
-                transcripción de este equipo; mientras tanto, escribí o pegá el texto a mano.
+                Dictado: <strong>sin dictado</strong>. Este equipo todavía no tiene la
+                transcripción; mientras tanto, escribe o pega el texto a mano.
               </p>
             ) : (
               <p className="text-sm text-texto-suave">
@@ -798,7 +798,7 @@ export function InventarioPantalla() {
 
             {dictado === 'error' ? (
               <EstadoPantalla estado="error">
-                No se pudo transcribir el audio. Escribí o pegá el texto a mano: no se pierde nada.
+                No se pudo transcribir el audio. Escribe o pega el texto a mano: no se pierde nada.
               </EstadoPantalla>
             ) : null}
 
@@ -851,7 +851,7 @@ export function InventarioPantalla() {
                     onClick={confirmarTexto}
                   >
                     {propuesta.bloquea
-                      ? 'No se puede confirmar: revisá los números'
+                      ? 'No se puede confirmar: revisa los números'
                       : `Confirmar entrada (${propuesta.registrables})`}
                   </BotonGrande>
                 </div>
