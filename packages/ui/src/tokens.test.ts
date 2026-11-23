@@ -45,7 +45,13 @@ describe('tokens de tamano de letra', () => {
     expect(boton).not.toMatch(/font-size:\s*\d+px/);
   });
 
-  it('el rail de escritorio no crece con la letra: es cromo, no texto', () => {
-    expect(regla(':root')).toMatch(/--ancho-rail:\s*240px/);
+  it('el rail de escritorio crece con la letra: si no, el control de letra no se alcanza', () => {
+    // Estuvo en `240px`. A `data-texto='enorme'` (26 px de base) el control de
+    // tamaño de letra no entraba en el rail y, con `#root` en `overflow: hidden`,
+    // quedaba fuera de pantalla: se subía a enorme y no se podía volver. En
+    // `rem` el ancho escala con la misma base que el contenido del rail.
+    const rail = regla(':root');
+    expect(rail).toMatch(/--ancho-rail:\s*[\d.]+rem/);
+    expect(rail).not.toMatch(/--ancho-rail:\s*\d+px/);
   });
 });

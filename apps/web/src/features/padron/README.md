@@ -19,3 +19,5 @@ grupo nutricional ni la ración (`packages/nutrition`, DEC-2026-0003) y no muest
 está en la RLS y en el `select`, no en un `if` de la vista.
 
 **Texto visible:** el código de la persona se explica sin el marcador de plantilla `P-XXXX`.
+
+**Texto visible:** sin sesión remota pide "Conecta Supabase" (tuteo peruano), no "Conectá".

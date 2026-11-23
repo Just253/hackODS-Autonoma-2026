@@ -110,7 +110,7 @@ describe('ConsentimientoPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Revocar el seguimiento' }));
 
-    await waitFor(() => expect(screen.getByText('Revocado')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/Revocado/)).toBeInTheDocument());
     expect(screen.getByRole('checkbox', { name: 'Seguimiento de salud' })).not.toBeChecked();
     expect(screen.queryByText('Otorgado')).not.toBeInTheDocument();
     expect(screen.getByText(/Permiso revocado\./)).toBeInTheDocument();

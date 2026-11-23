@@ -34,3 +34,5 @@ aporta la fecha de vencimiento y la cantidad con la que entró. Cuando el contra
 calcula precios ni presupuesto; no inventa equivalencias para `saco`, `docena` o `atado`.
 
 **Texto visible:** las unidades se escriben completas (gramos, mililitros) y la app tutea en peruano.
+
+**Estados:** cargando / vacío / error viven en el mismo bloque; antes el vacío nunca se veía porque la siembra demo lo tapaba.

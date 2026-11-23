@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 
 import { CORTE_DEMO, MOVIMIENTOS_DEMO } from './fixtures/demo';
+import { INSUMOS_DEMO } from './fixtures/inventario-demo';
 import { FUENTE_PRECIOS_DEMO, PRODUCTO_DESTACADO, PRODUCTOS_DEMO } from './fixtures/precios-productos';
+import { AvisoSinSesion } from './app/AvisoSinSesion';
 import { ComprobantePage } from './features/comprobante/ComprobantePage';
 import { ConsentimientoPage } from './features/consentimiento/ConsentimientoPage';
-import { InventarioPantalla } from './features/inventario/InventarioPantalla';
+import { InventarioPantalla, AVISOS_HUMANOS } from './features/inventario/InventarioPantalla';
 import { PadronPage } from './features/padron/PadronPage';
 import { PreciosPantalla } from './features/precios/PreciosPantalla';
 import { PresupuestoPantalla } from './features/presupuesto/PresupuestoPantalla';
@@ -58,6 +60,17 @@ const PALABRAS_PROHIBIDAS: readonly { readonly patron: RegExp; readonly motivo: 
       /(?:Elegí|Escribí|Revisá|Comprá|pegá|contá|registrá|necesitás|tenés|poné|andá|dictá|probá|mirá|cargá)/i,
     motivo: 'voseo rioplatense',
   },
+  // La forma sin tilde se escapaba de la lista de arriba: `revisalo` pasaba la
+  // guardia porque sólo se buscaban las palabras agudas acentuadas. Lo que el
+  // voseo tiene de sistemático no es la tilde sino el pronombre enclítico
+  // (`revisalo`, `decime`, `fijate`), y ese patrón no existe en el tuteo.
+  {
+    patron: /revis[aá]lo|fijate|decime|miralo|probalo|cargalo|contame/i,
+    motivo: 'voseo rioplatense (enclítico)',
+  },
+  // "Conectá" es voseo; "Conecta" es la forma peruana que la app debe usar.
+  // Sin `\b` final con `s?`, el patrón anterior también hería el tuteo.
+  { patron: /\bConectás\b|\bConectá\b/i, motivo: 'voseo rioplatense' },
 ];
 
 /** Texto visible: se quitan los tags (y con ellos los atributos y su contenido). */
@@ -74,8 +87,28 @@ function pantallas(): readonly { readonly nombre: string; readonly html: string 
     // ("Elegí", "pegá") pasó la guardia. Se suman como el resto: sin estado
     // global, solo el primer render (la carga en curso dice "Leyendo…").
     { nombre: 'recetario', html: renderToStaticMarkup(<RecetasPage />) },
-    { nombre: 'despensa', html: renderToStaticMarkup(<InventarioPantalla />) },
+    // La despensa SIN `cargando`: con el render estático se quedaba en
+    // "Leyendo la despensa…" y el resto de la pantalla -catálogo incluido, que
+    // es donde aparecía "revisalo"- nunca llegaba al HTML. Es el mismo listado
+    // que la pantalla muestra después de leer Dexie.
+    {
+      nombre: 'despensa',
+      html: renderToStaticMarkup(
+        <InventarioPantalla insumosIniciales={INSUMOS_DEMO} estadoInicial="listo" />,
+      ),
+    },
     { nombre: 'consentimiento', html: renderToStaticMarkup(<ConsentimientoPage />) },
+    // Los tres estados vacíos que salen de `AvisoSinSesion` (padrón y precios
+    // lo usan con distinto `que`). Vivían fuera de la guardia porque no son una
+    // pantalla por sí solos, y así "Conectá Supabase" pasó 10/10.
+    {
+      nombre: 'aviso sin sesión',
+      html: renderToStaticMarkup(<AvisoSinSesion que="el padrón" />),
+    },
+    {
+      nombre: 'aviso sin sesión (precios)',
+      html: renderToStaticMarkup(<AvisoSinSesion que="los precios" />),
+    },
     {
       nombre: 'presupuesto',
       html: renderToStaticMarkup(<PresupuestoPantalla movimientos={MOVIMIENTOS_DEMO} corte={CORTE_DEMO} />),
@@ -114,4 +147,15 @@ describe('copy visible: la jerga interna no llega a la pantalla', () => {
       }
     });
   }
+
+  // Los avisos de la despensa sólo se pintan después de "Revisar texto", así
+  // que no están en ningún HTML de arriba: se revisan como texto suelto. Sin
+  // esto, "revisalo" volvía a colarse sin que la guardia se enterara.
+  it('los avisos de la despensa hablan en peruano', () => {
+    for (const aviso of Object.values(AVISOS_HUMANOS)) {
+      for (const { patron, motivo } of PALABRAS_PROHIBIDAS) {
+        expect(aviso, `${motivo} (${patron})`).not.toMatch(patron);
+      }
+    }
+  });
 });

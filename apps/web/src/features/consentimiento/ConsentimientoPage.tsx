@@ -188,7 +188,16 @@ export function ConsentimientoPage() {
                 const ocupado = guardando !== null;
                 return (
                   <div key={tipo} className="oc-tarjeta flex flex-col gap-3" data-permiso={tipo}>
-                    <div className="flex items-start gap-3">
+                    {/*
+                      El checkbox y su título son UN solo objetivo de toque: el
+                      área es el `<label>`, no la casilla de 24 px. `min-h-12` es
+                      `--toque-minimo` en la escala que usa este archivo (48 px a
+                      16 px de base; crece con `data-texto`). `items-start` +
+                      `p-2` mantienen la casilla alineada con la primera línea del
+                      título sin encoger el área. El detalle queda fuera del label
+                      para que tocar el texto largo no marque la casilla.
+                    */}
+                    <label className="flex min-h-12 cursor-pointer items-start gap-3 p-2">
                       <input
                         id={`consentimiento-${tipo}`}
                         type="checkbox"
@@ -198,27 +207,31 @@ export function ConsentimientoPage() {
                         onChange={(e) => firmar(tipo, e.target.checked)}
                         aria-describedby={`consentimiento-${tipo}-detalle consentimiento-${tipo}-estado`}
                       />
-                      <div className="flex min-w-0 flex-col gap-1">
-                        <label htmlFor={`consentimiento-${tipo}`} className="text-lg font-bold">
-                          {TEXTO_PERMISO[tipo].titulo}
-                        </label>
-                        <p id={`consentimiento-${tipo}-detalle`} className="text-sm text-texto-suave">
-                          {TEXTO_PERMISO[tipo].detalle}
-                        </p>
-                      </div>
-                    </div>
+                      <span className="text-lg font-bold">{TEXTO_PERMISO[tipo].titulo}</span>
+                    </label>
+                    <p id={`consentimiento-${tipo}-detalle`} className="text-sm text-texto-suave">
+                      {TEXTO_PERMISO[tipo].detalle}
+                    </p>
 
                     <p id={`consentimiento-${tipo}-estado`} data-estado={estado} className="text-sm">
                       Estado:{' '}
+                      {/*
+                        Revocar es un estado legítimo, no una alerta de sync:
+                        "Revocado" va en el color del texto + marca ○, y
+                        `pendiente` (marrón de sincronización) queda para lo que
+                        espera la red. La palabra siempre está: el color nunca es
+                        el único distintivo.
+                      */}
                       <strong
                         className={
                           estado === 'otorgado'
                             ? 'text-primario'
                             : estado === 'revocado'
-                              ? 'text-pendiente'
+                              ? 'text-texto'
                               : 'text-texto-suave'
                         }
                       >
+                        {estado === 'revocado' ? '○ ' : null}
                         {TEXTO_ESTADO[estado]}
                       </strong>
                       {registro === null

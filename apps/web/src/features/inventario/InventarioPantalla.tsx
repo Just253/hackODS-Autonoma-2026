@@ -129,11 +129,17 @@ export interface PropuestaEntrada {
   readonly registrables: number;
 }
 
-const AVISOS_HUMANOS: Readonly<Record<string, string>> = {
+/**
+ * Avisos que la pantalla muestra cuando una línea pegada no se puede
+ * registrar. Exportado para que la guardia de copy (`copy-visible.test.tsx`)
+ * los lea: sólo salen después de "Revisar texto", así que un render estático no
+ * los alcanza y un voseo ahí pasaría desapercibido.
+ */
+export const AVISOS_HUMANOS: Readonly<Record<string, string>> = {
   MONTO_SIN_REPARTIR: 'Hay un solo monto para varios productos: no se reparte solo.',
   NUMERO_AMBIGUO: 'Hay más de un número en la línea y no se sabe cuál es el precio.',
   PRECIO_AMBIGUO: 'El precio no se puede confirmar.',
-  PRECIO_FUERA_DE_RANGO: 'El precio está muy lejos de lo habitual: revisalo.',
+  PRECIO_FUERA_DE_RANGO: 'El precio está muy lejos de lo habitual: revísalo.',
   ARITMETICA_NO_CUADRA: 'Las cuentas de la línea no cuadran.',
   CANTIDAD_IMPOSIBLE: 'La cantidad no es posible.',
   SIN_CANTIDAD: 'Una línea no dice cuánto.',
@@ -228,11 +234,24 @@ interface Formulario {
   loteId: string;
 }
 
-export function InventarioPantalla() {
-  const [cargando, setCargando] = useState(true);
+export function InventarioPantalla({
+  insumosIniciales,
+  estadoInicial,
+}: {
+  /**
+   * Lo que la pantalla muestra antes de leer Dexie. Sin esto arranca vacía y
+   * `cargando`, que es la verdad en la app. La guardia de copy necesita el
+   * listado ya cargado para revisar el catálogo, y un test del estado vacío
+   * necesita arrancar sin insumos: son los dos caminos que da este prop.
+   */
+  readonly insumosIniciales?: readonly Insumo[];
+  /** `cargando` por defecto; un test lo pone en `listo` con los datos ya puestos. */
+  readonly estadoInicial?: 'cargando' | 'listo';
+} = {}) {
+  const [cargando, setCargando] = useState(estadoInicial !== 'listo');
   const [error, setError] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
-  const [insumos, setInsumos] = useState<readonly Insumo[]>([]);
+  const [insumos, setInsumos] = useState<readonly Insumo[]>(insumosIniciales ?? []);
   const [movimientos, setMovimientos] = useState<Awaited<ReturnType<typeof listarMovimientos>>>([]);
   const [lotes, setLotes] = useState<readonly Lote[]>([]);
   const [texto, setTexto] = useState('');
@@ -460,15 +479,6 @@ export function InventarioPantalla() {
     });
   };
 
-  if (cargando) {
-    return (
-      <section className="flex flex-col gap-4" aria-busy="true">
-        <EncabezadoPantalla titulo="Despensa" />
-        <EstadoPantalla estado="cargando">Leyendo la despensa guardada en este dispositivo…</EstadoPantalla>
-      </section>
-    );
-  }
-
   const filasStock = stockPorInsumo(insumos, movimientos);
   const porId = new Map(insumos.map((insumo) => [insumo.id, insumo]));
   const bajoMinimo = filasStock.filter((fila) => fila.bajoMinimo);
@@ -493,13 +503,33 @@ export function InventarioPantalla() {
     );
 
   return (
-    <section className="flex flex-col gap-4 lg:gap-6">
+    <section className="flex flex-col gap-4 lg:gap-6" aria-busy={cargando}>
       <EncabezadoPantalla
         titulo="Despensa"
         descripcion="El stock sale de los movimientos guardados en esta tablet. Nada se edita: si algo está mal, se corrige con un ajuste."
       />
 
       {error !== null ? <EstadoPantalla estado="error">{error}</EstadoPantalla> : null}
+      {/*
+        Un solo bloque de estados, en la misma posición: cargando · error ·
+        vacío. El de vacío antes vivía dentro de la lista de insumos, después de
+        las alertas; con la siembra de `recargar` (`sembrarInsumos`) nunca se
+        veía, y cuando se viera quedaba abajo de todo. Ahora se lee antes de las
+        alertas: primero "hay o no hay", después "qué ojo hay que poner".
+      */}
+      {cargando ? (
+        <EstadoPantalla estado="cargando">
+          Leyendo la despensa guardada en este dispositivo…
+        </EstadoPantalla>
+      ) : insumos.length === 0 ? (
+        <div className="oc-tarjeta flex flex-col gap-1" data-estado="vacio">
+          <span className="oc-estado__etiqueta text-texto-suave">Despensa vacía</span>
+          <p>
+            Todavía no hay insumos cargados en esta olla. El catálogo llega con el menú firmado;
+            mientras tanto se puede cargar a mano lo que hay en la despensa, abajo.
+          </p>
+        </div>
+      ) : null}
       {aviso !== null ? (
         <div
           role="status"
@@ -510,48 +540,51 @@ export function InventarioPantalla() {
         </div>
       ) : null}
 
-      {/* Alertas: stock mínimo y vencimiento próximo. Se leen antes de la lista. */}
-      <div className="flex flex-col gap-2" aria-label="Alertas de la despensa">
-        {bajoMinimo.length > 0 ? (
-          <div className="oc-estado" data-estado="alerta" data-tono="atencion" role="status">
-            <span className="oc-estado__etiqueta">Atención</span>
-            <p>
-              {bajoMinimo.length === 1
-                ? '1 insumo está bajo el mínimo: '
-                : `${bajoMinimo.length} insumos están bajo el mínimo: `}
-              {bajoMinimo
-                .map((fila) => porId.get(fila.insumoId)?.denominacion ?? fila.insumoId)
-                .join(', ')}
-              .
+      {/* Alertas: stock mínimo y vencimiento próximo. Se leen antes de la lista,
+          y sólo cuando hay insumos: con la despensa vacía "ningún insumo está
+          por debajo de su mínimo" es cierto y no dice nada. */}
+      {insumos.length > 0 ? (
+        <div className="flex flex-col gap-2" aria-label="Alertas de la despensa">
+          {bajoMinimo.length > 0 ? (
+            <div className="oc-estado" data-estado="alerta" data-tono="atencion" role="status">
+              <span className="oc-estado__etiqueta">Atención</span>
+              <p>
+                {bajoMinimo.length === 1
+                  ? '1 insumo está bajo el mínimo: '
+                  : `${bajoMinimo.length} insumos están bajo el mínimo: `}
+                {bajoMinimo
+                  .map((fila) => porId.get(fila.insumoId)?.denominacion ?? fila.insumoId)
+                  .join(', ')}
+                .
+              </p>
+            </div>
+          ) : (
+            <p className="text-sm text-texto-suave" data-estado="stock-ok">
+              Ningún insumo está por debajo de su mínimo.
             </p>
-          </div>
-        ) : (
-          <p className="text-sm text-texto-suave" data-estado="stock-ok">
-            Ningún insumo está por debajo de su mínimo.
-          </p>
-        )}
+          )}
 
-        {vencimientosConAlerta.length > 0 ? (
-          <div className="oc-estado" data-estado="error" data-tono="critica" role="status">
-            <span className="oc-estado__etiqueta">Vencimiento</span>
-            <ul className="flex flex-col gap-1">
-              {vencimientosConAlerta.map(({ lote, urgencia }) => (
-                <li key={lote.loteId}>
-                  {porId.get(lote.insumoId)?.denominacion ?? lote.insumoId}:{' '}
-                  {TEXTO_URGENCIA[urgencia]} el {formatearFechaCorta(lote.fechaVencimiento)}.
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
-      </div>
+          {vencimientosConAlerta.length > 0 ? (
+            <div className="oc-estado" data-estado="error" data-tono="critica" role="status">
+              <span className="oc-estado__etiqueta">Vencimiento</span>
+              <ul className="flex flex-col gap-1">
+                {vencimientosConAlerta.map(({ lote, urgencia }) => (
+                  <li key={lote.loteId}>
+                    {porId.get(lote.insumoId)?.denominacion ?? lote.insumoId}:{' '}
+                    {TEXTO_URGENCIA[urgencia]} el {formatearFechaCorta(lote.fechaVencimiento)}.
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
-      {/* Lista de insumos con stock derivado. */}
-      <section aria-label="Insumos y stock" className="oc-tarjeta flex flex-col divide-y divide-borde">
-        <p className="pb-3 text-lg font-bold">Insumos de la olla</p>
-        {insumos.length === 0 ? (
-          <p className="py-2 text-sm text-texto-suave">Todavía no hay insumos cargados.</p>
-        ) : (
+      {/* Lista de insumos con stock derivado. El estado vacío ya se pintó
+          arriba: acá solo queda la lista, sin un segundo mensaje. */}
+      {insumos.length > 0 ? (
+        <section aria-label="Insumos y stock" className="oc-tarjeta flex flex-col divide-y divide-borde">
+          <p className="pb-3 text-lg font-bold">Insumos de la olla</p>
           <ul className="flex flex-col divide-y divide-borde">
             {filasStock.map((fila) => {
               const insumo = porId.get(fila.insumoId);
@@ -589,8 +622,8 @@ export function InventarioPantalla() {
               );
             })}
           </ul>
-        )}
-      </section>
+        </section>
+      ) : null}
 
       <div className="grid gap-4 lg:grid-cols-2 lg:items-start lg:gap-6">
         {/* Alta manual de movimiento. */}
