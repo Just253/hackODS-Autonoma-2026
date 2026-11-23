@@ -108,8 +108,7 @@ regla no está probando nada.
   columna y la elección no deja registro.
 - ¿Con qué `entidad` viaja el servicio al outbox? `servicio.registrado` no es un valor de
   `evento_sync.entidad` (`modelo_base.sql:279-280`); falta decidir el valor y cómo se marca la operación.
-- Dexie guarda una ración por persona (`raciones`, PK `personaCodigoP`, `base.ts:51`, rama del PR #14):
-  un segundo servicio pisa la ración anterior y el total por servicio no se reconstruye. ¿Se cambia la
-  clave?
-- ¿La demo dice 148 o el número que salga de los datos? La regla es que salga de los datos; el guion
-  aprende a decir el número real.
+- ~~¿Se cambia la clave de `raciones`?~~ Resuelto en #30: PK `[personaCodigoP+servicioId]` en `base.ts`.
+  Un segundo servicio ya no pisa la ración anterior y el total por servicio se reconstruye.
+- **Decidido:** la demo dice el número que salga de los datos, no una constante. Con el seed actual son
+  **5 raciones** (6 personas − 1 baja); el guion ya dice 5 y sube solo si se agregan personas al seed.
