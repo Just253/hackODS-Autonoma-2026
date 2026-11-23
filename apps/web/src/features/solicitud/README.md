@@ -6,3 +6,8 @@ puras de `packages/domain` (`crearSolicitud`/`resolverSolicitud`); al entregar m
 los dos movimientos `transferencia` (origen negativo, destino positivo, conservación a 0).
 **Qué lee:** `NUEVA_SOLICITUD_DEMO` y `AHORA_DEMO` (props del router). **Qué escribe:** nada —
 demo determinista, sin red ni estado global.
+
+**Persistencia:** `SolicitudEntreOllas` no lleva `deviceId`/`lamport`, que la fila de `solicitudes`
+exige (`NOT NULL`): los agrega la capa que persiste. Los `id` de los dos movimientos de la entrega
+son UUID que el caller provee (`resolverSolicitud(..., { ids })`); el dominio no llama a
+`randomUUID()` y nunca interpola ids no-UUID (la columna `movimientos.id` es `uuid`).

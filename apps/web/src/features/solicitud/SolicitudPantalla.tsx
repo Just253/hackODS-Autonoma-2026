@@ -27,6 +27,12 @@ export interface SolicitudPantallaProps {
   readonly ahora: string;
 }
 
+/** UUIDs fijos de la transferencia demo: la columna `movimientos.id` es uuid. */
+const IDS_DEMO = {
+  origen: '0f0e0d0c-0b0a-4908-8706-050403020100',
+  destino: '1a1b1c1d-1e1f-4a2b-8c3d-4e5f60718293',
+} as const;
+
 const TONO: Readonly<Record<string, string>> = {
   borrador: 'pendiente',
   enviada: 'enviada',
@@ -60,7 +66,11 @@ export function SolicitudPantalla({ nueva, ahora }: SolicitudPantallaProps) {
   const resolver = (decision: DecisionSolicitud): void => {
     setError(null);
     try {
-      const resultado = resolverSolicitud(solicitud, decision, { ahora, autor: 'cocinera' });
+      const resultado = resolverSolicitud(solicitud, decision, {
+        ahora,
+        autor: 'cocinera',
+        ids: IDS_DEMO,
+      });
       setSolicitud(resultado.solicitud);
       if (resultado.movimientos.length > 0) {
         // La entrega son dos movimientos (origen negativo, destino positivo):

@@ -16,7 +16,7 @@
  */
 import type { EstadoSolicitud, Movimiento, SolicitudItem } from '@hackods/contracts';
 
-import { TransicionInvalida, UnidadNoSoportada } from './errors.js';
+import { DatoFaltante, TransicionInvalida, UnidadNoSoportada } from './errors.js';
 
 /**
  * Estado del dominio, alineado con la columna `solicitudes.estado` del SQL
@@ -35,6 +35,8 @@ export interface SolicitudEntreOllas {
   readonly items: readonly SolicitudItem[];
   readonly createdAt: string;
   readonly updatedAt: string;
+  // La fila de `solicitudes` exige `deviceId` y `lamport` (NOT NULL). No viven
+  // en el modelo de dominio: los agrega la capa que persiste (repositorio).
 }
 
 export interface NuevaSolicitud {
@@ -92,6 +94,13 @@ export interface ResolucionContexto {
   readonly ahora: string;
   /** Autor del movimiento de entrega, si la decision es `entregar`. */
   readonly autor?: string;
+  /**
+   * Ids UUID de los dos movimientos de la transferencia, ya generados por el
+   * caller (el repositorio). El dominio es determinista y no llama a
+   * `randomUUID()`; la columna `movimientos.id` es `uuid`, asi que interpolar
+   * un id no-UUID rompe el insert. Obligatorio al `entregar`.
+   */
+  readonly ids?: { readonly origen: string; readonly destino: string };
 }
 
 /**
@@ -143,6 +152,11 @@ export function resolverSolicitud(
 
   const cantidad = cantidadEnBase(item.cantidad, item.unidad, item.insumoId);
   const autor = contexto.autor ?? 'dominio';
+  const ids = contexto.ids;
+  if (ids === undefined) {
+    // Sin UUID no hay insert: `movimientos.id` es `uuid`. Se exige, no se inventa.
+    throw new DatoFaltante('resolverSolicitud(entregar): faltan los ids UUID de los movimientos');
+  }
   const base = {
     insumoId: item.insumoId,
     motivo: 'transferencia' as const,
@@ -160,13 +174,13 @@ export function resolverSolicitud(
   const movimientos: readonly Movimiento[] = [
     {
       ...base,
-      id: `${solicitud.id}:entrega:${item.insumoId}:origen`,
+      id: ids.origen,
       ollaId: solicitud.ollaOrigenId,
       delta: -cantidad,
     },
     {
       ...base,
-      id: `${solicitud.id}:entrega:${item.insumoId}:destino`,
+      id: ids.destino,
       ollaId: solicitud.ollaDestinoId,
       delta: cantidad,
     },
