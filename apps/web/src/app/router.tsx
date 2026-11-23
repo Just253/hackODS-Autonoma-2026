@@ -18,6 +18,7 @@ import { SolicitudPantalla } from '../features/solicitud/SolicitudPantalla.js';
 import { AHORA_DEMO, NUEVA_SOLICITUD_DEMO } from '../features/solicitud/fixtures.js';
 import { ReportePantalla } from '../features/reporte/ReportePantalla.js';
 import { MOVIMIENTOS_ENTRE_OLLAS, PERIODO_DEMO } from '../features/reporte/fixtures.js';
+import { InventarioPantalla } from '../features/inventario/InventarioPantalla.js';
 import { RecetasPage } from '../features/recetas/RecetasPage.js';
 import { ConsentimientoPage } from '../features/consentimiento/ConsentimientoPage.js';
 import { destinoDeRuta, rutaInicial } from './navegacion.js';
@@ -125,6 +126,8 @@ export const rutas = [
           { path: 'recetas', element: <RecetasPage /> },
           // #74 · consentimiento: dos permisos separados del plato.
           { path: 'consentimiento', element: <ConsentimientoPage /> },
+          // Despensa (issue #69): stock derivado, vencimiento y entrada por texto.
+          { path: 'inventario', element: <InventarioPantalla /> },
         ],
       },
     ],

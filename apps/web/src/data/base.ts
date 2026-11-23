@@ -1,5 +1,5 @@
 import Dexie, { type EntityTable, type Table } from 'dexie';
-import type { IdentidadLocal, Movimiento, Persona, Racion } from '@hackods/contracts';
+import type { IdentidadLocal, Insumo, Movimiento, Persona, Racion } from '@hackods/contracts';
 import type { RegistroConsentimiento, ServicioDeReceta } from '@hackods/domain';
 import type { EventoSaliente } from '@hackods/sync';
 
@@ -14,6 +14,10 @@ import type { EventoSaliente } from '@hackods/sync';
  * - `identidadLocal` NO es sincronizable: `nombreLocal` y `alias` viven aca,
  *   marcados `localOnly: true` (DEC-2026-0002). Ningun serializador del outbox
  *   lee esta tabla.
+ * - la despensa (v6): `insumos` es el catalogo local, `movimientos` es
+ *   append-only (lo comparten recetas y despensa) y `lotes` guarda el
+ *   vencimiento. `lotes` tambien es localOnly: el contrato no lo modela
+ *   todavia (issue #69).
  *
  * `meta` guarda el contador de Lamport del dispositivo (nunca `Date.now()`).
  */
@@ -59,6 +63,42 @@ export type ConsentimientoLocal = RegistroConsentimiento & { readonly ollaId: st
  * "El esquema del outbox: packages/sync").
  */
 export type EventoOutbox = EventoSaliente & { estado: 'pendiente' };
+
+/**
+ * Estado de un lote de despensa. `disponible` es el unico que cuenta para las
+ * alertas de vencimiento; los otros dos son el final del lote, no un borrado.
+ */
+export type EstadoLote = 'disponible' | 'agotado' | 'retirado';
+
+/**
+ * Lote con vencimiento (issue #69). Vive SOLO en el dispositivo: el contrato
+ * `Movimiento` todavia no modela el lote y `@hackods/sync` no tiene una entidad
+ * `lotes`, asi que esta tabla no entra al outbox (ver `data/inventario.ts`).
+ * Cuando el contrato lo modele, esto pasa a ser una entidad sincronizable.
+ */
+export interface Lote {
+  readonly loteId: string;
+  readonly ollaId: string;
+  readonly insumoId: string;
+  /** Cantidad con la que entro, en la unidad base del insumo. */
+  readonly cantidadInicial: number;
+  /** ISO `YYYY-MM-DD`. `null` = sin dato: no se supone que dure para siempre. */
+  readonly fechaVencimiento: string | null;
+  readonly estado: EstadoLote;
+  readonly createdAt: string;
+  readonly deviceId: string;
+  readonly lamport: number;
+}
+
+/**
+ * Fila de `movimientos`: el contrato `Movimiento` mas el vinculo local al lote
+ * (issue #69). `loteId` es opcional porque los movimientos que escribe el
+ * recetario (#72) no abren lote. Queda fuera del evento del outbox a proposito;
+ * el payload que viaja es el `Movimiento` puro, que es lo que el servidor sabe
+ * leer.
+ */
+export type MovimientoLocal = Movimiento & { readonly loteId?: string | null };
+
 export type BaseOlla = Dexie & {
   personas: EntityTable<Persona, 'codigoP'>;
   /** Clave compuesta: `EntityTable` solo admite una propiedad, asi que va `Table`. */
@@ -66,6 +106,23 @@ export type BaseOlla = Dexie & {
   identidadLocal: EntityTable<IdentidadLocal, 'codigoP'>;
   /** Firmas de consentimiento: append-only, una fila por firma. */
   consentimiento: EntityTable<ConsentimientoLocal, 'id'>;
+  /** Catalogo de insumos de esta olla (seed local, marcado como ficticio). */
+  insumos: EntityTable<Insumo, 'id'>;
+  /**
+   * Movimientos append-only de la despensa: el stock se deriva sumandolos
+   * (docs/DECISIONES.md D4). `[ollaId+insumoId]` es el indice del saldo por
+   * insumo; `at` ordena la historia sin depender de `createdAt`. `loteId` es el
+   * vinculo local al vencimiento (#69) y no viaja al servidor.
+   */
+  movimientos: EntityTable<MovimientoLocal, 'id'>;
+  /** Vencimiento por lote; local-only, no viaja al servidor. */
+  lotes: EntityTable<Lote, 'loteId'>;
+  /**
+   * Servicio cocinado con receta, comensales por grupo, cocinero, 75 °C y
+   * costo. Todavia no es el contrato `Servicio` (no tiene esos campos): vive
+   * local y marcado como tal hasta que #62/#65 lo lleven a SQL.
+   */
+  serviciosCocidos: EntityTable<ServicioDeReceta, 'id'>;
   meta: EntityTable<RegistroLamport, 'clave'>;
   /**
    * `eventUuid` como clave = idempotencia gratis: guardar el mismo evento no
@@ -73,18 +130,6 @@ export type BaseOlla = Dexie & {
    * contractual de envio (nunca `creadoEn`); `estado` filtra los pendientes.
    */
   outbox: Table<EventoOutbox, string>;
-  /**
-   * Movimientos append-only de la despensa: el stock se deriva sumandolos
-   * (docs/DECISIONES.md D4). `[ollaId+insumoId]` es el indice del saldo por
-   * insumo; `at` ordena la historia sin depender de `createdAt`.
-   */
-  movimientos: EntityTable<Movimiento, 'id'>;
-  /**
-   * Servicio cocinado con receta, comensales por grupo, cocinero, 75 °C y
-   * costo. Todavia no es el contrato `Servicio` (no tiene esos campos): vive
-   * local y marcado como tal hasta que #62/#65 lo lleven a SQL.
-   */
-  serviciosCocidos: EntityTable<ServicioDeReceta, 'id'>;
 };
 
 export function nombreBase(ollaId: string): string {
@@ -139,6 +184,15 @@ export function baseDeOlla(ollaId: string): BaseOlla {
   // de esta persona" y "la última de este permiso".
   base.version(6).stores({
     consentimiento: 'id, ollaId, personaId, [personaId+tipo], lamport',
+  });
+
+  // v7: despensa con vencimiento (issue #69). Aditiva: suma el catalogo de
+  // insumos y los lotes al `movimientos` que ya creo el recetario en v5 (mismos
+  // indices, para que los dos caminos de escritura convivan). `lotes` guarda el
+  // vencimiento y es local-only: no tiene entidad en el outbox.
+  base.version(7).stores({
+    insumos: 'id, denominacion',
+    lotes: 'loteId, insumoId, fechaVencimiento, estado',
   });
 
   abiertas.set(ollaId, base);

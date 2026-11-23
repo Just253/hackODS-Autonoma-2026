@@ -99,10 +99,10 @@ export interface Seccion {
  *   servidor; aca solo es "puede entrar a toda seccion".
  */
 export const MATRIZ_ROL: Readonly<Record<Rol, readonly string[]>> = {
-  cocinera: ['/servicio', '/comprobante', '/recetas'],
-  organizadora: ['/padron', '/presupuesto', '/precios', '/solicitud', '/reporte', '/recetas', '/consentimiento'],
+  cocinera: ['/servicio', '/comprobante', '/recetas', '/inventario'],
+  organizadora: ['/padron', '/presupuesto', '/precios', '/solicitud', '/reporte', '/recetas', '/consentimiento', '/inventario'],
   nutricionista: ['/servicio'],
-  admin: ['/padron', '/servicio', '/comprobante', '/presupuesto', '/precios', '/solicitud', '/reporte', '/recetas', '/consentimiento'],
+  admin: ['/padron', '/servicio', '/comprobante', '/presupuesto', '/precios', '/solicitud', '/reporte', '/recetas', '/consentimiento', '/inventario'],
 } as const;
 
 export const DIARIOS: readonly Destino[] = [
@@ -182,6 +182,17 @@ export const SECUNDARIOS: readonly Destino[] = [
     icono: 'padron',
     tarea: 'Dar o retirar el permiso de seguimiento y de estadísticas.',
     roles: ['organizadora', 'admin'],
+  },
+  {
+    a: '/inventario',
+    texto: 'Despensa',
+    descripcion: 'Despensa',
+    // Glifo reutilizado: `packages/ui` no tiene uno de despensa todavia
+    // (agregarlo es de su duenio). Las flechas de entrada/salida son lo mas
+    // cercano al movimiento de stock.
+    icono: 'entreOllas',
+    tarea: 'Ver el stock, cargar lo que entró y anotar el vencimiento.',
+    roles: ['cocinera', 'organizadora', 'admin'],
   },
 ] as const;
 

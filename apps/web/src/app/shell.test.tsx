@@ -68,9 +68,10 @@ describe('cascaron', () => {
       .getAllByRole('link')
       .map((a) => a.textContent ?? '');
     // Cada enlace concatena `descripcion` + `tarea` sin espacio entre ambos.
-    // La cocinera solo tiene Recetario en "Más"; lo demas es de otros roles.
-    expect(nombres).toHaveLength(1);
-    expect(nombres[0]).toContain('Recetario');
+    // La cocinera tiene Recetario y Despensa en "Más"; lo demas es de otros roles.
+    expect(nombres).toHaveLength(2);
+    expect(nombres.some((t) => t.includes('Recetario'))).toBe(true);
+    expect(nombres.some((t) => t.includes('Despensa'))).toBe(true);
   });
 
   it('la hoja "Más" se cierra con Escape y no queda tapando la accion', () => {
@@ -94,7 +95,7 @@ describe('cascaron', () => {
   });
 
   it('el rail de escritorio lista las secciones del rol, en dos grupos', () => {
-    // Organizadora: 7 de 9 destinos (recetas + permisos incluidos) y agrupado.
+    // Organizadora: 8 de 10 destinos (recetas, permisos y despensa incluidos).
     window.localStorage.setItem(
       CLAVE_SESION,
       JSON.stringify({ ...SESION_INICIAL, rol: 'organizadora' }),
@@ -102,7 +103,7 @@ describe('cascaron', () => {
     montarApp('/padron');
 
     const rail = enlacesDelRail();
-    expect(rail).toHaveLength(7);
+    expect(rail).toHaveLength(8);
     expect(rail.map((a) => a.textContent)).toEqual([
       'Padrón',
       'Presupuesto',
@@ -111,6 +112,7 @@ describe('cascaron', () => {
       'Reporte entre ollas',
       'Recetario',
       'Consentimiento',
+      'Despensa',
     ]);
 
     // El rail agrupa en "Día a día" y "Otros"; "Entre ollas" es ademas una pantalla.
@@ -193,9 +195,9 @@ describe('cascaron', () => {
     );
     // Barra + hoja es exactamente lo que el rol puede ver, sin faltar ni sobrar.
     expect([...barraDeAdmin, ...hojaDeAdmin]).toEqual([...DIARIOS, ...SECUNDARIOS].map((d) => d.a));
-    // Admin: los cuatro diarios y los cinco secundarios (recetas + permisos).
+    // Admin: los cuatro diarios y los seis secundarios (recetas, permisos, despensa).
     expect(barraDeAdmin).toHaveLength(4);
-    expect(hojaDeAdmin).toHaveLength(5);
+    expect(hojaDeAdmin).toHaveLength(6);
     expect(TEXTO_INICIAL).toBe('normal');
   });
 });
