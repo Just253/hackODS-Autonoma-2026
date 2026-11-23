@@ -89,16 +89,33 @@ function aEventoDeRed(evento: EventoSaliente): unknown {
   };
 }
 
-/** El cuerpo `{ error }` de una Edge Function es el mensaje util, no el status. */
+/** El cuerpo `{ codigo, mensaje }` de una Edge Function es el mensaje util, no el status. */
 export async function mensajeDeError(error: unknown): Promise<string> {
   if (error instanceof Error) {
     const contexto = (error as { context?: Response }).context;
     if (contexto !== undefined && typeof contexto.clone === 'function') {
       try {
-        const cuerpo = (await contexto.clone().json()) as { error?: unknown };
-        if (typeof cuerpo.error === 'string' && cuerpo.error !== '') return cuerpo.error;
+        const cuerpo = (await contexto.clone().json()) as {
+          error?: unknown;
+          mensaje?: unknown;
+          codigo?: unknown;
+        };
+        const detalle =
+          typeof cuerpo.mensaje === 'string' && cuerpo.mensaje !== ''
+            ? cuerpo.mensaje
+            : typeof cuerpo.error === 'string' && cuerpo.error !== ''
+              ? cuerpo.error
+              : null;
+        if (detalle !== null) {
+          return typeof cuerpo.codigo === 'string' && cuerpo.codigo !== ''
+            ? `${detalle} (${cuerpo.codigo})`
+            : detalle;
+        }
       } catch {
-        /* respuesta sin JSON: queda el mensaje del SDK */
+        /* respuesta sin JSON: queda el status o el mensaje del SDK */
+      }
+      if (typeof contexto.status === 'number' && contexto.status > 0) {
+        return `la ingesta respondió ${contexto.status}`;
       }
     }
     return error.message;
