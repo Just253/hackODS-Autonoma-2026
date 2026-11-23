@@ -1,7 +1,7 @@
 ---
 description: Migraciones, RLS y seed. Toda tabla entra con su política y su test.
 mode: all
-model: anthropic/claude-sonnet-5-5
+model: mistral/deepseek-v4-1-flash-1017
 steps: 55
 permissions:
   - action: edit
@@ -11,10 +11,19 @@ permissions:
     resource: "supabase/migrations/**"
     effect: allow
   - action: edit
+    resource: "**/supabase/migrations/**"
+    effect: allow
+  - action: edit
     resource: "supabase/seed.sql"
     effect: allow
   - action: edit
+    resource: "**/supabase/seed.sql"
+    effect: allow
+  - action: edit
     resource: "supabase/tests/**"
+    effect: allow
+  - action: edit
+    resource: "**/supabase/tests/**"
     effect: allow
   - action: subagent
     resource: "*"
