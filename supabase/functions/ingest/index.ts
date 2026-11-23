@@ -60,6 +60,15 @@ function esErrorIngesta(e: unknown): e is ErrorIngesta {
   return typeof e === 'object' && e !== null && 'codigo' in e && 'status' in e;
 }
 
+/**
+ * `COMPUTE_URL` sin barras finales. Configurada con `/` al final concatenaba
+ * `//extract` y daba 404 en el smoke real (#98). Misma regla que
+ * `packages/domain/src/ingesta.ts:normalizarBase` (la Edge no importa el monorepo).
+ */
+function normalizarBase(url: string): string {
+  return url.replace(/\/+$/, '');
+}
+
 function extensionDe(mime: string, tipo: string): string {
   if (tipo === 'audio') {
     if (mime === 'audio/wav' || mime === 'audio/wave' || mime === 'audio/x-wav') return 'wav';
@@ -241,6 +250,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     if (!supabaseUrl || !anonKey || !computeUrl || !computeToken) {
       throw error(500, 'MAL_CONFIGURADA', 'faltan SUPABASE_URL, SUPABASE_ANON_KEY, COMPUTE_URL o COMPUTE_TOKEN');
     }
+    const computeBase = normalizarBase(computeUrl);
 
     const form = await req.formData();
     const archivo = form.get('archivo');
@@ -251,7 +261,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
     if (archivo.size > MAX_BYTES) throw error(413, 'ARCHIVO_GRANDE', `maximo ${MAX_BYTES} bytes`);
     const mime = (archivo.type || '').toLowerCase();
     if (!mimeValido(mime, tipo)) {
-      throw error(415, 'MIME_NO_SOPORTADO', tipo === 'audio' ? 'se esperaba audio/*' : 'se esperaba image/* o application/pdf');
+      throw error(415, 'MIME_NO_SOPORTADO', tipo === 'audio' ? 'se esperaba audio/*' : 'se esperaba image/png o image/jpeg');
+    }
+    // El compute (`/extract`) solo lee PNG/JPEG: el PDF se rechaza antes de subir
+    // y de llamar compute (#98). Fallaría igual con 502, pero el motivo sería otro.
+    if (tipo === 'boleta' && mime === 'application/pdf') {
+      throw error(415, 'TIPO_NO_SOPORTADO', 'La boleta debe ser PNG o JPEG (el OCR no lee PDF)');
     }
 
     const supabase = createClient(supabaseUrl, anonKey, {
@@ -289,18 +304,18 @@ Deno.serve(async (req: Request): Promise<Response> => {
     if (subidaError !== null) throw error(subidaError.statusCode === '403' ? 403 : 502, 'STORAGE', subidaError.message);
 
     const resultado = tipo === 'audio'
-      ? await transcribir(bytesArreglo, mime, computeToken, computeUrl)
-      : await extraer(bytesArreglo, mime, computeToken, computeUrl);
+      ? await transcribir(bytesArreglo, mime, computeToken, computeBase)
+      : await extraer(bytesArreglo, mime, computeToken, computeBase);
 
     const texto = resultado.texto;
     let embedding: number[] | null = null;
     let categoria = 'sin_clasificar';
     let confianza = 0;
     try {
-      const [vector] = await embedTextos([texto.trim() === '' ? 'captura vacia' : texto], computeToken, computeUrl);
+      const [vector] = await embedTextos([texto.trim() === '' ? 'captura vacia' : texto], computeToken, computeBase);
       embedding = vector ?? null;
       if (embedding !== null) {
-        const catalogo = await catalogoConVectores(computeToken, computeUrl);
+        const catalogo = await catalogoConVectores(computeToken, computeBase);
         const categorizado = categorizar(embedding, catalogo);
         categoria = categorizado.categoria;
         confianza = Number(categorizado.confianza.toFixed(3));

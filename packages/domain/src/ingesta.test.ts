@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { TAU } from './clasificacion/config.js';
 import {
   categorizarPorEmbedding,
+  normalizarBase,
   normalizarItemsBoleta,
   parsearDictado,
   similitudCoseno,
@@ -36,6 +37,45 @@ describe('parsearDictado', () => {
   it('texto sin producto no inventa un item', () => {
     expect(parsearDictado('2 kilos')).toEqual([]);
     expect(parsearDictado('')).toEqual([]);
+  });
+
+  it('rojo->verde: ASR impreciso "2 kilos ne arothi un litro ne afeite" -> arroz 2 kg y aceite 1 lt', () => {
+    const items = parsearDictado('2 kilos ne arothi un litro ne afeite');
+    expect(items).toEqual([
+      { insumoTexto: 'arroz', cantidad: 2, unidad: 'kg' },
+      { insumoTexto: 'aceite', cantidad: 1, unidad: 'lt' },
+    ]);
+  });
+
+  it('ASR impreciso sin match en el diccionario no inventa items', () => {
+    expect(parsearDictado('2 kilos ne tractor un litro ne camioneta')).toEqual([]);
+  });
+
+  it('el número y la unidad sobreviven al ruido ASR ("dos kilos arros" -> arroz 2 kg)', () => {
+    expect(parsearDictado('dos kilos arros')).toEqual([{ insumoTexto: 'arroz', cantidad: 2, unidad: 'kg' }]);
+  });
+
+  it('sin fuzzy, la palabra fuera del diccionario no crea item', () => {
+    // Palabra corta y lejana al diccionario: Levenshtein > 1 -> descarte.
+    expect(parsearDictado('2 kilos de xyz')).toEqual([]);
+  });
+});
+
+describe('normalizarBase', () => {
+  it('quita las barras finales para que no salga `//extract`', () => {
+    expect(normalizarBase('https://compute.test/')).toBe('https://compute.test');
+    expect(normalizarBase('https://compute.test///')).toBe('https://compute.test');
+  });
+
+  it('deja la URL sin barras igual y no toca la ruta interna', () => {
+    expect(normalizarBase('https://compute.test')).toBe('https://compute.test');
+    expect(normalizarBase('https://compute.test/api/v1')).toBe('https://compute.test/api/v1');
+    expect(normalizarBase('https://compute.test/api/')).toBe('https://compute.test/api');
+  });
+
+  it('url vacía o solo barras -> cadena vacía', () => {
+    expect(normalizarBase('')).toBe('');
+    expect(normalizarBase('///')).toBe('');
   });
 });
 
