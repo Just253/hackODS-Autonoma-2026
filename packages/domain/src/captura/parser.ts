@@ -642,7 +642,6 @@ function parsearSegmento(
   const tokenMonto = indiceMonto >= 0 ? tokens[indiceMonto] : undefined;
   const valorMonto = tokenMonto?.kind === 'num' ? tokenMonto.value : null;
   const anteriorMonto = indiceMonto > 0 ? tokens[indiceMonto - 1] : undefined;
-  const siguienteMonto = indiceMonto >= 0 ? tokens[indiceMonto + 1] : undefined;
   const cueA =
     anteriorMonto?.kind === 'word' && (anteriorMonto.value === 'a' || anteriorMonto.value === 'al');
   const esUnitario = valorMonto !== null && (cueA || marcador !== null);

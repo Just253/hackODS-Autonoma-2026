@@ -78,3 +78,6 @@ pnpm --filter @hackods/domain typecheck
 
 Dueño: **C** (`area:contracts`). Requiere **2 aprobaciones** (A y B). Es el paquete más caro de
 romper: una regla mal pensada bloquea a las otras dos personas.
+10. Lint desde #7: sin variables sin usar (`^_` para ignorar deliberadamente) y sin
+    `console.log`; el gate `pnpm lint`/`pnpm verificar` lo exige. El borrado de código
+    muerto (`captura/parser.ts: siguienteMonto` en #7) es consecuencia de esta regla.
