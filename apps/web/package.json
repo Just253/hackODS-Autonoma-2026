@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@hackods/contracts": "workspace:*",
+    "@hackods/domain": "workspace:*",
     "@hackods/ui": "workspace:*",
     "dexie": "^4.4.7",
     "react": "^19.3.1",
