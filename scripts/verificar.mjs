@@ -155,7 +155,18 @@ paso('términos muertos', () => {
   return `${MUERTOS.length} términos en cero`;
 });
 
-// 7. Links internos de la documentación ---------------------------------------
+// 6b. Regla de "sólo docs" ----------------------------------------------------
+// `scripts/` no es un paquete del monorepo, así que `turbo run test` no lo mira: su test corre acá,
+// con el runner de Node, o la regla que salta typecheck/tests/build queda sin anclar.
+paso('regla de cambios', () => {
+  const salida = correr('node', ['--test', 'scripts/cambios.test.mjs']);
+  const pass = Number(salida.match(/^# pass (\d+)/m)?.[1] ?? 0);
+  const fail = Number(salida.match(/^# fail (\d+)/m)?.[1] ?? 0);
+  if (fail > 0) throw new Error(`${fail} caso(s) en rojo: ${salida.split('\n').slice(-12).join('\n')}`);
+  if (pass === 0) throw new Error('el test de la regla no corrió');
+  return `${pass} casos: docs vs código`;
+});
+
 paso('links', () => {
   const rotos = [];
   let revisados = 0;
