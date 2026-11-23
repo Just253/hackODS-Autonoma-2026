@@ -7,7 +7,7 @@ import { baseDeOlla } from '../data/base.js';
 import { outboxDe } from '../data/outbox-repo.js';
 import { contarPersonas, OLLA_DEMO } from '../data/repositorio.js';
 import { SyncLocal } from '../data/sync-local.js';
-import { SECCIONES, destinoDeRuta, destinosDeBarra, destinosDeMas } from './navegacion.js';
+import { destinoDeRuta, destinosDeBarra, destinosDeMas, seccionesDe } from './navegacion.js';
 import { ETIQUETA_ROL, OLLAS_DEMO, ROLES, textoDivisor, useSesion } from './sesion.js';
 import type { ControlSesion } from './sesion.js';
 import { fijarPersonasGuardadas, useEstadoSync, alAvisarCambio } from './sync.js';
@@ -110,9 +110,21 @@ export function Shell() {
   const { pendientes, empujar } = useOutbox();
   const ubicacion = useLocation();
 
-  const barra = destinosDeBarra();
-  const mas = destinosDeMas();
+  const barra = destinosDeBarra(sesion);
+  const mas = destinosDeMas(sesion);
+  const secciones = seccionesDe(sesion);
   const actual = destinoDeRuta(ubicacion.pathname);
+
+  /**
+   * Aviso de la guarda (FE-02): si `router.tsx` redirigio por rol, dejo el
+   * texto en `location.state`. Se lee como texto, no como color, y se anuncia
+   * (`role="status"`): quien llega aca tiene que saber por que no entro, sin
+   * que la app le deje la duda de si fue un error.
+   */
+  const avisoAcceso =
+    typeof (ubicacion.state as { avisoAcceso?: unknown } | null)?.avisoAcceso === 'string'
+      ? ((ubicacion.state as { avisoAcceso: string }).avisoAcceso)
+      : null;
 
   /**
    * La pastilla del header: una sola, y la verdad mas urgente primero. Con
@@ -190,7 +202,7 @@ export function Shell() {
         </div>
 
         <nav aria-label="Secciones principales" className="flex-1 overflow-y-auto px-2 py-4">
-          {SECCIONES.map((seccion) => (
+          {secciones.map((seccion) => (
             <div key={seccion.titulo} className="mb-5 last:mb-0">
               <p className="px-2 pb-1.5 text-[0.6875rem] font-bold uppercase tracking-[0.12em] text-texto-suave">
                 {seccion.titulo}
@@ -251,8 +263,7 @@ export function Shell() {
             </p>
           </div>
 
-          <div className="flex shrink-0 items-center gap-2" data-pendientes={pendientes}>
-            {/*
+          <div className="flex shrink-0 items-center gap-2" data-pendientes={pendientes}>            {/*
               En escritorio el boton vive al lado de la pastilla. En el telefono
               no entra en el header: la accion esta en la hoja "Más" y el
               conteo se sigue viendo arriba.
@@ -273,6 +284,15 @@ export function Shell() {
 
         <main id="contenido" className="min-h-0 flex-1 overflow-y-auto">
           <div className="mx-auto w-full max-w-[var(--ancho-contenido)] px-4 pt-4 pb-[calc(var(--alto-nav)+env(safe-area-inset-bottom)+1.5rem)] lg:px-8 lg:py-8">
+            {avisoAcceso === null ? null : (
+              <p
+                role="status"
+                data-aviso-acceso=""
+                className="mb-4 rounded-oc border border-pendiente bg-pendiente-suave px-3 py-2 text-sm font-semibold text-pendiente"
+              >
+                {avisoAcceso}
+              </p>
+            )}
             <Outlet />
             <p className="mt-10 border-t border-borde pt-4 text-xs text-texto-suave">
               Datos simulados. Esto apoya la decisión de la olla; no es un diagnóstico.
@@ -286,31 +306,35 @@ export function Shell() {
         barra. No es un overlay: asi no hay que adivinar la altura de la barra
         (que crece con el tamano de letra) ni pelear con el area segura.
       */}
-      {abiertoMas && mas.length > 0 ? (
+      {abiertoMas ? (
         <nav
           id="mas-secciones"
           aria-label="Más secciones"
           className="z-40 shrink-0 border-t border-borde bg-superficie px-4 pt-3 shadow-[var(--sombra-alta)] lg:hidden"
         >
-          <p className="mx-auto max-w-[var(--ancho-lectura)] px-1 pb-2 text-[0.6875rem] font-bold uppercase tracking-[0.12em] text-texto-suave">
-            Otros
-          </p>
-          <ul className="mx-auto flex max-w-[var(--ancho-lectura)] flex-col gap-2 pb-3">
-            {mas.map((destino) => (
-              <li key={destino.a}>
-                <NavLink
-                  to={destino.a}
-                  className="flex min-h-14 items-center gap-2.5 rounded-oc border border-borde bg-fondo px-3 py-2 text-[0.9375rem] font-semibold active:bg-primario-suave"
-                >
-                  <Icono nombre={destino.icono} />
-                  <span className="flex min-w-0 flex-col">
-                    <span>{destino.descripcion}</span>
-                    <span className="text-xs font-normal text-texto-suave">{destino.tarea}</span>
-                  </span>
-                </NavLink>
-              </li>
-            ))}
-          </ul>
+          {mas.length > 0 ? (
+            <>
+              <p className="mx-auto max-w-[var(--ancho-lectura)] px-1 pb-2 text-[0.6875rem] font-bold uppercase tracking-[0.12em] text-texto-suave">
+                Otros
+              </p>
+              <ul className="mx-auto flex max-w-[var(--ancho-lectura)] flex-col gap-2 pb-3">
+                {mas.map((destino) => (
+                  <li key={destino.a}>
+                    <NavLink
+                      to={destino.a}
+                      className="flex min-h-14 items-center gap-2.5 rounded-oc border border-borde bg-fondo px-3 py-2 text-[0.9375rem] font-semibold active:bg-primario-suave"
+                    >
+                      <Icono nombre={destino.icono} />
+                      <span className="flex min-w-0 flex-col">
+                        <span>{destino.descripcion}</span>
+                        <span className="text-xs font-normal text-texto-suave">{destino.tarea}</span>
+                      </span>
+                    </NavLink>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : null}
 
           {/* Accion de sync del telefono: el header muestra el conteo, la accion vive aca. */}
           {pendientes > 0 ? (
@@ -376,30 +400,31 @@ export function Shell() {
             </li>
           ))}
 
-          {mas.length > 0 ? (
-            <li className="min-w-0 flex-1">
-              <button
-                type="button"
-                onClick={() => setAbiertoMas((v) => !v)}
-                aria-expanded={abiertoMas}
-                aria-controls={mas.length > 0 ? 'mas-secciones' : undefined}
+          {/* "Más" siempre: ahi viven las secciones extra Y el contexto/sesion.
+              Un rol sin secundarios (cocinera) no se queda sin forma de abrir
+              la hoja de ajustes. */}
+          <li className="min-w-0 flex-1">
+            <button
+              type="button"
+              onClick={() => setAbiertoMas((v) => !v)}
+              aria-expanded={abiertoMas}
+              aria-controls="mas-secciones"
+              className={[
+                'flex min-h-[calc(var(--alto-nav)-1px)] w-full flex-col items-center justify-center gap-0.5 px-1 py-1.5 text-[0.6875rem] font-semibold leading-tight',
+                abiertoMas ? 'text-primario' : 'text-texto-suave',
+              ].join(' ')}
+            >
+              <span
                 className={[
-                  'flex min-h-[calc(var(--alto-nav)-1px)] w-full flex-col items-center justify-center gap-0.5 px-1 py-1.5 text-[0.6875rem] font-semibold leading-tight',
-                  abiertoMas ? 'text-primario' : 'text-texto-suave',
+                  'flex h-8 w-8 items-center justify-center rounded-full',
+                  abiertoMas ? 'bg-primario-suave' : '',
                 ].join(' ')}
               >
-                <span
-                  className={[
-                    'flex h-8 w-8 items-center justify-center rounded-full',
-                    abiertoMas ? 'bg-primario-suave' : '',
-                  ].join(' ')}
-                >
-                  <Icono nombre="mas" />
-                </span>
-                <span>Más</span>
-              </button>
-            </li>
-          ) : null}
+                <Icono nombre="mas" />
+              </span>
+              <span>Más</span>
+            </button>
+          </li>
         </ul>
       </nav>
     </div>
