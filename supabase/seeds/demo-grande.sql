@@ -12,15 +12,21 @@
 --     (...) values` de seed.sql. Este archivo es otro fichero y su serie de
 --     precios va en un `do $$ ... loop`, nunca en un insert con VALUES inline.
 
+insert into zonas (id, nombre, distritos) values
+  ('lima-sur',  'Lima Sur',  array['Villa El Salvador', 'Villa Maria del Triunfo', 'Lurin', 'Pachacamac']),
+  ('lima-este', 'Lima Este', array['Ate', 'San Juan de Lurigancho']),
+  ('lima-norte','Lima Norte',array['Comas', 'Independencia'])
+on conflict (id) do nothing;
+
 -- ---------------------------------------------------------------------------
 -- Ollas 4..8 (codigos sin 0/O/1/I)
 -- ---------------------------------------------------------------------------
-insert into ollas (id, titulo, codigo, tipo, distrito) values
-  ('00000000-0000-4000-8000-000000000004', 'Olla Demo Villa Maria del Triunfo', 'DEMHDD', 'comun', 'Villa Maria del Triunfo'),
-  ('00000000-0000-4000-8000-000000000005', 'Olla Demo Ate', 'DEMHEE', 'comun', 'Ate'),
-  ('00000000-0000-4000-8000-000000000006', 'Comedor Demo Independencia', 'DEMHFF', 'comedor_pca', 'Independencia'),
-  ('00000000-0000-4000-8000-000000000007', 'Olla Demo Lurin', 'DEMHGG', 'comun', 'Lurin'),
-  ('00000000-0000-4000-8000-000000000008', 'Comedor Demo Pachacamac', 'DEMHHH', 'comedor_pca', 'Pachacamac')
+insert into ollas (id, titulo, codigo, tipo, distrito, zona_id) values
+  ('00000000-0000-4000-8000-000000000004', 'Olla Demo Villa Maria del Triunfo', 'DEMHDD', 'comun', 'Villa Maria del Triunfo', 'lima-sur'),
+  ('00000000-0000-4000-8000-000000000005', 'Olla Demo Ate', 'DEMHEE', 'comun', 'Ate', 'lima-este'),
+  ('00000000-0000-4000-8000-000000000006', 'Comedor Demo Independencia', 'DEMHFF', 'comedor_pca', 'Independencia', 'lima-norte'),
+  ('00000000-0000-4000-8000-000000000007', 'Olla Demo Lurin', 'DEMHGG', 'comun', 'Lurin', 'lima-sur'),
+  ('00000000-0000-4000-8000-000000000008', 'Comedor Demo Pachacamac', 'DEMHHH', 'comedor_pca', 'Pachacamac', 'lima-sur')
 on conflict (id) do nothing;
 
 -- ---------------------------------------------------------------------------
@@ -57,11 +63,6 @@ on conflict do nothing;
 --   lima-este : 2 San Juan de Lurigancho, 5 Ate
 --   lima-norte: 3 Comas, 6 Independencia
 -- ---------------------------------------------------------------------------
-insert into zonas (id, nombre, distritos) values
-  ('lima-sur',  'Lima Sur',  array['Villa El Salvador', 'Villa Maria del Triunfo', 'Lurin', 'Pachacamac']),
-  ('lima-este', 'Lima Este', array['Ate', 'San Juan de Lurigancho']),
-  ('lima-norte','Lima Norte',array['Comas', 'Independencia'])
-on conflict (id) do nothing;
 
 update ollas set zona_id = case id
     when '00000000-0000-4000-8000-000000000001' then 'lima-sur'
