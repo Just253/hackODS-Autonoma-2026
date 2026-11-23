@@ -17,3 +17,6 @@ Por qué mediana: un error de unidad mueve el promedio (T7 da +128 % falso). El
 outlier se excluye por MAD y no mueve la tendencia. Precio con `formato-precio.ts`.
 Tests: `formato-precio.test.ts` (tabla micro→soles), `tendencia.test.ts` (+12,00 %
 con outlier y rojo→verde contra promedio) y `PreciosPantalla.test.tsx`.
+
+**En el cascarón móvil:** es destino secundario, siempre dentro de Más. La mediana y la variación
+van como cifra grande, con signo y palabra, nunca solo con una flecha de color.

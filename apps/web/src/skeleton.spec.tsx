@@ -76,7 +76,7 @@ describe('esqueleto offline', () => {
     });
 
     await act(async () => {
-      fireEvent.submit(screen.getByRole('form', { name: /Alta de persona/i }));
+      fireEvent.click(screen.getByRole('button', { name: /Guardar alta/i }));
     });
 
     const avisoAlta = await screen.findByText(/Alta guardada: P-/i);

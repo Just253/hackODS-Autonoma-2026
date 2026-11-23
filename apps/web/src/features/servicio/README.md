@@ -1,32 +1,39 @@
 # Servicio del día
 
-**Qué es:** registro de una ración por persona del padrón, explicada con al menos dos razones, mas el
-resumen del menú firmado del día. La cocinera escribe las razones; la pantalla no las inventa
-(DEC-2026-0003, menú firmado).
-
-**Resumen del menú (conectado):** `ServicioResumen` llama a `servirDelDia(menus, personas)` de
-`@hackods/domain` y **solo muestra** el resultado: sello del nutricionista, hash del contenido, las dos
-opciones (general/A y especial/A), la porción por grupo etario y el **total de raciones**. El total
-sale del padrón vigente (`deletedAt === null`), no de una constante: si cambia el padrón, cambia el
-número. La pantalla no calcula porciones ni gramos; eso es del dominio.
-
-**Sin dato honesto:** si el menú no trae sello, no está aprobado/publicado, el hash no corresponde al
-contenido o una opción no trae platos firmados, la pantalla dice **"sin dato"** (o el campo que falla)
-y nunca dibuja un número a mano (DEC-2026-0003). Los grupos con personas pero sin porción firmada se
-declaran como **"grupos sin porción firmada"**, no se les inventa una porción.
+**Qué es:** registro de una ración por persona del padrón, explicada con al menos dos razones. La
+pantalla no justifica la ración: la cocinera escribe las razones (DEC-2026-0003, menú firmado).
 
 **Qué lee:** `listarPersonas(OLLA_DEMO)` y `racionDe(codigoP, OLLA_DEMO)` de
-`src/data/repositorio.ts`; el menú firmado de DEMO sale de `src/fixtures/servicio-demo.ts` (ficticio y
-con el hash real del seed, calculado con `serializarContenido`).
+`src/data/repositorio.ts`, para saber quién está en el padrón y si ya tiene ración **del servicio de
+hoy** (`servicio-AAAA-MM-DD`).
 
 **Qué escribe:** `guardarRacion()`, un `add` append-only en la tabla `raciones` de
-`hackods-<ollaId>`, validado con `racionSchema`. La clave es `[personaCodigoP+servicioId]`: una fila
-por persona y servicio. Si ya existe, `add` falla con `RacionDuplicada` y la pantalla lo dice; una
-ración se anula con otro registro, no se pisa en silencio (contrato append-only).
+`hackods-<ollaId>`, validado con `racionSchema`. La clave primaria es compuesta,
+`[personaCodigoP+servicioId]`: una fila por persona y servicio. Si ya existe, `add` falla con
+`RacionDuplicada` y la pantalla lo dice — no se reemplaza nada en silencio, porque una ración se anula
+con otro registro (contrato append-only).
+
+**Sin menú firmado:** `NuevaRacion.servicioId` es opcional y, si no se pasa, `guardarRacion()` usa
+`servicioDelDia()` (`servicio-AAAA-MM-DD`, del reloj inyectable). Nunca se guarda `null`: `null` no
+puede formar parte de una clave compuesta en IndexedDB. Cuando exista el menú (H3:30), el id del
+servicio lo trae la integración.
+
+**Hallazgo `COBERTURA_SIN_CALCULO`:** `racionSchema.cobertura` es un record que exige una clave por
+nutriente del contrato (`nutrienteIdSchema.options`: hoy `energia`, `proteina`, `hierro`, `zinc`,
+`vitaminaA`, `folato`, `vitaminaB12`, `calcio`). Omitirlos no es opción, porque Zod falla. El
+repositorio se arma las claves desde el propio schema y escribe `0` en cada una con
+`COBERTURA_SIN_CALCULO`; esos `0` significan **"sin cálculo"**, no "cero nutrientes": la pantalla
+dice `sin dato` y nunca dibuja el `0`. Igual `componentes: []`, porque el cálculo por grupo es de
+`packages/nutrition` (DEC-2026-0003).
 
 **Estados:** leyendo el servicio · sin padrón (pedir el alta en Padrón) · contador de raciones del
 dispositivo · ración guardada ("pendiente de sincronizar; la red no hizo falta") · faltan razones
-(error) · menú no servible (se dice el campo).
+(error).
 
-**Qué NO hace:** no calcula peso ni nutrientes (eso es de `packages/nutrition`, hoy dice "sin dato") y
-no sincroniza: el envío y el Lamport de la ración son de `packages/sync` (DEC-2026-0005).
+**Qué NO hace:** no calcula peso ni nutrientes por persona; la porción por grupo es la del menú
+firmado (`ServicioResumen` con `servirDelDia`) y el resto dice `sin dato`. No sincroniza: el envío y el
+Lamport de la ración corresponden a `packages/sync` (DEC-2026-0005).
+
+**En el cascarón móvil:** segundo destino en modo simple. El resumen del menú (sello, hash, A/B,
+porción por grupo y total) lo calcula `ServicioResumen`; la cifra de raciones registradas va aparte. La
+barra inferior deja a la vista el resto del flujo sin salir de la pantalla.

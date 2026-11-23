@@ -145,6 +145,8 @@ describe('pantalla de comprobante', () => {
       .getAllByRole('listitem')
       .filter((f) => f.getAttribute('data-estado') === 'por_revisar');
     expect(porRevisar).toHaveLength(2);
+    // El contador y el color dicen 2, no 6: las otras 4 ya las confirmó el clasificador.
+    expect(screen.getByText(/2 de 6 líneas por revisar/i)).toBeInTheDocument();
     for (const fila of porRevisar) {
       expect(fila.getAttribute('data-suma')).toBe('no');
     }

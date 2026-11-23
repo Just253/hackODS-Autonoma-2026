@@ -1,8 +1,50 @@
 @import 'tailwindcss';
 
+/**
+ * Puente entre los tokens de `@hackods/ui` y Tailwind 4.
+ *
+ * `@theme inline` (y no `@theme`) porque las variables ya existen en `:root`
+ * (tokens.css) y cambian en runtime con `data-texto`; `inline` hace que las
+ * utilidades apunten a `var(--color-x)` en vez de copiar el valor al compilar.
+ * Resultado: `bg-superficie`, `text-primario`, `border-borde` salen del token y
+ * un hexadecimal suelto en un componente sigue siendo un error de review.
+ *
+ * Los tokens son un triplete RGB para que `/50` y amigos funcionen.
+ */
+@theme inline {
+  --color-fondo: rgb(var(--color-fondo));
+  --color-superficie: rgb(var(--color-superficie));
+  --color-tenue: rgb(var(--color-tenue));
+  --color-borde: rgb(var(--color-borde));
+  --color-borde-fuerte: rgb(var(--color-borde-fuerte));
+
+  --color-texto: rgb(var(--color-texto));
+  --color-texto-suave: rgb(var(--color-texto-suave));
+
+  --color-primario: rgb(var(--color-primario));
+  --color-primario-texto: rgb(var(--color-primario-texto));
+  --color-primario-fuerte: rgb(var(--color-primario-fuerte));
+  --color-primario-suave: rgb(var(--color-primario-suave));
+
+  --color-alerta: rgb(var(--color-alerta));
+  --color-alerta-suave: rgb(var(--color-alerta-suave));
+  --color-error: rgb(var(--color-error));
+  --color-error-suave: rgb(var(--color-error-suave));
+
+  --color-pendiente: rgb(var(--color-pendiente));
+  --color-pendiente-suave: rgb(var(--color-pendiente-suave));
+
+  --radius-oc: var(--radio);
+  --radius-oc-grande: var(--radio-grande);
+
+  --spacing-nav: var(--alto-nav);
+  --spacing-header: var(--alto-header);
+}
+
 html,
 body,
 #root {
+  height: 100%;
   min-height: 100%;
 }
 
@@ -11,4 +53,20 @@ body {
   background: var(--color-fondo);
   color: var(--color-texto);
   font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /* Sin rebote: en una tablet de pie el rebote de iOS se come el pulgar. */
+  overscroll-behavior-y: none;
+}
+
+/* El contenido scrollea; la pagina no. Asi el header y la barra no se mueven. */
+#root {
+  overflow: hidden;
+}
+
+/* Todo lo tocable tiene area de toque y feedback propio, no hover pegajoso. */
+button,
+a,
+select,
+input {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }

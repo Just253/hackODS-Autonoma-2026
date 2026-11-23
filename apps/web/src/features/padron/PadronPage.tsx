@@ -1,8 +1,9 @@
 import { type FormEvent, useEffect, useState } from 'react';
 
 import { personaSchema } from '@hackods/contracts';
-import { BotonGrande } from '@hackods/ui';
+import { BotonGrande, EstadoPantalla } from '@hackods/ui';
 
+import { avisarCambioLocal } from '../../app/sync.js';
 import { OLLA_DEMO, altaPersona, contarPersonas } from '../../data/repositorio.js';
 
 /**
@@ -14,6 +15,10 @@ import { OLLA_DEMO, altaPersona, contarPersonas } from '../../data/repositorio.j
  *
  * Estados: cargando / vacio / formulario invalido / error / pendiente de
  * sincronizar. Ninguno bloquea por red: el alta se guarda en el dispositivo.
+ *
+ * Presentacion movil: la cifra del padron arriba (lo primero que se mira al
+ * llegar), un objetivo por pantalla y el boton grande al final del formulario,
+ * al alcance del pulgar.
  */
 
 interface Formulario {
@@ -48,6 +53,10 @@ function mensajeDeAnioInvalido(): string {
     : 'Año de nacimiento: el contrato no lo acepta.';
 }
 
+/** Clase unica de los campos: 56 px de alto, borde visible al sol. */
+const CAMPO =
+  'min-h-[56px] w-full rounded-oc border border-borde-fuerte bg-superficie px-3 py-2 text-base';
+
 export function PadronPage() {
   const [cantidad, setCantidad] = useState<number | null>(null);
   const [formulario, setFormulario] = useState<Formulario>(FORMULARIO_VACIO);
@@ -76,6 +85,7 @@ export function PadronPage() {
   const enviar = (evento: FormEvent<HTMLFormElement>): void => {
     evento.preventDefault();
     setError(null);
+    setCodigoRecienCreado(null);
 
     const anio = Number(formulario.anioNacimiento);
     if (!ANIO_NACIMIENTO.safeParse(anio).success) {
@@ -96,6 +106,7 @@ export function PadronPage() {
         setCodigoRecienCreado(persona.codigoP);
         setFormulario(FORMULARIO_VACIO);
         setCantidad((n) => (n ?? 0) + 1);
+        avisarCambioLocal();
       })
       .catch(() => {
         setError('No se pudo guardar el alta en el dispositivo. Intentá otra vez.');
@@ -107,61 +118,73 @@ export function PadronPage() {
 
   return (
     <section className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <h2 className="text-2xl font-bold">Padrón</h2>
-        <p className="text-gray-600">
+      <header className="flex flex-col gap-1">
+        <h2 className="text-xl font-bold">Padrón</h2>
+        <p className="text-sm text-texto-suave">
           Se guarda un código P-XXXX. No se piden nombres, documentos ni teléfonos.
         </p>
-      </div>
+      </header>
 
+      {/* La cifra primero: "cuantas personas hay" es la pregunta de entrada. */}
       {cantidad === null ? (
-        <p role="status" className="text-gray-600">
+        <EstadoPantalla estado="cargando">
           Leyendo el padrón guardado en este dispositivo…
-        </p>
+        </EstadoPantalla>
       ) : cantidad === 0 ? (
-        <p className="rounded-lg border border-gray-300 bg-gray-50 p-4">
-          Todavía no hay personas en esta olla. La primera alta queda solo en el dispositivo.
-        </p>
+        <div className="oc-tarjeta flex flex-col gap-1" data-estado="vacio">
+          <span className="oc-estado__etiqueta text-texto-suave">Padrón vacío</span>
+          <p>Todavía no hay personas en esta olla. La primera alta queda solo en el dispositivo.</p>
+        </div>
       ) : (
-        <p className="text-gray-600">
-          {cantidad} {cantidad === 1 ? 'persona registrada' : 'personas registradas'} en este
-          dispositivo.
-        </p>
+        <div className="oc-tarjeta flex items-baseline justify-between gap-3">
+          <p className="text-sm text-texto-suave">
+            {cantidad === 1 ? 'persona registrada' : 'personas registradas'} en este dispositivo
+          </p>
+          <p className="oc-cifra" aria-label={`${cantidad} personas en el padrón`}>
+            {cantidad}
+          </p>
+        </div>
       )}
 
       {codigoRecienCreado !== null ? (
         <div
           role="status"
-          className="rounded-lg border border-gray-300 bg-gray-50 p-4"
+          className="oc-tarjeta border-primario bg-primario-suave"
           data-estado="pendiente-de-sincronizar"
         >
-          <p className="text-lg font-semibold">Alta guardada: {codigoRecienCreado}</p>
-          <p className="text-gray-600">
+          <p className="text-lg font-bold">Alta guardada: {codigoRecienCreado}</p>
+          <p className="text-sm text-texto-suave">
             Pendiente de sincronizar. Anotá el código en el papel del comedor.
           </p>
         </div>
       ) : null}
 
+      {error !== null ? (
+        <div id="error-padron">
+          <EstadoPantalla estado="error">{error}</EstadoPantalla>
+        </div>
+      ) : null}
+
       <form onSubmit={enviar} className="flex flex-col gap-3" aria-label="Alta de persona">
         <label className="flex flex-col gap-1">
-          <span className="font-semibold">Año de nacimiento</span>
+          <span className="text-sm font-semibold">Año de nacimiento</span>
           <input
             name="anioNacimiento"
             inputMode="numeric"
             value={formulario.anioNacimiento}
             onChange={(e) => cambiar('anioNacimiento', e.target.value)}
-            className="rounded border border-gray-400 p-2"
+            className={CAMPO}
             aria-describedby={error === null ? undefined : 'error-padron'}
           />
         </label>
 
         <label className="flex flex-col gap-1">
-          <span className="font-semibold">Sexo</span>
+          <span className="text-sm font-semibold">Sexo</span>
           <select
             name="sexo"
             value={formulario.sexo}
             onChange={(e) => cambiar('sexo', e.target.value as Formulario['sexo'])}
-            className="rounded border border-gray-400 p-2"
+            className={CAMPO}
           >
             <option value="F">F</option>
             <option value="M">M</option>
@@ -170,12 +193,12 @@ export function PadronPage() {
         </label>
 
         <label className="flex flex-col gap-1">
-          <span className="font-semibold">Grupo</span>
+          <span className="text-sm font-semibold">Grupo</span>
           <select
             name="categoria"
             value={formulario.categoria}
             onChange={(e) => cambiar('categoria', e.target.value as Formulario['categoria'])}
-            className="rounded border border-gray-400 p-2"
+            className={CAMPO}
           >
             <option value="adulto">Adulto</option>
             <option value="adulto_mayor">Adulto mayor</option>
@@ -186,33 +209,30 @@ export function PadronPage() {
         </label>
 
         <label className="flex flex-col gap-1">
-          <span className="font-semibold">Alias (opcional, solo en este dispositivo)</span>
+          <span className="text-sm font-semibold">Alias (opcional, solo en este dispositivo)</span>
           <input
             name="alias"
             value={formulario.alias}
             onChange={(e) => cambiar('alias', e.target.value)}
-            className="rounded border border-gray-400 p-2"
+            className={CAMPO}
           />
         </label>
 
         <label className="flex flex-col gap-1">
-          <span className="font-semibold">Nombre local (opcional, solo en este dispositivo)</span>
+          <span className="text-sm font-semibold">
+            Nombre local (opcional, solo en este dispositivo)
+          </span>
           <input
             name="nombreLocal"
             value={formulario.nombreLocal}
             onChange={(e) => cambiar('nombreLocal', e.target.value)}
-            className="rounded border border-gray-400 p-2"
+            className={CAMPO}
           />
         </label>
 
-        {error !== null ? (
-          <p id="error-padron" role="alert" className="font-semibold">
-            {error}
-          </p>
-        ) : null}
-
-        <div>
-          <BotonGrande disabled={guardando}>
+        {/* El boton ocupa el ancho: es LA accion de esta pantalla. */}
+        <div className="sticky bottom-0 -mx-4 bg-fondo/95 px-4 py-3 backdrop-blur">
+          <BotonGrande disabled={guardando} type="submit">
             {guardando ? 'Guardando…' : 'Guardar alta'}
           </BotonGrande>
         </div>
