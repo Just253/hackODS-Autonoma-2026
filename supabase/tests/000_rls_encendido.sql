@@ -7,6 +7,9 @@
 
 begin;
 
+-- pgTAP vive en el schema `extensions` (migracion 20261123155000_pgtap).
+set search_path to extensions, pg_temp, public;
+
 select plan(1);
 
 select is_empty(
