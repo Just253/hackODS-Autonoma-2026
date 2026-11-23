@@ -39,7 +39,12 @@ Modelo y alcance: `docs/DECISIONES.md` D2/D3/D4/D8.
   devuelve deltas negativos. `ServicioDeReceta` es el cierre local (receta, comensales por
   grupo, cocinero, 75 °C, costo y sustituciones) hasta que #62/#65 lo lleven al contrato.
 - **Saldo de despensa derivado**: `saldoDespensa(movimientos)` suma los deltas append-only
-  (incluye `transferencia` y ignora bajas lógicas). El saldo nunca se escribe a mano (D4).
+  (incluye `transferencia` y ignora bajas lógicas) y redondea una vez a dos decimales, la
+  precisión de `movimientos.delta`. El saldo nunca se escribe a mano (D4).
+- **Despensa con vencimiento (#69)**: `stockPorInsumo(insumos, movimientos)` cruza ese saldo con
+  `stockMinimo` (límite inclusivo: igual al mínimo todavía no alerta). `urgenciaVencimiento(fecha,
+  hoy)` devuelve `vencido`, `vence_3`, `vence_7`, `vence_15`, `vigente` o `sin_dato`; sin fecha no
+  se supone que el insumo dure para siempre.
 - **Stub explícito** (`serviciosDelDia`): lanza `NoImplementado`; un stub que devuelve un
   número inventado es un bug.
 - Errores tipados (`OllaCerrada`, `ServicioDuplicado`, `DatoFaltante`, `NoImplementado`, `MenuNoServible`).
