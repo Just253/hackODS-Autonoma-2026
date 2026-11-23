@@ -7,14 +7,28 @@
  * sobre fondo siempre pasa AA/AAA y los bordes son de 1 px solidos, no grises
  * de 1 tono de diferencia.
  *
- * Cada apariencia se define como triplete RGB ("24 103 68") y `tailwind.css`
- * la envuelve con `rgb(var(--color-x))` (`@theme inline`): una sola fuente de
- * verdad y `bg-primario/20` funciona. El CSS a mano de este mismo archivo usa
- * `var(--color-x)` directo, que es un color CSS valido por ser triplete.
+ * Cada apariencia se define como triplete RGB ("24 103 68") y tanto
+ * `tailwind.css` (`@theme inline`) como este archivo lo envuelven con
+ * `rgb(var(--color-x))`: una sola fuente de verdad y `bg-primario/20` funciona.
+ * Un triplete suelto NO es un color CSS: usarlo directo invalida la propiedad y
+ * el borde o el fondo desaparecen sin ningun error visible.
+ *
+ * Las clases de componente (`.oc-tarjeta`, `.oc-boton`, ...) viven en
+ * `@layer components` a proposito: Tailwind 4 pone sus utilidades en
+ * `@layer utilities` y una regla sin capa le gana siempre a cualquier capa, asi
+ * que `.oc-tarjeta { background }` tapaba `bg-primario-suave` y
+ * `border-primario` en el mismo elemento. En `components`, la utilidad manda.
+ *
+ * La primera linea declara el orden completo de capas: este archivo se importa
+ * ANTES de Tailwind, y sin esta declaracion `components` quedaba antes que
+ * `base` (el preflight) y el preflight borraba los bordes de `.oc-campo` y
+ * `.oc-boton` (`border: 0 solid`) y el fondo de los botones.
  *
  * Si algo de fuera necesitara un hex (impresion, PDF), se convierte en la
  * plantilla que lo consume, no se agrega un duplicado aca.
  */
+@layer theme, base, components, utilities;
+
 :root {
   /* --- Superficies ------------------------------------------------------- */
   /* Papel calido: se lee con la luz del mediodia sin encandilar. */
@@ -48,7 +62,7 @@
   --color-error-suave: 251 231 227;
 
   /* --- Sync ------------------------------------------------------------- */
-  /* Pendiente de sincronizar no es error ni alerta: es un estado normal. */
+  /* Guardado en este dispositivo no es error ni alerta: es un estado normal. */
   --color-pendiente: 91 83 66;
   --color-pendiente-suave: 239 232 219;
 
@@ -59,8 +73,14 @@
   /* Navegacion inferior: 64 px de caja + area segura del sistema. */
   --alto-nav: 64px;
   --alto-header: 56px;
-  --ancho-columna: 34rem;
-  --sombra-alta: 0 -1px 0 var(--color-borde);
+  /* Medida de lectura: una columna de texto no pasa de ~70 caracteres. */
+  --ancho-lectura: 34rem;
+  /* Ancho del area de contenido en escritorio (rail + grillas de 2 columnas). */
+  --ancho-contenido: 68rem;
+  /* Rail lateral de escritorio. En px: es cromo de layout, no texto; si
+     creciera con el tamano de letra se comeria la pantalla. */
+  --ancho-rail: 240px;
+  --sombra-alta: 0 -1px 0 rgb(var(--color-borde));
 
   /* Escala tipografica: 18 px por defecto, no 16. Se ajusta con data-texto. */
   --texto-base: 18px;
@@ -85,137 +105,256 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 
-/* --- Botones -------------------------------------------------------------*/
+/* --- Foco ---------------------------------------------------------------- */
 
-.oc-boton {
-  min-height: calc(var(--toque-minimo) + 8px);
-  min-width: var(--toque-minimo);
-  padding: 0.6rem 1.25rem;
-  border-radius: var(--radio);
-  border: 1px solid var(--color-borde-fuerte);
-  background: var(--color-superficie);
-  color: var(--color-texto);
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-  /* Sin hover pegajoso: en tablet se queda "encendido" despues del toque. */
-  -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;
-}
-
-.oc-boton--primario {
-  background: var(--color-primario);
-  border-color: var(--color-primario);
-  color: var(--color-primario-texto);
-}
-
-.oc-boton--primario:active {
-  background: var(--color-primario-fuerte);
-  border-color: var(--color-primario-fuerte);
-}
-
-.oc-boton--secundario {
-  background: var(--color-superficie);
-  color: var(--color-texto);
-}
-
-.oc-boton:disabled {
-  cursor: not-allowed;
-  opacity: 0.55;
-}
-
-.oc-boton:focus-visible {
-  outline: 3px solid var(--color-primario);
+/*
+ * Un solo anillo de foco en toda la app (enlaces de navegacion incluidos). Va
+ * sin capa a proposito: es accesibilidad, no una utilidad que se pueda apagar
+ * por accidente con `outline-none`.
+ */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid rgb(var(--color-primario));
   outline-offset: 2px;
 }
 
-/* --- Estados -------------------------------------------------------------
- * Los cuatro estados de pantalla se distinguen por TEXTO y por COLOR. El color
- * solo no alcanza: daltonismo, sol y pantalla rayada. Cada bloque lleva una
- * etiqueta de palabra ("Cargando", "Error", "Sin conexion") y su borde.
- */
+@layer components {
+  /* --- Botones -----------------------------------------------------------*/
 
-.oc-estado {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  border-radius: var(--radio);
-  border: 1px solid var(--color-borde);
-  border-left: 6px solid var(--color-borde);
-  background: var(--color-superficie);
-  padding: 0.75rem 1rem;
-}
+  .oc-boton {
+    min-height: calc(var(--toque-minimo) + 8px);
+    min-width: var(--toque-minimo);
+    padding: 0.6rem 1.25rem;
+    border-radius: var(--radio);
+    border: 1px solid rgb(var(--color-borde-fuerte));
+    background: rgb(var(--color-superficie));
+    color: rgb(var(--color-texto));
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    /* Sin hover pegajoso: en tablet se queda "encendido" despues del toque. */
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
 
-.oc-estado__etiqueta {
-  font-size: 0.8125rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-}
+  .oc-boton--primario {
+    background: rgb(var(--color-primario));
+    border-color: rgb(var(--color-primario));
+    color: rgb(var(--color-primario-texto));
+  }
 
-.oc-estado[data-estado='cargando'] {
-  border-left-color: var(--color-primario);
-  background: var(--color-primario-suave);
-}
-.oc-estado[data-estado='cargando'] .oc-estado__etiqueta {
-  color: var(--color-primario-fuerte);
-}
+  .oc-boton--primario:active {
+    background: rgb(var(--color-primario-fuerte));
+    border-color: rgb(var(--color-primario-fuerte));
+  }
 
-.oc-estado[data-estado='sin-conexion'] {
-  border-left-color: var(--color-pendiente);
-  background: var(--color-pendiente-suave);
-}
-.oc-estado[data-estado='sin-conexion'] .oc-estado__etiqueta {
-  color: var(--color-pendiente);
-}
+  .oc-boton--secundario {
+    background: rgb(var(--color-superficie));
+    color: rgb(var(--color-texto));
+  }
 
-.oc-estado[data-estado='error'] {
-  border-left-color: var(--color-error);
-  background: var(--color-error-suave);
-}
-.oc-estado[data-estado='error'] .oc-estado__etiqueta {
-  color: var(--color-error);
-}
+  /*
+   * Deshabilitado se ve como "no disponible", no como una accion apagada: un
+   * primario al 55 % de opacidad sigue pareciendo el boton que hay que tocar.
+   * Fondo tenue + texto suave + borde normal, sin cambiar el tamano.
+   */
+  .oc-boton:disabled {
+    cursor: not-allowed;
+    opacity: 1;
+    background: rgb(var(--color-tenue));
+    border-color: rgb(var(--color-borde));
+    color: rgb(var(--color-texto-suave));
+  }
 
-.oc-estado[data-estado='alerta'] {
-  border-left-color: var(--color-alerta);
-  background: var(--color-alerta-suave);
-}
-.oc-estado[data-estado='alerta'] .oc-estado__etiqueta {
-  color: var(--color-alerta);
-}
+  .oc-boton:focus-visible {
+    outline: 3px solid rgb(var(--color-primario));
+    outline-offset: 2px;
+  }
 
-/* --- Piezas de pantalla --------------------------------------------------*/
+  /*
+   * Hover solo donde hay puntero fino: en la tablet el toque dejaba el estilo
+   * "encendido" y parecia un estado. Tailwind 4 ya envuelve `hover:` igual,
+   * esto cubre el CSS a mano.
+   */
+  @media (hover: hover) and (pointer: fine) {
+    .oc-boton:hover {
+      background: rgb(var(--color-tenue));
+    }
 
-/* Tarjeta base: una sola forma, con borde visible al sol. */
-.oc-tarjeta {
-  border-radius: var(--radio);
-  border: 1px solid var(--color-borde);
-  background: var(--color-superficie);
-  padding: 1rem;
-}
+    .oc-boton--primario:hover {
+      background: rgb(var(--color-primario-fuerte));
+      border-color: rgb(var(--color-primario-fuerte));
+    }
+  }
 
-/* La cifra que manda en la pantalla: alineada a la derecha, tabular. */
-.oc-cifra {
-  font-size: var(--texto-cifra);
-  font-weight: 800;
-  line-height: 1.05;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.01em;
-}
+  /* --- Campos ------------------------------------------------------------
+   * Misma caja en el padron y en el servicio. 56 px: se toca de pie, con una
+   * mano ocupada. El borde es `borde-fuerte` porque el suave desaparece al sol.
+   */
 
-/* "Pendiente de sincronizar": se lee como estado, no como error. */
-.oc-pendiente {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  border-radius: 999px;
-  border: 1px solid var(--color-pendiente);
-  background: var(--color-pendiente-suave);
-  color: var(--color-pendiente);
-  padding: 0.125rem 0.625rem;
-  font-size: 0.8125rem;
-  font-weight: 700;
+  .oc-campo {
+    width: 100%;
+    min-height: 56px;
+    border-radius: var(--radio);
+    border: 1px solid rgb(var(--color-borde-fuerte));
+    background: rgb(var(--color-superficie));
+    color: rgb(var(--color-texto));
+    padding: 0.5rem 0.75rem;
+    font: inherit;
+  }
+
+  .oc-campo::placeholder {
+    color: rgb(var(--color-texto-suave));
+  }
+
+  /* --- Tablas ------------------------------------------------------------
+   * Misma tabla en servicio y en reporte. En el telefono se apila con scroll
+   * horizontal; en escritorio gana densidad (filas mas bajas, numeros a la
+   * derecha) sin cambiar el marcado.
+   */
+
+  .oc-tabla {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .oc-tabla th,
+  .oc-tabla td {
+    padding: 0.5rem 0.625rem;
+    border-bottom: 1px solid rgb(var(--color-borde));
+    vertical-align: baseline;
+  }
+
+  .oc-tabla thead th {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: rgb(var(--color-texto-suave));
+    border-bottom: 2px solid rgb(var(--color-borde-fuerte));
+    white-space: nowrap;
+  }
+
+  .oc-tabla tbody th {
+    font-weight: 600;
+  }
+
+  /* Columna de cifras: se compara de arriba a abajo, no se lee. */
+  .oc-tabla .oc-num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .oc-tabla tbody tr:nth-child(even) {
+    background: rgb(var(--color-tenue));
+  }
+
+  @media (min-width: 64rem) {
+    .oc-tabla th,
+    .oc-tabla td {
+      padding: 0.375rem 0.75rem;
+    }
+
+    .oc-tabla {
+      font-size: 0.9375rem;
+    }
+  }
+
+  /* --- Estados -----------------------------------------------------------
+   * Los cuatro estados de pantalla se distinguen por TEXTO y por COLOR. El
+   * color solo no alcanza: daltonismo, sol y pantalla rayada. Cada bloque lleva
+   * una etiqueta de palabra ("Cargando", "Error", "Sin conexion") y su borde.
+   */
+
+  .oc-estado {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    border-radius: var(--radio);
+    border: 1px solid rgb(var(--color-borde));
+    border-left: 6px solid rgb(var(--color-borde));
+    background: rgb(var(--color-superficie));
+    padding: 0.75rem 1rem;
+  }
+
+  .oc-estado__etiqueta {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  .oc-estado[data-estado='cargando'] {
+    border-left-color: rgb(var(--color-primario));
+    background: rgb(var(--color-primario-suave));
+  }
+  .oc-estado[data-estado='cargando'] .oc-estado__etiqueta {
+    color: rgb(var(--color-primario-fuerte));
+  }
+
+  .oc-estado[data-estado='sin-conexion'] {
+    border-left-color: rgb(var(--color-pendiente));
+    background: rgb(var(--color-pendiente-suave));
+  }
+  .oc-estado[data-estado='sin-conexion'] .oc-estado__etiqueta {
+    color: rgb(var(--color-pendiente));
+  }
+
+  .oc-estado[data-estado='error'] {
+    border-left-color: rgb(var(--color-error));
+    background: rgb(var(--color-error-suave));
+  }
+  .oc-estado[data-estado='error'] .oc-estado__etiqueta {
+    color: rgb(var(--color-error));
+  }
+
+  .oc-estado[data-estado='alerta'] {
+    border-left-color: rgb(var(--color-alerta));
+    background: rgb(var(--color-alerta-suave));
+  }
+  .oc-estado[data-estado='alerta'] .oc-estado__etiqueta {
+    color: rgb(var(--color-alerta));
+  }
+
+  /* --- Piezas de pantalla ------------------------------------------------*/
+
+  /* Tarjeta base: una sola forma, con borde visible al sol. */
+  .oc-tarjeta {
+    border-radius: var(--radio);
+    border: 1px solid rgb(var(--color-borde));
+    background: rgb(var(--color-superficie));
+    padding: 1rem;
+  }
+
+  /* La cifra que manda en la pantalla: alineada a la izquierda, tabular. */
+  .oc-cifra {
+    font-size: var(--texto-cifra);
+    font-weight: 800;
+    line-height: 1.05;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+
+  /* "Guardado en esta tablet": se lee como estado, no como error. */
+  .oc-pendiente {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    border-radius: 999px;
+    border: 1px solid rgb(var(--color-pendiente));
+    background: rgb(var(--color-pendiente-suave));
+    color: rgb(var(--color-pendiente));
+    padding: 0.125rem 0.625rem;
+    font-size: 0.8125rem;
+    font-weight: 700;
+  }
 }
 
 @media print {

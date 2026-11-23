@@ -50,8 +50,8 @@ body,
 
 body {
   margin: 0;
-  background: var(--color-fondo);
-  color: var(--color-texto);
+  background: rgb(var(--color-fondo));
+  color: rgb(var(--color-texto));
   font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
   /* Sin rebote: en una tablet de pie el rebote de iOS se come el pulgar. */
   overscroll-behavior-y: none;
