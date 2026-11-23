@@ -19,6 +19,9 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          # El chequeo de docs compara contra la rama base: necesita historia, no un clon superficial.
+          fetch-depth: 0
 
       # La version de pnpm sale de `packageManager` en package.json.
       - uses: pnpm/action-setup@v4
@@ -35,3 +38,9 @@ jobs:
       # entorno, identificadores, tipos, tests, build, términos muertos, links y secretos.
       - name: Verificar
         run: pnpm verificar
+
+      # ¿El cambio vino con su doc? Tabla en docs/PROCESO-DOCS.md §2.
+      - name: Documentación del cambio
+        run: pnpm docs:chequear
+        env:
+          BASE_REF: origin/${{ github.base_ref || 'main' }}

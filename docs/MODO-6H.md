@@ -27,6 +27,9 @@
    en `docs/ids/REGISTRO.md` o en el issue; no con un ADR.
 7. **Si una tarea no se termina en 45 minutos, se corta y se anota.** Un requisito de la demo a medias
    es peor que uno que no está: el jurado ve lo que se muestra, no lo que hay en `main`.
+8. **`pnpm hooks:install` una vez por máquina.** El pre-commit ataja ids, términos retirados y
+   secretos; el pre-push corre `pnpm verificar` y `pnpm docs:chequear`. Sin eso, las reglas existen
+   sólo en el papel.
 
 ## 2. Reparto de las 6 horas
 

@@ -15,6 +15,7 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
+import { pareceSecreto } from './patrones-secretos.mjs';
 
 const RAIZ = resolve(import.meta.dirname, '..');
 const RAPIDO = process.argv.includes('--rapido');
@@ -111,19 +112,14 @@ paso(
 );
 
 // 6. Términos muertos ----------------------------------------------------------
-// Palabras que ya se retiraron de una decisión y no deben volver al corpus vigente.
-const MUERTOS = [
-  'calcularRacion',
-  'LWW',
-  'UUIDv4',
-  'personas.nombre',
-  'ProveedorRequerimientos',
-];
+// La lista vive en scripts/terminos-muertos.json: es la misma que usa el pre-commit.
+const MUERTOS = JSON.parse(readFileSync(join(RAIZ, 'scripts/terminos-muertos.json'), 'utf8')).terminos;
 paso('términos muertos', () => {
   const hallados = [];
   for (const ruta of archivos(RAIZ, (n) => /\.(md|ts|tsx|mjs|json|ya?ml)$/.test(n))) {
     const rel = relative(RAIZ, ruta).replaceAll('\\', '/');
     if (rel === 'scripts/verificar.mjs') continue;
+    if (rel === 'scripts/terminos-muertos.json') continue;
     if (rel === 'docs/ids/REGISTRO.md') continue;
     const texto = readFileSync(ruta, 'utf8');
     for (const muerto of MUERTOS) {
@@ -166,10 +162,9 @@ paso('secretos', () => {
   } catch {
     return 'sin origin/main: no se revisó (push a main directo)';
   }
-  const patron = /(api[_-]?key|secret|token|passw|BEGIN .*PRIVATE)/i;
   const sospechosas = diff
     .split('\n')
-    .filter((l) => l.startsWith('+') && !l.startsWith('+++') && patron.test(l));
+    .filter((l) => l.startsWith('+') && !l.startsWith('+++') && pareceSecreto(l));
   if (sospechosas.length) throw new Error(sospechosas.slice(0, 5).join('\n'));
   return 'diff limpio';
 });

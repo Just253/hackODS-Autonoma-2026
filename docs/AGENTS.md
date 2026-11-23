@@ -8,6 +8,7 @@ docs/
   PROTOCOL.md          claims, labels, ramas, gate. Único dueño de esa materia
   FUENTES.md           tabla tema → archivo canónico → commit o archivo:línea
   MODO-6H.md           reglas de la ventana de 6 horas: manda sobre PROTOCOL.md
+  PROCESO-DOCS.md      qué doc va con qué cambio y en qué orden (contrato primero)
   ids/REGISTRO.md      el único que emite identificadores (DEC/PRB/SPK)
   problemas/           un archivo por problema, por categoría
   decisiones/          decisiones nuevas (DEC), una por archivo

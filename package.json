@@ -20,6 +20,8 @@
     "ids:nuevo": "node scripts/nuevo-id.mjs",
     "ids:chequear": "node scripts/chequear-ids.mjs",
     "verificar": "node scripts/verificar.mjs",
+    "docs:chequear": "node scripts/chequear-docs.mjs",
+    "hooks:install": "node scripts/instalar-hooks.mjs",
     "demo": "pnpm --filter @hackods/web build && pnpm --filter @hackods/web preview"
   },
   "devDependencies": {

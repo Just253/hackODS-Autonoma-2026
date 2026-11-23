@@ -1,0 +1,4 @@
+#!/bin/sh
+# pre-commit — rápido, sólo lo que se está commiteando.
+# Instalar con: pnpm hooks:install
+node scripts/chequeo-rapido.mjs || exit 1

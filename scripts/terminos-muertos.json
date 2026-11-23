@@ -1,0 +1,10 @@
+{
+  "_comentario": "Términos que una decisión retiró y no deben volver al corpus vigente. Única fuente: la usan scripts/verificar.mjs y scripts/chequeo-rapido.mjs. Si agregás uno, agregá también el DEC que lo retira en docs/DECISIONES.md.",
+  "terminos": [
+    "calcularRacion",
+    "LWW",
+    "UUIDv4",
+    "personas.nombre",
+    "ProveedorRequerimientos"
+  ]
+}

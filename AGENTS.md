@@ -88,6 +88,8 @@ pnpm build                       # build de todos los paquetes + app
 pnpm test                        # Vitest, todos los paquetes (turbo run test)
 pnpm typecheck                   # TypeScript en todos los paquetes
 pnpm verificar                   # la puerta completa (lo mismo que CI); --rapido saltea el build
+pnpm docs:chequear               # ¿el diff trae la doc que le corresponde? (PROCESO-DOCS.md §2)
+pnpm hooks:install               # una vez por máquina: activa .githooks (pre-commit y pre-push)
 pnpm --filter @hackods/nutrition test   # un paquete concreto
 pnpm db:start                    # Postgres + API local (Docker)
 pnpm db:reset                    # migraciones + seed local. SOLO local
@@ -127,6 +129,9 @@ Nunca `npm install`, `yarn`, `bun install` ni `pnpm add` en un paquete que no es
 10. **El chat es rumor.** Si no está en GitHub, no pasó.
 11. **Nada se pushea sin `pnpm verificar` en verde.** Es la misma puerta que CI: entorno, ids, tipos,
     tests, build, términos muertos, links y secretos. Verde local = verde remoto.
+12. **Cada cambio trae su doc en el mismo PR.** Contrato primero, interior junto
+    (`docs/PROCESO-DOCS.md`). `pnpm docs:chequear` lo verifica sobre el diff; el hook de pre-commit
+    ataja ids, términos retirados y secretos. Una sola vez por máquina: `pnpm hooks:install`.
 
 ---
 
@@ -230,6 +235,7 @@ Si falta un ítem, no se pide review. El revisor **checkoutea y corre**; no lee 
 | ¿Cómo se arman fixtures y tests? | `.opencode/skills/testing-fixtures/` |
 | ¿Cómo delego y qué le exijo al subagente? | `docs/plantilla-delegacion.md` (6 campos) + `docs/delegacion.md` §7–§9 (resumen de 12 líneas, anti-reinvención, `pnpm verificar`) |
 | ¿Cómo cito una decisión, abro un problema o un spike? | `docs/ids/REGISTRO.md` + `.opencode/commands/problema.md` |
+| ¿Qué doc va con este cambio y en qué orden? | `docs/PROCESO-DOCS.md` (`pnpm docs:chequear`, `pnpm hooks:install`) |
 
 **Fuente de verdad:** el repo (`main` mergeado) para el código y las decisiones; los issues y PRs
 para el trabajo; el chat para nada.

@@ -1,0 +1,5 @@
+#!/bin/sh
+# pre-push — la puerta completa, igual que CI.
+# Instalar con: pnpm hooks:install
+pnpm verificar || exit 1
+pnpm docs:chequear || exit 1

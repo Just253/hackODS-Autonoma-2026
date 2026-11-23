@@ -20,6 +20,7 @@
 | Estado real de la protección de `main` | `docs/ORQUESTACION.md` §8 + `AGENTS.md` §8.1 | `ORQUESTACION.md:217-233` |
 | Backlog y números de issue | GitHub Issues | `gh issue list` |
 | Identificadores (DEC/PRB/SPK) y problemas abiertos | `docs/ids/REGISTRO.md` + `docs/problemas/` | `pnpm ids:chequear` |
+| Orden doc/implementación y hooks de git | `docs/PROCESO-DOCS.md` | §2 (tabla) y §4 (hooks) |
 | Demo (duración y guion) | `docs/DECISIONES.md` D6 | `DECISIONES.md:48-52` |
 | Reglas operativas por carpeta | `AGENTS.md` raíz + `AGENTS.md` de cada paquete | §2–§9 |
 | Jerarquía documental | `docs/AGENTS.md` | encabezado |
