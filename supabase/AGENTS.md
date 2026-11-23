@@ -22,6 +22,9 @@ supabase/
 - Políticas RLS y funciones `security definer` mínimas (`app.mis_ollas`, `app.mi_rol`).
 - Edge Functions de sync (`docs/contracts/sync.md`): lote ≤ 100, `idempotency_key = event_uuid`,
   orden `(lamport, device_id)`. **Sin `service_role`** en la función: RLS con el JWT del cliente.
+- Edge Function `enroll` (`docs/adr/0008-enrolamiento.md`): **única** excepción a lo anterior.
+  Es pre-auth: crea `auth.users` y llama `app.enroll()` (SQL, `security definer`, sin
+  `EXECUTE` para `anon`/`authenticated`) con `service_role`, que vive solo en el servidor.
 - Seed local reproducible y enteramente ficticio.
 
 ## Qué NO es de este paquete
