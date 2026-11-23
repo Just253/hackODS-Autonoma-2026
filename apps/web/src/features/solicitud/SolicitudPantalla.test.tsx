@@ -21,7 +21,7 @@ describe('SolicitudPantalla', () => {
     montar();
     fireEvent.click(screen.getByRole('button', { name: /Enviar/i }));
     expect(screen.getByText(/Enviada/i)).toBeInTheDocument();
-    expect(screen.queryByText(/transferidos/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/entregó/i)).not.toBeInTheDocument();
   });
 
   it('aprobar desde enviada deja Aprobada, sin movimiento', () => {
@@ -29,7 +29,7 @@ describe('SolicitudPantalla', () => {
     fireEvent.click(screen.getByRole('button', { name: /Enviar/i }));
     fireEvent.click(screen.getByRole('button', { name: /Aprobar/i }));
     expect(screen.getByText(/Aprobada/i)).toBeInTheDocument();
-    expect(screen.queryByText(/transferidos/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/entregó/i)).not.toBeInTheDocument();
   });
 
   it('entregar tras aprobar muestra el par de transferencia (no mueve stock sola)', () => {
@@ -38,10 +38,9 @@ describe('SolicitudPantalla', () => {
     fireEvent.click(screen.getByRole('button', { name: /Aprobar/i }));
     fireEvent.click(screen.getByRole('button', { name: /Entregar/i }));
     expect(screen.getByText(/Entregada/i)).toBeInTheDocument();
-    // Origen negativo y destino positivo: −20000 y +20000 en pantalla.
-    expect(screen.getByText(/transferidos/i)).toBeInTheDocument();
-    expect(screen.getByText(/-20000/)).toBeInTheDocument();
-    expect(screen.getByText(/\+20000/)).toBeInTheDocument();
+    // Las dos ollas por su título público, con la cantidad: quién entregó y quién recibió.
+    expect(screen.getByText(/Olla Norte entregó 20 kg/)).toBeInTheDocument();
+    expect(screen.getByText(/Olla Centro recibió 20 kg/)).toBeInTheDocument();
   });
 
   it('no se puede aprobar sin enviar: el boton esta deshabilitado', () => {

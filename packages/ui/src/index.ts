@@ -1,2 +1,10 @@
 export { BotonGrande } from './BotonGrande.js';
 export type { BotonGrandeProps } from './BotonGrande.js';
+export { CifraDestacada } from './CifraDestacada.js';
+export type { CifraDestacadaProps } from './CifraDestacada.js';
+export { EncabezadoPantalla } from './EncabezadoPantalla.js';
+export type { EncabezadoPantallaProps } from './EncabezadoPantalla.js';
+export { EstadoPantalla } from './EstadoPantalla.js';
+export type { Estado, EstadoPantallaProps } from './EstadoPantalla.js';
+export { Icono } from './Icono.js';
+export type { IconoProps, NombreIcono } from './Icono.js';

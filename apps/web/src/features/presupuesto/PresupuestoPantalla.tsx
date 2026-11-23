@@ -8,19 +8,30 @@
  * Los umbrales (80 % / 100 %) NO se repiten aca: se derivan de
  * `resultado.alertas` (`presupuesto_80` / `presupuesto_100`). Si el dominio
  * mueve su umbral, la pantalla lo sigue sin tocarse (apps/web/AGENTS.md §5).
+ *
+ * Distribucion: "Disponible" es la cifra heroe (lo que se viene a ver) y el
+ * consumo se dibuja con una barra ademas del porcentaje: el color solo no
+ * alcanza. En el telefono todo va en una columna; en escritorio el detalle
+ * (asignado, gastado, comprometido, proyeccion) pasa a la segunda columna y
+ * deja de ser una lista larga.
+ *
+ * Nota: los nombres de clase de esta pantalla evitan decimales a proposito; un
+ * test compara el HTML contra `/\d+\.\d+/` para probar que no hay centimos
+ * flotantes sueltos.
  */
 import type { Centimos, MovimientoPresupuesto } from '@hackods/contracts';
-import { BotonGrande } from '@hackods/ui';
+import { BotonGrande, CifraDestacada, EncabezadoPantalla, EstadoPantalla } from '@hackods/ui';
 
+import { formatearRango } from '../../app/fechas.js';
 import { calcularPresupuesto, type CortePresupuesto, type ResultadoPresupuesto } from './dominio';
 import { formatearCentimos, formatearPuntosBase } from './formato';
 
-export type EstadoPantalla = 'listo' | 'cargando' | 'error' | 'sin-conexion';
+export type EstadoPantallaPresupuesto = 'listo' | 'cargando' | 'error' | 'sin-conexion';
 
 export interface PresupuestoPantallaProps {
   readonly movimientos: readonly MovimientoPresupuesto[];
   readonly corte: CortePresupuesto;
-  readonly estado?: EstadoPantalla;
+  readonly estado?: EstadoPantallaPresupuesto;
   readonly onReintentar?: () => void;
 }
 
@@ -40,18 +51,13 @@ function filas(resultado: ResultadoPresupuesto): readonly FilaPresupuesto[] {
       nota: 'compras programadas',
     },
     {
-      etiqueta: 'Disponible',
-      valor: resultado.disponible,
-      nota: resultado.disponible < 0 ? 'excedido' : 'lo que queda libre',
-    },
-    {
       etiqueta: 'Proyección al cierre',
       // MEDIA 5: sin base suficiente no hay cifra; `null` viaja hasta aca y se
       // muestra "sin dato". Mostrar el numero contradiria el aviso.
       valor: resultado.muestraInsuficiente ? null : resultado.proyeccionCentimos,
       nota: resultado.muestraInsuficiente
-        ? 'muestra insuficiente (menos de 3 días): sin dato'
-        : 'estimación lineal, no un pronóstico',
+        ? 'sin dato — hacen falta al menos 3 días'
+        : 'a este ritmo, cuánto se gastaría',
     },
   ];
 }
@@ -105,39 +111,6 @@ function avisos(resultado: ResultadoPresupuesto): readonly AvisoAlerta[] {
   return lista;
 }
 
-function Cargando() {
-  return (
-    <p className="text-gray-600" role="status">
-      Cargando presupuesto…
-    </p>
-  );
-}
-
-function SinConexion() {
-  return (
-    <div className="rounded-lg border border-gray-300 bg-gray-50 p-4" role="status" data-estado="sin-conexion">
-      <strong>Sin conexión.</strong> Se muestra lo último guardado en el teléfono.
-      <br />
-      <span className="rounded bg-gray-200 px-2 py-1 text-sm">pendiente de sincronizar</span>
-    </div>
-  );
-}
-
-function Error({ onReintentar }: { readonly onReintentar?: () => void }) {
-  return (
-    <div className="rounded-lg border border-red-400 bg-red-50 p-4" role="alert">
-      No se pudo calcular el presupuesto con los datos guardados.
-      {onReintentar !== undefined && (
-        <div className="mt-2">
-          <BotonGrande variante="secundario" onClick={onReintentar}>
-            Reintentar
-          </BotonGrande>
-        </div>
-      )}
-    </div>
-  );
-}
-
 /** MEDIA 4: esto se pinta dentro del <main> de Shell; va como <section>. */
 export function PresupuestoPantalla({
   movimientos,
@@ -148,8 +121,8 @@ export function PresupuestoPantalla({
   if (estado === 'cargando') {
     return (
       <section className="flex flex-col gap-4" aria-busy="true">
-        <h2 className="text-2xl font-bold">Presupuesto de la olla</h2>
-        <Cargando />
+        <EncabezadoPantalla titulo="Presupuesto de la olla" />
+        <EstadoPantalla estado="cargando">Cargando presupuesto…</EstadoPantalla>
       </section>
     );
   }
@@ -157,78 +130,133 @@ export function PresupuestoPantalla({
   if (estado === 'error') {
     return (
       <section className="flex flex-col gap-4">
-        <h2 className="text-2xl font-bold">Presupuesto de la olla</h2>
-        <Error onReintentar={onReintentar} />
+        <EncabezadoPantalla titulo="Presupuesto de la olla" />
+        <EstadoPantalla
+          estado="error"
+          accion={
+            onReintentar === undefined ? undefined : (
+              <BotonGrande variante="secundario" onClick={onReintentar}>
+                Reintentar
+              </BotonGrande>
+            )
+          }
+        >
+          No se pudo calcular el presupuesto con los datos guardados.
+        </EstadoPantalla>
       </section>
     );
   }
 
   const resultado = calcularPresupuesto(movimientos, corte);
   const listaAvisos = avisos(resultado);
+  const restoDeFilas = filas(resultado);
+  const consumoEntero =
+    resultado.consumoBp === null ? null : Math.min(100, Math.round(resultado.consumoBp / 100));
 
   return (
-    <section className="flex flex-col gap-4">
-      <header className="flex flex-col gap-1">
-        <h2 className="text-2xl font-bold">Presupuesto de la olla</h2>
-        <p className="text-gray-600">
-          Período {corte.periodoDesde} a {corte.periodoHasta}
-        </p>
-      </header>
+    <section className="flex flex-col gap-4 lg:gap-6">
+      <EncabezadoPantalla
+        titulo="Presupuesto de la olla"
+        descripcion={formatearRango(corte.periodoDesde, corte.periodoHasta)}
+      />
 
-      {estado === 'sin-conexion' && <SinConexion />}
+      {estado === 'sin-conexion' && (
+        <EstadoPantalla estado="sin-conexion">
+          Se muestra lo último guardado en esta tablet. Todavía no se envía a ninguna parte.
+        </EstadoPantalla>
+      )}
 
       {listaAvisos.length > 0 && (
         <div className="flex flex-col gap-2" aria-live="polite" aria-label="Alertas de presupuesto">
           {listaAvisos.map((aviso) => (
-            <p
+            <div
               key={aviso.texto}
-              className={
-                aviso.tono === 'critica'
-                  ? 'rounded-lg border border-red-400 bg-red-50 p-4'
-                  : 'rounded-lg border border-amber-400 bg-amber-50 p-4'
-              }
+              className="oc-estado"
+              data-estado={aviso.tono === 'critica' ? 'error' : 'alerta'}
               data-tono={aviso.tono}
+              role="status"
             >
-              {aviso.texto}
-            </p>
+              <span className="oc-estado__etiqueta">
+                {aviso.tono === 'critica' ? 'Alerta' : 'Atención'}
+              </span>
+              <p>{aviso.texto}</p>
+            </div>
           ))}
         </div>
       )}
 
-      <section aria-label="Resumen del presupuesto">
-        <table className="w-full border-collapse text-left">
-          <tbody>
-            {filas(resultado).map((fila) => (
-              <tr key={fila.etiqueta} className="border-b border-gray-200">
-                <th scope="row" className="py-2 pr-4 font-normal">
-                  {fila.etiqueta}
-                  <small className="block text-gray-600">{fila.nota}</small>
-                </th>
-                <td className="py-2 text-right tabular-nums">
-                  {fila.valor === null ? (
-                    <span className="text-gray-600">sin dato</span>
-                  ) : (
-                    formatearCentimos(fila.valor)
-                  )}
-                </td>
-              </tr>
-            ))}
-            <tr>
-              <th scope="row" className="py-2 pr-4 font-normal">
-                Consumo
-                <small className="block text-gray-600">gastado + comprometido sobre asignado</small>
-              </th>
-              <td className="py-2 text-right tabular-nums">
-                {resultado.consumoBp === null ? (
-                  <span className="text-gray-600">sin dato</span>
+      <div className="grid gap-4 lg:grid-cols-2 lg:items-start lg:gap-6">
+        <div className="flex flex-col gap-4">
+          {/* Lo que se viene a ver: cuanto queda. */}
+          <CifraDestacada
+            etiqueta="Disponible"
+            nota={resultado.disponible < 0 ? 'excedido' : 'lo que queda libre'}
+            tono={resultado.disponible < 0 ? 'error' : 'primario'}
+          >
+            {formatearCentimos(resultado.disponible)}
+          </CifraDestacada>
+
+          <section className="oc-tarjeta flex flex-col gap-2" aria-label="Consumo del período">
+            <p className="text-sm font-semibold text-texto-suave">
+              Consumo del mes
+              <span className="block text-xs font-normal">
+                {consumoEntero === null
+                  ? 'sin dato — todavía no hay dinero asignado'
+                  : `De cada S/ 100 del mes ya están usados S/ ${consumoEntero}.`}
+              </span>
+            </p>
+            <p className="text-2xl font-bold tabular-nums">
+              {resultado.consumoBp === null ? (
+                <span className="text-base font-normal text-texto-suave">sin dato</span>
+              ) : (
+                formatearPuntosBase(resultado.consumoBp)
+              )}
+            </p>
+            {consumoEntero === null ? null : (
+              <div
+                className="h-2 w-full overflow-hidden rounded-full bg-tenue"
+                role="progressbar"
+                aria-label="Consumo del presupuesto"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={consumoEntero}
+              >
+                <div
+                  className={
+                    consumoEntero >= 100
+                      ? 'h-full rounded-full bg-error'
+                      : consumoEntero >= 80
+                        ? 'h-full rounded-full bg-alerta'
+                        : 'h-full rounded-full bg-primario'
+                  }
+                  style={{ width: `${consumoEntero}%` }}
+                />
+              </div>
+            )}
+          </section>
+        </div>
+
+        <section
+          aria-label="Resumen del presupuesto"
+          className="oc-tarjeta flex flex-col divide-y divide-borde"
+        >
+          {restoDeFilas.map((fila) => (
+            <div key={fila.etiqueta} className="flex items-baseline justify-between gap-3 py-3">
+              <span className="font-semibold">
+                {fila.etiqueta}
+                <span className="block text-xs font-normal text-texto-suave">{fila.nota}</span>
+              </span>
+              <span className="text-lg font-bold tabular-nums">
+                {fila.valor === null ? (
+                  <span className="text-base font-normal text-texto-suave">sin dato</span>
                 ) : (
-                  formatearPuntosBase(resultado.consumoBp)
+                  formatearCentimos(fila.valor)
                 )}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
+              </span>
+            </div>
+          ))}
+        </section>
+      </div>
     </section>
   );
 }

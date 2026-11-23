@@ -71,23 +71,29 @@ describe('esqueleto offline', () => {
     fireEvent.change(screen.getByLabelText(/Año de nacimiento/i), {
       target: { value: '1958' },
     });
-    fireEvent.change(screen.getByLabelText(/Alias/i), {
+    fireEvent.change(screen.getByLabelText(/Apodo/i), {
       target: { value: 'Alias ficticio' },
     });
 
     await act(async () => {
-      fireEvent.submit(screen.getByRole('form', { name: /Alta de persona/i }));
+      fireEvent.click(screen.getByRole('button', { name: /Guardar alta/i }));
     });
 
     const avisoAlta = await screen.findByText(/Alta guardada: P-/i);
     const codigoP = avisoAlta.textContent?.match(/P-[A-Z0-9]{4}/)?.[0];
     expect(codigoP).toBe('P-DDDD');
-    expect(screen.getByText(/Pendiente de sincronizar/i)).toBeInTheDocument();
+    expect(screen.getByText(/Guardado en esta tablet/i)).toBeInTheDocument();
 
     // 2. Racion con dos razones.
     unmount();
     montarApp('/servicio');
     await screen.findByText(/raciones registradas/i);
+    // El total sale del padron real: una persona, una racion en cada opcion (no una constante).
+    const totales = screen.getAllByTestId('total-raciones');
+    expect(totales).toHaveLength(2);
+    for (const total of totales) {
+      expect(total).toHaveTextContent('Total de raciones: 1');
+    }
 
     fireEvent.change(screen.getByLabelText(/^Razón 1$/i), {
       target: { value: 'Porción por grupo de edad según el menú firmado' },
@@ -108,7 +114,7 @@ describe('esqueleto offline', () => {
 
     // 4. La racion sigue en pantalla, leida de IndexedDB, sin una sola request.
     expect(
-      await screen.findByText(/Ración registrada · pendiente de sincronizar/i),
+      await screen.findByText(/Ración registrada · guardada en esta tablet/i),
     ).toBeInTheDocument();
     // El codigo aparece en la fila y en el resumen: basta con que este presente.
     expect(screen.getAllByText(codigoP!).length).toBeGreaterThan(0);
@@ -152,6 +158,12 @@ describe('esqueleto offline', () => {
 
     montarApp('/servicio');
     await screen.findByText(/raciones registradas/i);
+    // El total sale del padron real: una persona, una racion en cada opcion (no una constante).
+    const totales = screen.getAllByTestId('total-raciones');
+    expect(totales).toHaveLength(2);
+    for (const total of totales) {
+      expect(total).toHaveTextContent('Total de raciones: 1');
+    }
     fireEvent.change(screen.getByLabelText(/^Razón 1$/i), {
       target: { value: 'Una sola razon no alcanza' },
     });
