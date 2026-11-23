@@ -5,7 +5,7 @@
 **antes** de pasarse.
 
 **Guion:** 1:40 (confirmar la boleta → gastado, disponible, alerta al 80 %)
-**Área:** `web` + `contracts` · **Estado:** sin empezar · Issue: #10
+**Área:** `web` + `contracts` · **Estado:** pantalla en `main` (PR #31) · Issue: #10
 
 ## Precondiciones
 
