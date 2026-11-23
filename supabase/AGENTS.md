@@ -75,3 +75,7 @@ Toda tabla nueva entra **con su política y su test en el mismo PR**. Tabla sin 
 
 Dueño: **B** (`area:api`). Revisa **A**. Cambios de contrato (columnas que consume el cliente) se
 anuncian en el issue y en `packages/contracts` **antes** del código.
+9. pgvector vive en el schema `extensions` (migración `20261123190000`): `dish.embedding
+   extensions.vector(1024)` + `embedding_modelo`, nullable — la dimensión es la del modelo
+   del contrato de clasificación (bge-m3, `docs/contracts/clasificacion.md`). Los embeddings
+   reales los calcula el adaptador de D8; hasta entonces las columnas van `null`.
