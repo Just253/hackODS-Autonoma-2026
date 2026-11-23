@@ -13,6 +13,10 @@
 1. **Un issue, un worktree, una rama, un PR.** No se pushea a `main`.
    `gh issue develop <n> --base main --name <tipo>/<area>-<n>-<slug> --worktree ../wt/<n>-<slug> --checkout`.
    Draft PR en el primer push (`gh pr create --draft`), squash al mergear.
+   **Para actualizar la rama: `git merge origin/main`, nunca `git rebase`.** Rebase reescribe
+   commits: con tres personas en tres máquinas, el force-push siguiente rompe el clon de otro, y
+   reaplica commits que ya entraron con squash. El merge de `main` en la rama no reescribe nada y
+   desaparece al hacer squash.
 2. **Sin claims ni `/preflight`.** El claim es el PR enlazado al issue: `status:claimed` al abrir,
    `status:in-review` al salir de draft. No hay línea `claim/v1` ni `release/v1`.
 3. **Una aprobación, no dos.** Mientras solo una cuenta tenga acceso al repo, mergea el admin con un
