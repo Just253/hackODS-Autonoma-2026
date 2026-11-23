@@ -274,7 +274,7 @@ export function Shell() {
                 onClick={() => void empujar()}
                 className="oc-boton oc-boton--primario hidden lg:inline-flex"
               >
-                Sincronizar ahora (local)
+                Guardar ahora
               </button>
             ) : null}
 
@@ -344,7 +344,7 @@ export function Shell() {
                 onClick={() => void empujar()}
                 className="oc-boton oc-boton--primario w-full"
               >
-                Sincronizar ahora (local)
+                Guardar ahora
               </button>
             </div>
           ) : null}

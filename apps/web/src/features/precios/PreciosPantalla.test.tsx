@@ -89,4 +89,22 @@ describe('PreciosPantalla (lista por producto + detalle)', () => {
     expect(conPapa).toContain('\u221210,00 %');
     expect(conPapa).toContain('S/ 1,62 / kg');
   });
+
+  it('nunca muestra la unidad base cruda: g se dice kg, ml se dice L, unidad se dice unidad', () => {
+    const html = render({
+      productos: [
+        pollo({ id: 'arroz', nombre: 'arroz', unidad: 'g' }),
+        pollo({ id: 'aceite', nombre: 'aceite', unidad: 'ml' }),
+        pollo({ id: 'huevo', nombre: 'huevo', unidad: 'unidad' }),
+      ],
+      productoInicial: 'arroz',
+    });
+
+    expect(html).toContain('/ kg');
+    expect(html).toContain('/ L');
+    expect(html).toContain('/ unidad');
+    // Las unidades base del dominio no se cuelan en la pantalla.
+    expect(html).not.toContain('/ g<');
+    expect(html).not.toContain('/ ml<');
+  });
 });

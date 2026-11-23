@@ -143,7 +143,13 @@ export function PadronPage() {
               etiqueta={cantidad === 1 ? 'Persona registrada' : 'Personas registradas'}
               nota="en este dispositivo"
             >
-              <span aria-label={`${cantidad} personas en el padrón`}>{cantidad}</span>
+              <span
+                aria-label={
+                  cantidad === 1 ? '1 persona en el padrón' : `${cantidad} personas en el padrón`
+                }
+              >
+                {cantidad}
+              </span>
             </CifraDestacada>
           )}
 

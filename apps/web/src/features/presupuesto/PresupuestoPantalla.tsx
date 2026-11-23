@@ -23,6 +23,7 @@ import type { Centimos, MovimientoPresupuesto } from '@hackods/contracts';
 import { BotonGrande, CifraDestacada, EncabezadoPantalla, EstadoPantalla } from '@hackods/ui';
 
 import { formatearRango } from '../../app/fechas.js';
+import { consumoEnPalabras, fraseConsumo } from './consumo';
 import { calcularPresupuesto, type CortePresupuesto, type ResultadoPresupuesto } from './dominio';
 import { formatearCentimos, formatearPuntosBase } from './formato';
 
@@ -150,8 +151,10 @@ export function PresupuestoPantalla({
   const resultado = calcularPresupuesto(movimientos, corte);
   const listaAvisos = avisos(resultado);
   const restoDeFilas = filas(resultado);
-  const consumoEntero =
-    resultado.consumoBp === null ? null : Math.min(100, Math.round(resultado.consumoBp / 100));
+  // El consumo se dice en soles de cada 100, no en un porcentaje crudo; el
+  // numero sale del dominio y el redondeo lo explica `fraseConsumo`.
+  const consumo = consumoEnPalabras(resultado.consumoBp, resultado.asignado);
+  const frase = fraseConsumo(consumo, resultado.asignado);
 
   return (
     <section className="flex flex-col gap-4 lg:gap-6">
@@ -197,39 +200,30 @@ export function PresupuestoPantalla({
           </CifraDestacada>
 
           <section className="oc-tarjeta flex flex-col gap-2" aria-label="Consumo del período">
-            <p className="text-sm font-semibold text-texto-suave">
-              Consumo del mes
-              <span className="block text-xs font-normal">
-                {consumoEntero === null
-                  ? 'sin dato — todavía no hay dinero asignado'
-                  : `De cada S/ 100 del mes ya están usados S/ ${consumoEntero}.`}
-              </span>
+            <p className="text-sm font-semibold text-texto-suave">Consumo del mes</p>
+            {/* La frase en palabras es la cifra: un "84,2 %" obliga a hacer la
+                cuenta mental y no dice nada en soles. */}
+            <p className={consumo === null ? 'text-base text-texto-suave' : 'text-2xl font-bold'}>
+              {frase}
             </p>
-            <p className="text-2xl font-bold tabular-nums">
-              {resultado.consumoBp === null ? (
-                <span className="text-base font-normal text-texto-suave">sin dato</span>
-              ) : (
-                formatearPuntosBase(resultado.consumoBp)
-              )}
-            </p>
-            {consumoEntero === null ? null : (
+            {consumo === null ? null : (
               <div
                 className="h-2 w-full overflow-hidden rounded-full bg-tenue"
                 role="progressbar"
                 aria-label="Consumo del presupuesto"
                 aria-valuemin={0}
                 aria-valuemax={100}
-                aria-valuenow={consumoEntero}
+                aria-valuenow={consumo.deCadaCien}
               >
                 <div
                   className={
-                    consumoEntero >= 100
+                    consumo.deCadaCien >= 100
                       ? 'h-full rounded-full bg-error'
-                      : consumoEntero >= 80
+                      : consumo.deCadaCien >= 80
                         ? 'h-full rounded-full bg-alerta'
                         : 'h-full rounded-full bg-primario'
                   }
-                  style={{ width: `${consumoEntero}%` }}
+                  style={{ width: `${consumo.deCadaCien}%` }}
                 />
               </div>
             )}

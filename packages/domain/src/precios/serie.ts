@@ -82,6 +82,65 @@ function p50Estable(
   return mediana(antiguas.map((observacion) => Number(observacion.valor)));
 }
 
+/** Una fila de `precio_observado` lo justo para agrupar por producto y canal. */
+export interface ObservacionPorProducto {
+  readonly id: string;
+  readonly productoId: string;
+  /** `mayorista` | `minorista` | `no_declarado`: la serie NO los mezcla (D8). */
+  readonly canal: string;
+  readonly valor: Microcentesimos;
+  readonly fecha: string;
+}
+
+export interface MedianaProducto {
+  readonly productoId: string;
+  readonly canal: string;
+  /** `null` si no hay observaciones en ese grupo o bajo el umbral. */
+  readonly mediana: Microcentesimos | null;
+  /** Observaciones usadas (las de la ventana, ya sin outliers). */
+  readonly muestra: number;
+}
+
+/**
+ * Mediana por `(producto, canal)` desde las filas de `precio_observado`.
+ *
+ * El SQL lo puede hacer con `percentile_cont`; este adaptador es la misma cuenta
+ * en TS para la UI offline y los tests. Reutiliza `medianaMovil` (ventana de 7 +
+ * filtro MAD), asi un producto con una sola observacion absurda no mueve la
+ * mediana. Se omite el grupo sin filas: producto sin historia -> no aparece.
+ */
+export function medianaPorProducto(
+  observaciones: readonly ObservacionPorProducto[],
+  opciones: OpcionesSerie = {},
+): readonly MedianaProducto[] {
+  const grupos = new Map<string, ObservacionPorProducto[]>();
+  for (const observacion of observaciones) {
+    const clave = `${observacion.productoId}\u0000${observacion.canal}`;
+    const grupo = grupos.get(clave);
+    if (grupo === undefined) {
+      grupos.set(clave, [observacion]);
+    } else {
+      grupo.push(observacion);
+    }
+  }
+
+  const resultado: MedianaProducto[] = [];
+  for (const grupo of grupos.values()) {
+    const primera = grupo[0];
+    if (primera === undefined) {
+      continue;
+    }
+    const serie = medianaMovil(grupo, opciones);
+    resultado.push({
+      productoId: primera.productoId,
+      canal: primera.canal,
+      mediana: serie.mediana,
+      muestra: serie.evaluadas.filter((o) => !o.excluida).length,
+    });
+  }
+  return resultado;
+}
+
 /**
  * Calcula la mediana movil y marca los outliers de la serie.
  * No ordena por `id`: la fecha manda; el id desempata.

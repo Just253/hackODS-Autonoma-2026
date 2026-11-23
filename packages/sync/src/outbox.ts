@@ -10,7 +10,14 @@ export interface EventoSaliente {
   readonly lamport: number;
   readonly deviceId: string;
   readonly ollaId: string;
-  readonly entidad: 'personas' | 'raciones' | 'movimientos' | 'solicitudes' | 'precios' | 'menus';
+  readonly entidad:
+    | 'personas'
+    | 'raciones'
+    | 'movimientos'
+    | 'solicitudes'
+    | 'precios'
+    | 'menus'
+    | 'consentimiento';
   readonly op: Operacion;
   readonly payload: unknown;
   readonly creadoEn: string;

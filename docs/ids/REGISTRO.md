@@ -68,6 +68,7 @@ Se agregan al final, una fila por ID, con la salida de `pnpm ids:nuevo`.
 | DEC-20261123-1358-8feaf9 | DEC | Perspectivas por rol y divisor de contexto | abierto | 2026-11-23T13:58:32-05:00 | GAMA | `decisiones/DEC-20261123-1358-8feaf9.md` | — |
 | PRB-20261123-1358-ebe937 | PRB | El dataset no alcanza para probar OCR, voz y embeddings | abierto | 2026-11-23T13:58:39-05:00 | GAMA | `problemas/datos/PRB-20261123-1358-ebe937.md` | — |
 | PRB-20261123-1358-160661 | PRB | Operacion del backend sin tipos generados, backups ni retencion | abierto | 2026-11-23T13:58:44-05:00 | GAMA | `problemas/infra/PRB-20261123-1358-160661.md` | — |
+| PRB-20261123-1446-fc257a | PRB | La guardia de copy solo audita el primer render | abierto | 2026-11-23T14:46:30-05:00 | Hans | `problemas/web/PRB-20261123-1446-fc257a.md` | — |
 
 ## 5. Estados
 

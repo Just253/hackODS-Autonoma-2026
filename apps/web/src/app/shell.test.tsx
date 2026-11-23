@@ -64,7 +64,14 @@ describe('cascaron', () => {
     fireEvent.click(mas);
     expect(mas).toHaveAttribute('aria-expanded', 'true');
     const hoja = screen.getByRole('navigation', { name: 'Más secciones' });
-    expect(within(hoja).queryAllByRole('link')).toHaveLength(0);
+    const nombres = within(hoja)
+      .getAllByRole('link')
+      .map((a) => a.textContent ?? '');
+    // Cada enlace concatena `descripcion` + `tarea` sin espacio entre ambos.
+    // La cocinera tiene Recetario y Despensa en "Más"; lo demas es de otros roles.
+    expect(nombres).toHaveLength(2);
+    expect(nombres.some((t) => t.includes('Recetario'))).toBe(true);
+    expect(nombres.some((t) => t.includes('Despensa'))).toBe(true);
   });
 
   it('la hoja "Más" se cierra con Escape y no queda tapando la accion', () => {
@@ -88,7 +95,7 @@ describe('cascaron', () => {
   });
 
   it('el rail de escritorio lista las secciones del rol, en dos grupos', () => {
-    // Organizadora: es el rol con mas destinos (5 de 7).
+    // Organizadora: 8 de 10 destinos (recetas, permisos y despensa incluidos).
     window.localStorage.setItem(
       CLAVE_SESION,
       JSON.stringify({ ...SESION_INICIAL, rol: 'organizadora' }),
@@ -96,13 +103,16 @@ describe('cascaron', () => {
     montarApp('/padron');
 
     const rail = enlacesDelRail();
-    expect(rail).toHaveLength(5);
+    expect(rail).toHaveLength(8);
     expect(rail.map((a) => a.textContent)).toEqual([
       'Padrón',
       'Presupuesto',
       'Precios de insumos',
       'Entre ollas',
       'Reporte entre ollas',
+      'Recetario',
+      'Consentimiento',
+      'Despensa',
     ]);
 
     // El rail agrupa en "Día a día" y "Otros"; "Entre ollas" es ademas una pantalla.
@@ -185,9 +195,9 @@ describe('cascaron', () => {
     );
     // Barra + hoja es exactamente lo que el rol puede ver, sin faltar ni sobrar.
     expect([...barraDeAdmin, ...hojaDeAdmin]).toEqual([...DIARIOS, ...SECUNDARIOS].map((d) => d.a));
-    // Admin: los cuatro diarios y los tres secundarios.
+    // Admin: los cuatro diarios y los seis secundarios (recetas, permisos, despensa).
     expect(barraDeAdmin).toHaveLength(4);
-    expect(hojaDeAdmin).toHaveLength(3);
+    expect(hojaDeAdmin).toHaveLength(6);
     expect(TEXTO_INICIAL).toBe('normal');
   });
 });

@@ -53,6 +53,32 @@ function Hash({ valor }: { readonly valor: string }) {
   );
 }
 
+/**
+ * El error del dominio traducido a lo que se lee en la cocina.
+ *
+ * `MenuNoServible.campo` es un identificador tecnico (`estado`, `sello.hash`,
+ * `porcion.<grupo>`): la cocinera no lo entiende y no deberia tener que
+ * entenderlo. La frase de cocina va afuera, a la vista; el campo y el detalle
+ * siguen existiendo adentro del `<details>`, para quien los busque. Si el campo
+ * es uno que no conocemos, la frase es generica: nunca se filtra un
+ * `porcion.adulto` a la pantalla.
+ */
+export function fraseDeCocina(error: MenuNoServible): string {
+  switch (error.campo) {
+    case 'estado':
+      return 'El menú de hoy no tiene la aprobación de la nutricionista.';
+    case 'sello':
+      return 'El menú de hoy no tiene la firma de la nutricionista.';
+    case 'sello.hash':
+    case 'sello.version':
+      return 'La firma del menú no coincide con lo que se va a servir.';
+    case 'menu':
+      return 'Todavía no se eligió el menú del día.';
+    default:
+      return 'Algo en el menú del día no está bien. Revisa con la nutricionista antes de servir.';
+  }
+}
+
 function TarjetaOpcion({
   opcion,
   menus,
@@ -153,11 +179,16 @@ export function ServicioResumen({ menus, personas }: ServicioResumenProps) {
         <div className="oc-estado" data-estado="alerta" role="alert">
           <span className="oc-estado__etiqueta">Atención</span>
           <p className="font-semibold">El menú de hoy no se puede servir.</p>
+          <p className="font-semibold" data-estado="motivo-en-cocina">
+            {fraseDeCocina(error)}
+          </p>
           <p className="text-sm">
             Porciones y total: <strong>sin dato</strong>.
           </p>
           <details className="text-sm">
-            <summary className="cursor-pointer font-semibold">Ver detalle</summary>
+            <summary className="cursor-pointer font-semibold">
+              Ver detalle para quien revise el menú
+            </summary>
             <p className="pt-1 text-xs">
               Campo: <strong>{error.campo}</strong> — {error.detalle}.
             </p>
@@ -169,7 +200,7 @@ export function ServicioResumen({ menus, personas }: ServicioResumenProps) {
   }
 
   return (
-    <div className="flex flex-col gap-3" aria-label="Servicio del dia">
+    <div className="flex flex-col gap-3" aria-label="Servicio del día">
       {opciones.map((opcion) => (
         <TarjetaOpcion key={opcion.templateId} opcion={opcion} menus={menus} />
       ))}

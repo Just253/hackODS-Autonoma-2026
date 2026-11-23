@@ -6,7 +6,7 @@ Vigente: `docs/DECISIONES.md` (D1, D2, D4, D5).
 ```text
 supabase/
   migrations/    YYYYMMDDHHMMSS_slug.sql — solo forward, nunca se edita una aplicada
-  functions/     edge functions (Deno): sync-push, sync-pull
+  functions/     edge functions (Deno): sync-push, sync-pull, sync-apply
   tests/         pruebas SQL de RLS y de constraints
   seed.sql       seed idempotente + fixtures sintéticos
   config.toml    Supabase local
@@ -15,16 +15,26 @@ supabase/
 ## Qué es de este paquete
 
 - Esquema: `ollas` (tipo `comun | comedor_pca`), `personas` (**solo `codigo_p` P-XXXX**),
-  `insumos`, `precios` (serie con canal/fecha/fuente), familia de menú
+  `insumos`, `precios` (serie por insumo: canal/fecha/fuente), `producto_catalogo` +
+  `producto_alias` (catálogo global, lectura de cliente) y `precio_observado` (serie
+  inmutable por producto/olla, D8; la olla ve solo lo suyo, el agregado de red es RPC
+  k ≥ 10), familia de menú
   (`menu_template`, `menu_day`, `dish`, `ingredient`, `portion`, `menu_constraint`,
   `substitution`, `validation`), `movimientos` (append-only), `servicios`, `solicitudes`,
-  `evento_sync`.
+  `evento_sync`, `captura` + `captura_item` (ingesta de audio/boleta, #83).
 - Políticas RLS y funciones `security definer` mínimas (`app.mis_ollas`, `app.mi_rol`).
 - Edge Functions de sync (`docs/contracts/sync.md`): lote ≤ 100, `idempotency_key = event_uuid`,
   orden `(lamport, device_id)`. **Sin `service_role`** en la función: RLS con el JWT del cliente.
+- Edge Function `ingest` (`docs/contracts/ingesta.md`, ADR-0011): un endpoint, dos ramas
+  (`audio`→`/transcribe`, `boleta`→`/extract`) y `/embed`; compute externo por
+  `COMPUTE_URL`/`COMPUTE_TOKEN` server-side. Binario en bucket privado `capturas`
+  (`capturas/<olla_id>/…`), fila en `captura` bajo RLS.
 - Edge Function `enroll` (`docs/adr/0008-enrolamiento.md`): **única** excepción a lo anterior.
   Es pre-auth: crea `auth.users` y llama `app.enroll()` (SQL, `security definer`, sin
   `EXECUTE` para `anon`/`authenticated`) con `service_role`, que vive solo en el servidor.
+- Materializador (`docs/adr/0009-materializador.md`): `app.aplicar_evento(uuid)` aplica un evento y
+  `app.aplicar_pendientes(limite)` recorre los pendientes; `POST /functions/v1/sync-apply` los
+  dispara. Allowlist entidad × rol, conflicto sin abortar y transacción por evento.
 - Seed local reproducible y enteramente ficticio.
 
 ## Qué NO es de este paquete
@@ -43,7 +53,7 @@ pnpm exec supabase start                 # local, Docker
 pnpm exec supabase db reset              # migraciones + seed. Solo local
 pnpm exec supabase db diff -f <slug>     # genera migración desde el remoto local
 pnpm exec supabase test db               # pruebas SQL (pgTAP)
-pnpm exec supabase functions serve       # sync-push / sync-pull en local
+pnpm exec supabase functions serve       # sync-push / sync-pull / sync-apply en local
 ```
 
 `supabase link`, `db push` y `functions deploy` **no los corre un agente**. Los corre una persona, con
@@ -87,3 +97,7 @@ anuncian en el issue y en `packages/contracts` **antes** del código.
    extensions.vector(1024)` + `embedding_modelo`, nullable — la dimensión es la del modelo
    del contrato de clasificación (bge-m3, `docs/contracts/clasificacion.md`). Los embeddings
    reales los calcula el adaptador de D8; hasta entonces las columnas van `null`.
+10. Máquina de estados de `solicitudes` (migración `20261123191010`): la validan
+    servidor-side el trigger `app.validar_transicion_solicitud` (origen: `borrador→enviada`,
+    `cancelada`; destino: `enviada→aceptada→entregada`; terminales intocables). El trigger es
+    invoker: `authenticated` necesita `USAGE` en el esquema `app` (concedido en la misma migración).

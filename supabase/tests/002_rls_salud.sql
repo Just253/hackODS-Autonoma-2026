@@ -85,6 +85,24 @@ values
   ('P-ZZ20', 'aaaaaaaa-0000-4000-8000-000000000002', 1995, 'F', 'adulto', 'no', 62.80, 160.80, false, 'dev-test-b'),
   ('P-ZZ21', 'aaaaaaaa-0000-4000-8000-000000000002', 1995, 'F', 'adulto', 'no', 62.90, 160.90, false, 'dev-test-b');
 
+-- Consentimiento (#74): el agregado de salud solo cuenta `seguimiento` vigente,
+-- así que el grupo niño de la olla A necesita su firma. Antes alcanzaba el
+-- booleano `consentimiento_seguimiento` de `personas`; ahora la verdad es esta
+-- tabla append-only. Se firma para las 10 personas del grupo visible; los otros
+-- grupos siguen por debajo de k>=10 y se suprimen igual que antes.
+insert into consentimiento (id, olla_id, persona_id, tipo, otorgado, version, firmado_en, revocado_en, device_id, lamport)
+values
+  ('f0000000-0000-4000-8000-000000000001', 'aaaaaaaa-0000-4000-8000-000000000001', 'P-ZZ01', 'seguimiento', true, 1, '2026-11-22T10:00:00Z', null, 'dev-test-a', 1),
+  ('f0000000-0000-4000-8000-000000000002', 'aaaaaaaa-0000-4000-8000-000000000001', 'P-ZZ02', 'seguimiento', true, 1, '2026-11-22T10:01:00Z', null, 'dev-test-a', 2),
+  ('f0000000-0000-4000-8000-000000000003', 'aaaaaaaa-0000-4000-8000-000000000001', 'P-ZZ03', 'seguimiento', true, 1, '2026-11-22T10:02:00Z', null, 'dev-test-a', 3),
+  ('f0000000-0000-4000-8000-000000000004', 'aaaaaaaa-0000-4000-8000-000000000001', 'P-ZZ04', 'seguimiento', true, 1, '2026-11-22T10:03:00Z', null, 'dev-test-a', 4),
+  ('f0000000-0000-4000-8000-000000000005', 'aaaaaaaa-0000-4000-8000-000000000001', 'P-ZZ05', 'seguimiento', true, 1, '2026-11-22T10:04:00Z', null, 'dev-test-a', 5),
+  ('f0000000-0000-4000-8000-000000000006', 'aaaaaaaa-0000-4000-8000-000000000001', 'P-ZZ06', 'seguimiento', true, 1, '2026-11-22T10:05:00Z', null, 'dev-test-a', 6),
+  ('f0000000-0000-4000-8000-000000000007', 'aaaaaaaa-0000-4000-8000-000000000001', 'P-ZZ07', 'seguimiento', true, 1, '2026-11-22T10:06:00Z', null, 'dev-test-a', 7),
+  ('f0000000-0000-4000-8000-000000000008', 'aaaaaaaa-0000-4000-8000-000000000001', 'P-ZZ08', 'seguimiento', true, 1, '2026-11-22T10:07:00Z', null, 'dev-test-a', 8),
+  ('f0000000-0000-4000-8000-000000000009', 'aaaaaaaa-0000-4000-8000-000000000001', 'P-ZZ09', 'seguimiento', true, 1, '2026-11-22T10:08:00Z', null, 'dev-test-a', 9),
+  ('f0000000-0000-4000-8000-000000000010', 'aaaaaaaa-0000-4000-8000-000000000001', 'P-ZZ22', 'seguimiento', true, 1, '2026-11-22T10:09:00Z', null, 'dev-test-a', 10);
+
 -- ---------------------------------------------------------------------------
 -- 1. Privilegios por columna (estables con y sin LOGIN).
 -- ---------------------------------------------------------------------------
