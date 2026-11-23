@@ -3,10 +3,13 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom';
 
 import { Icono } from '@hackods/ui';
 
-import { contarPersonas } from '../data/repositorio.js';
+import { baseDeOlla } from '../data/base.js';
+import { outboxDe } from '../data/outbox-repo.js';
+import { contarPersonas, OLLA_DEMO } from '../data/repositorio.js';
+import { SyncLocal } from '../data/sync-local.js';
 import { SECCIONES, destinoDeRuta, destinosDeBarra, destinosDeMas } from './navegacion.js';
-import { type TamanoTexto, useTexto } from './texto.js';
 import { fijarPersonasGuardadas, useEstadoSync, alAvisarCambio } from './sync.js';
+import { type TamanoTexto, useTexto } from './texto.js';
 
 /**
  * Cascaron de la PWA. Una sola pantalla, dos distribuciones:
@@ -31,16 +34,95 @@ import { fijarPersonasGuardadas, useEstadoSync, alAvisarCambio } from './sync.js
  * `aria-label` para no declarar dos veces el mismo landmark en el lector de
  * pantalla. El conteo del padron alimenta la pastilla del header: el header no
  * abre Dexie por su lado.
+ *
+ * La pastilla dice UNA cosa a la vez, y la mas urgente gana:
+ *
+ * - hay eventos sin enviar → "N cambios pendientes de sincronizar (local)" y
+ *   el boton de sincronizar (en el header de escritorio; en el telefono, en la
+ *   hoja "Más");
+ * - no hay nada pendiente → "En este dispositivo" (lo que se guardo esta aca),
+ *   nunca "Sincronizado" a secas: la demo no tiene servidor.
+ *
+ * El outbox es otra cosa que el conteo del padron: `app/sync.ts` avisa cuando
+ * una pantalla escribe personas; `OutboxDexie` avisa cuando cambia el conjunto
+ * de eventos sin enviar. Ninguno de los dos se sondea con `setInterval`.
  */
+
+/** Textos exactos del badge (issue #19); se exportan para no duplicarlos en tests. */
+export function textoPendientes(cantidad: number): string {
+  const sustantivo = cantidad === 1 ? 'cambio pendiente' : 'cambios pendientes';
+  return `${cantidad} ${sustantivo} de sincronizar (local)`;
+}
+
+/**
+ * Cuenta los pendientes del outbox y los empuja con `SyncLocal`.
+ *
+ * El conteo NO se lee una sola vez: `OutboxDexie` mantiene un espejo en
+ * memoria y avisa a sus oyentes en `encolar`, `marcarEnviado`, `marcarError` y
+ * cuando una transaccion confirma su evento. Asi, dos altas seguidas suben el
+ * badge de 1 a 2 sin recargar, y el push lo baja a cero en el acto.
+ */
+function useOutbox(): {
+  readonly pendientes: number;
+  readonly empujar: () => Promise<void>;
+} {
+  const [pendientes, setPendientes] = useState(0);
+  // Una instancia por montaje: si la base se cerro (tests, recarga) la
+  // proxima lectura toma la conexion nueva y su outbox.
+  const [outbox] = useState(() => outboxDe(baseDeOlla(OLLA_DEMO)));
+
+  useEffect(() => {
+    let vigente = true;
+    const leer = (): void => {
+      if (vigente) setPendientes(outbox.total());
+    };
+    const quitar = outbox.suscribir(leer);
+    // Lo persistido de una sesion anterior. Si la base no abre, el badge se
+    // queda en cero: no se inventa un numero.
+    outbox
+      .cargar()
+      .then(leer)
+      .catch(() => {
+        /* sin base no hay conteo; se muestra el estado inicial */
+      });
+    return () => {
+      vigente = false;
+      quitar();
+    };
+  }, [outbox]);
+
+  const empujar = async (): Promise<void> => {
+    // `marcarEnviado` avisa a los oyentes: no hace falta refrescar a mano.
+    await new SyncLocal(outbox).push();
+  };
+
+  return { pendientes, empujar };
+}
+
 export function Shell() {
   const [abiertoMas, setAbiertoMas] = useState(false);
   const [tamano, cambiarTamano] = useTexto();
   const sync = useEstadoSync();
+  const { pendientes, empujar } = useOutbox();
   const ubicacion = useLocation();
 
   const barra = destinosDeBarra();
   const mas = destinosDeMas();
   const actual = destinoDeRuta(ubicacion.pathname);
+
+  /**
+   * La pastilla del header: una sola, y la verdad mas urgente primero. Con
+   * cambios sin enviar manda el outbox; si ademas no hay red, se dice en el
+   * detalle en vez de esconderlo.
+   */
+  const pildora =
+    pendientes > 0
+      ? {
+          tono: 'pendiente' as const,
+          texto: textoPendientes(pendientes),
+          detalle: sync.tono === 'sin-conexion' ? 'Sin conexión' : null,
+        }
+      : sync;
 
   // Alimenta la pastilla del header sin que el header abra Dexie por su lado.
   // Sin red y sin base, se queda en cero: no se inventa un numero. Se repite
@@ -150,7 +232,24 @@ export function Shell() {
             </p>
           </div>
 
-          <SyncPildora tono={sync.tono} texto={sync.texto} detalle={sync.detalle} />
+          <div className="flex shrink-0 items-center gap-2" data-pendientes={pendientes}>
+            {/*
+              En escritorio el boton vive al lado de la pastilla. En el telefono
+              no entra en el header: la accion esta en la hoja "Más" y el
+              conteo se sigue viendo arriba.
+            */}
+            {pendientes > 0 ? (
+              <button
+                type="button"
+                onClick={() => void empujar()}
+                className="oc-boton oc-boton--primario hidden lg:inline-flex"
+              >
+                Sincronizar ahora (local)
+              </button>
+            ) : null}
+
+            <SyncPildora tono={pildora.tono} texto={pildora.texto} detalle={pildora.detalle} />
+          </div>
         </header>
 
         <main id="contenido" className="min-h-0 flex-1 overflow-y-auto">
@@ -193,6 +292,20 @@ export function Shell() {
               </li>
             ))}
           </ul>
+
+          {/* Accion de sync del telefono: el header muestra el conteo, la accion vive aca. */}
+          {pendientes > 0 ? (
+            <div className="mx-auto w-full max-w-[var(--ancho-lectura)] border-t border-borde py-3">
+              <button
+                type="button"
+                onClick={() => void empujar()}
+                className="oc-boton oc-boton--primario w-full"
+              >
+                Sincronizar ahora (local)
+              </button>
+            </div>
+          ) : null}
+
           <div className="mx-auto flex max-w-[var(--ancho-lectura)] items-end justify-between gap-3 border-t border-borde py-3">
             <ControlTexto tamano={tamano} cambiar={cambiarTamano} />
             <button
@@ -270,25 +383,32 @@ export function Shell() {
   );
 }
 
-/** Pastilla de sync: tono + punto + texto. Nunca solo color. */
+/**
+ * Pastilla de sync: tono + punto + texto. Nunca solo color.
+ *
+ * Es la unica pastilla del header: `pendiente` mientras el outbox tenga
+ * eventos, `local` cuando lo guardado ya esta en este dispositivo y
+ * `sin-conexion` cuando el navegador dice que no hay red.
+ */
 function SyncPildora({
   tono,
   texto,
   detalle,
 }: {
-  readonly tono: 'local' | 'sin-conexion';
+  readonly tono: 'local' | 'sin-conexion' | 'pendiente';
   readonly texto: string;
   readonly detalle: string | null;
 }) {
   return (
     <div
       className={[
-        'flex max-w-[9.5rem] shrink-0 flex-col items-end rounded-full border px-3 py-1 text-right',
-        tono === 'sin-conexion'
-          ? 'border-pendiente bg-pendiente-suave text-pendiente'
-          : 'border-borde bg-fondo text-texto-suave',
+        'flex max-w-[12rem] shrink-0 flex-col items-end rounded-full border px-3 py-1 text-right',
+        tono === 'local'
+          ? 'border-borde bg-fondo text-texto-suave'
+          : 'border-pendiente bg-pendiente-suave text-pendiente',
       ].join(' ')}
       role="status"
+      aria-live="polite"
       data-estado-sync={tono}
     >
       <span className="flex items-center gap-1.5 text-xs font-bold">
@@ -296,7 +416,7 @@ function SyncPildora({
           aria-hidden="true"
           className={[
             'inline-block h-2 w-2 rounded-full',
-            tono === 'sin-conexion' ? 'bg-pendiente' : 'bg-primario',
+            tono === 'local' ? 'bg-primario' : 'bg-pendiente',
           ].join(' ')}
         />
         {texto}

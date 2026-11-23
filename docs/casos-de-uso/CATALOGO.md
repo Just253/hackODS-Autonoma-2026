@@ -121,7 +121,7 @@ resuelve sembrando el menú publicado en `seed.sql`, no construyendo CU-17 antes
 | `hecho` | PR mergeado y issue cerrado. | El merge (keyword de cierre) o el orquestador. |
 | `descartado` | Se decidió no hacerlo: issue cerrado como *not planned* con motivo. | El orquestador o quien tenga el alcance. |
 
-Estado actual de `CU-01`…`CU-09`, verificado contra `main` en `8399ba9` (248 tests):
+Estado actual de `CU-01`…`CU-09`, verificado contra `main` en `bd82ca8` (261 tests):
 
 | CU | estado | ¿sirve hoy? | evidencia |
 |---|---|---|---|
@@ -132,10 +132,10 @@ Estado actual de `CU-01`…`CU-09`, verificado contra `main` en `8399ba9` (248 t
 | CU-05 | `en_curso` | ⚠️ | Pantalla en `main` (#31) sobre fixture; confirmar no mueve el presupuesto (#9). |
 | CU-06 | `hecho` | ✅ | 6 insumos con precio típico y variación desde #61; el detalle sale de `medianaMovil`. Sigue siendo fixture. |
 | CU-07 | `hecho` | ✅ | PR #37 mergeado (`377bff1`): solicitud, agregado sin identidades y reporte. |
-| CU-08 | `en_curso` | ⚠️ | Outbox Dexie de #45 en integración sobre el cascarón nuevo; falta el badge reactivo. |
+| CU-08 | `hecho` | ✅ | Outbox Dexie + badge reactivo desde #67; el sync es **local**, no habla con Supabase. |
 | CU-09 | `en_curso` | ⚠️ | El pie dice «datos simulados / no es un diagnóstico»; faltan «no prescribe dietas» y «no guarda nombres en la nube». |
 
-«Sirve hoy» significa que se puede mostrar sin explicar por qué no anda. Hoy: **4 sí, 5 a medias, 0 no**.
+«Sirve hoy» significa que se puede mostrar sin explicar por qué no anda. Hoy: **5 sí, 4 a medias, 0 no**.
 
 `CU-15` y `CU-16` ya tienen su parte de lectura en `main`: #23 mergeó la RLS de salud y las vistas
 agregadas. Siguen sin archivo propio, así que se quedan en la tabla del catálogo.
