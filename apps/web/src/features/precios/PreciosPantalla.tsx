@@ -5,17 +5,31 @@
  */
 import { BotonGrande } from '@hackods/ui';
 
-import { formatearPuntosBase } from '../presupuesto/formato';
+import { formatearVariacionBp } from '../presupuesto/formato';
 import { formatearPrecioSoles } from './formato-precio';
 import { calcularTendencia, type OpcionesTendencia } from './tendencia';
 import type { ObservacionPrecio } from './dominio';
 
 export type EstadoPantallaPrecio = 'listo' | 'cargando' | 'error' | 'sin-conexion';
 
+/**
+ * TODO(canal-por-observacion) — MEDIA 6, hueco de contrato.
+ *
+ * D8 pide que la serie NO mezcle canales (mayorista/minorista) y que el canal y
+ * la fuente viajen POR OBSERVACIÓN. Hoy no se puede cumplir desde esta capa:
+ *   - `ObservacionPrecio` (packages/domain/src/precios/serie.ts:19-23) solo
+ *     tiene `id`, `valor`, `fecha`. No hay `canal` ni `fuente`.
+ *   - `medianaMovil` (packages/domain/src/precios/serie.ts:89) no agrupa por
+ *     canal: mezcla todo lo que recibe.
+ * `packages/domain` es de otro dueño (area:contracts), así que no se cambia
+ * acá. Mitigación mientras tanto: `fuente` es única y global para la pantalla y
+ * los fixtures demo son de UN solo canal (mayorista), así que no se mezclan.
+ */
 export interface PreciosPantallaProps {
   readonly producto: string;
   /** Unidad base visible, ej. "kg". */
   readonly unidad: string;
+  /** Fuente/canal globales; ver TODO(canal-por-observacion). */
   readonly fuente: string;
   readonly ventanaActual: readonly ObservacionPrecio[];
   readonly ventanaPrevia: readonly ObservacionPrecio[];
@@ -28,19 +42,18 @@ function precioConUnidad(micro: number | null, unidad: string): string {
   return `${formatearPrecioSoles(micro)} / ${unidad}`;
 }
 
-/** Texto de variación: "+12,00 %" o "sin dato". */
+/** Texto de variación: "+12,00 %", "−0,50 %" o "sin dato". */
 function textoVariacion(tendencia: ReturnType<typeof calcularTendencia>): string {
   if (tendencia.sinDato || tendencia.variacionBp === null) {
     return 'sin dato';
   }
-  const signo = tendencia.variacionBp > 0 ? '+' : '';
-  return `${signo}${formatearPuntosBase(tendencia.variacionBp)}`;
+  return formatearVariacionBp(tendencia.variacionBp);
 }
 
 function TendenciaBadge({ tendencia }: { readonly tendencia: ReturnType<typeof calcularTendencia> }) {
   if (tendencia.sinDato) {
     return (
-      <span className="oc-badge oc-badge--tenue" data-estado="sin-dato">
+      <span className="rounded bg-gray-200 px-2 py-1 text-sm" data-estado="sin-dato">
         sin dato
       </span>
     );
@@ -48,13 +61,19 @@ function TendenciaBadge({ tendencia }: { readonly tendencia: ReturnType<typeof c
   const sube = tendencia.variacionBp !== null && tendencia.variacionBp > 0;
   const baja = tendencia.variacionBp !== null && tendencia.variacionBp < 0;
   const tono = sube ? 'alza' : baja ? 'baja' : 'igual';
+  const clase = sube
+    ? 'rounded bg-red-100 px-2 py-1 text-sm'
+    : baja
+      ? 'rounded bg-green-100 px-2 py-1 text-sm'
+      : 'rounded bg-gray-200 px-2 py-1 text-sm';
   return (
-    <span className={`oc-badge oc-badge--${tono}`} data-tono={tono}>
+    <span className={clase} data-tono={tono}>
       {textoVariacion(tendencia)}
     </span>
   );
 }
 
+/** MEDIA 4: esto se pinta dentro del <main> de Shell; va como <section>. */
 export function PreciosPantalla({
   producto,
   unidad,
@@ -66,77 +85,83 @@ export function PreciosPantalla({
 }: PreciosPantallaProps) {
   if (estado === 'cargando') {
     return (
-      <main className="oc-pantalla" aria-busy="true">
-        <h1 className="oc-titulo">Precio del {producto}</h1>
-        <p className="oc-aviso oc-aviso--tenue" role="status">
+      <section className="flex flex-col gap-4" aria-busy="true">
+        <h2 className="text-2xl font-bold">Precio del {producto}</h2>
+        <p className="text-gray-600" role="status">
           Cargando observaciones…
         </p>
-      </main>
+      </section>
     );
   }
 
   if (estado === 'error') {
     return (
-      <main className="oc-pantalla">
-        <h1 className="oc-titulo">Precio del {producto}</h1>
-        <div className="oc-aviso oc-aviso--critica" role="alert">
+      <section className="flex flex-col gap-4">
+        <h2 className="text-2xl font-bold">Precio del {producto}</h2>
+        <div className="rounded-lg border border-red-400 bg-red-50 p-4" role="alert">
           No se pudieron leer las observaciones guardadas.
           {onReintentar !== undefined && (
-            <div className="oc-accion">
+            <div className="mt-2">
               <BotonGrande variante="secundario" onClick={onReintentar}>
                 Reintentar
               </BotonGrande>
             </div>
           )}
         </div>
-      </main>
+      </section>
     );
   }
 
   const opciones: OpcionesTendencia = { ventanaActual, ventanaPrevia };
   const tendencia = calcularTendencia(opciones);
   const outlier = tendencia.serieActual.evaluadas.find((obs) => obs.excluida) ?? null;
+  const outlierPrevio = tendencia.seriePrevia.evaluadas.find((obs) => obs.excluida) ?? null;
 
   return (
-    <main className="oc-pantalla">
-      <header className="oc-cabecera">
-        <h1 className="oc-titulo">Precio del {producto}</h1>
-        <p className="oc-tenue">Fuente: {fuente}</p>
+    <section className="flex flex-col gap-4">
+      <header className="flex flex-col gap-1">
+        <h2 className="text-2xl font-bold">Precio del {producto}</h2>
+        <p className="text-gray-600">Fuente: {fuente}</p>
       </header>
 
       {estado === 'sin-conexion' && (
-        <div className="oc-aviso oc-aviso--tenue" role="status" data-estado="sin-conexion">
+        <div className="rounded-lg border border-gray-300 bg-gray-50 p-4" role="status" data-estado="sin-conexion">
           <strong>Sin conexión.</strong> Se muestran las observaciones guardadas.
           <br />
-          <span className="oc-badge">pendiente de sincronizar</span>
+          <span className="rounded bg-gray-200 px-2 py-1 text-sm">pendiente de sincronizar</span>
         </div>
       )}
 
-      <section className="oc-ficha" aria-label="Tendencia del precio">
-        <p className="oc-precio">
+      <section className="rounded-lg border border-gray-300 p-4" aria-label="Tendencia del precio">
+        <p className="text-lg">
           <strong>{precioConUnidad(tendencia.medianaActual, unidad)}</strong>
-          <small className="oc-tenue"> mediana de las últimas {ventanaActual.length} observaciones</small>
+          <small className="text-gray-600"> mediana de las últimas {ventanaActual.length} observaciones</small>
         </p>
-        <p className="oc-variacion">
+        <p>
           Variación contra la mediana previa: <TendenciaBadge tendencia={tendencia} />
         </p>
         {tendencia.sinDato && (
-          <p className="oc-tenue" data-motivo={tendencia.motivo ?? 'na'}>
+          <p className="text-gray-600" data-motivo={tendencia.motivo ?? 'na'}>
             No hay suficientes observaciones para comparar. No se interpola.
           </p>
         )}
         {tendencia.medianaPrevia !== null && !tendencia.sinDato && (
-          <p className="oc-tenue">
+          <p className="text-gray-600">
             Mediana previa {precioConUnidad(tendencia.medianaPrevia, unidad)} · mediana actual{' '}
             {precioConUnidad(tendencia.medianaActual, unidad)}
           </p>
         )}
         {outlier !== null && (
-          <p className="oc-tenue" data-estado="outlier">
+          <p className="text-gray-600" data-estado="outlier">
             Una observación se marcó como atípica y no entra en la tendencia.
           </p>
         )}
+        {outlierPrevio !== null && (
+          <p className="text-gray-600" data-estado="outlier-previo">
+            Una observación de la ventana previa se marcó como atípica y no entra en esa mediana.
+          </p>
+        )}
       </section>
-    </main>
+    </section>
   );
 }

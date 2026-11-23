@@ -31,10 +31,33 @@ export function formatearCentimos(valor: Centimos | number): string {
   return `${signo}S/ ${agruparMiles(soles)},${String(cent).padStart(2, '0')}`;
 }
 
-/** Puntos base (10 000 = 100 %) a "89,07 %". */
+/**
+ * Puntos base enteros (10 000 = 100 %) a "89,07 %".
+ *
+ * El signo se arma sobre el valor ABSOLUTO: `Math.trunc` de -0,5 es -0 (y su
+ * `String` es "0"), asi que `-50 bp` se perdia como "0,50 %". Un negativo se
+ * publica con signo menos explícito ("−0,50 %"); un positivo queda sin signo
+ * porque es un consumo, no una variación.
+ */
 export function formatearPuntosBase(bp: number): string {
   const entero = Math.trunc(bp);
-  const parte = Math.trunc(entero / 100);
-  const dec = Math.abs(entero % 100);
-  return `${parte},${String(dec).padStart(2, '0')} %`;
+  const abs = Math.abs(entero);
+  const parte = Math.trunc(abs / 100);
+  const dec = abs % 100;
+  const signo = entero < 0 ? '\u2212' : '';
+  return `${signo}${parte},${String(dec).padStart(2, '0')} %`;
+}
+
+/**
+ * Variación en puntos base a "+0,50 %" / "−0,50 %" / "0,00 %".
+ *
+ * A diferencia de `formatearPuntosBase` (consumo), una variación publica el
+ * signo POSITIVO explícito: "+12,00 %" y no "12,00 %".
+ */
+export function formatearVariacionBp(bp: number): string {
+  const entero = Math.trunc(bp);
+  if (entero > 0) {
+    return `+${formatearPuntosBase(entero)}`;
+  }
+  return formatearPuntosBase(entero);
 }

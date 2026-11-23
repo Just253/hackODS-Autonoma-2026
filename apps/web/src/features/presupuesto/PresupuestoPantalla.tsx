@@ -4,6 +4,10 @@
  * Solo muestra. El calculo es `calcularPresupuesto` de `@hackods/domain`; esta
  * capa traduce ese resultado a textos y formatea centimos enteros. Nunca hace
  * cuentas de dinero: si el numero no viene del dominio, no se muestra.
+ *
+ * Los umbrales (80 % / 100 %) NO se repiten aca: se derivan de
+ * `resultado.alertas` (`presupuesto_80` / `presupuesto_100`). Si el dominio
+ * mueve su umbral, la pantalla lo sigue sin tocarse (apps/web/AGENTS.md §5).
  */
 import type { Centimos, MovimientoPresupuesto } from '@hackods/contracts';
 import { BotonGrande } from '@hackods/ui';
@@ -42,7 +46,9 @@ function filas(resultado: ResultadoPresupuesto): readonly FilaPresupuesto[] {
     },
     {
       etiqueta: 'Proyección al cierre',
-      valor: resultado.proyeccionCentimos,
+      // MEDIA 5: sin base suficiente no hay cifra; `null` viaja hasta aca y se
+      // muestra "sin dato". Mostrar el numero contradiria el aviso.
+      valor: resultado.muestraInsuficiente ? null : resultado.proyeccionCentimos,
       nota: resultado.muestraInsuficiente
         ? 'muestra insuficiente (menos de 3 días): sin dato'
         : 'estimación lineal, no un pronóstico',
@@ -55,27 +61,41 @@ interface AvisoAlerta {
   readonly texto: string;
 }
 
-/** Alerta visible y no bloqueante: solo informa, no tapa la pantalla. */
+/**
+ * Alerta visible y no bloqueante: solo informa, no tapa la pantalla.
+ *
+ * El umbral sale del dominio: cada alerta trae `tipo` y `severidad`. Aca no se
+ * compara ningun numero de puntos base.
+ */
 function avisos(resultado: ResultadoPresupuesto): readonly AvisoAlerta[] {
   const lista: AvisoAlerta[] = [];
-  const bp = resultado.consumoBp;
 
-  if (bp !== null && bp >= 8_000) {
-    const detalle =
-      bp >= 10_000
-        ? 'Usaste todo el presupuesto del período.'
-        : 'Pasaste el 80 % del presupuesto del período.';
-    lista.push({
-      tono: bp >= 10_000 ? 'critica' : 'atencion',
-      texto: `${detalle} Consumo: ${formatearPuntosBase(bp)}.`,
-    });
+  for (const alerta of resultado.alertas) {
+    if (alerta.tipo === 'presupuesto_80') {
+      lista.push({
+        tono: 'atencion',
+        texto:
+          resultado.consumoBp === null
+            ? 'Pasaste el 80 % del presupuesto del período.'
+            : `Pasaste el 80 % del presupuesto del período. Consumo: ${formatearPuntosBase(resultado.consumoBp)}.`,
+      });
+    } else if (alerta.tipo === 'presupuesto_100') {
+      lista.push({
+        tono: 'critica',
+        texto:
+          resultado.consumoBp === null
+            ? 'Usaste todo el presupuesto del período.'
+            : `Usaste todo el presupuesto del período. Consumo: ${formatearPuntosBase(resultado.consumoBp)}.`,
+      });
+    } else if (alerta.tipo === 'proyeccion_excede') {
+      lista.push({
+        tono: 'atencion',
+        texto: 'Al ritmo actual, la proyección al cierre supera lo asignado.',
+      });
+    }
   }
-  if (resultado.alertas.some((alerta) => alerta.tipo === 'proyeccion_excede')) {
-    lista.push({
-      tono: 'atencion',
-      texto: 'Al ritmo actual, la proyección al cierre supera lo asignado.',
-    });
-  }
+
+  // Disponible negativo es un hecho aritmetico del resultado, no un umbral.
   if (resultado.disponible < 0) {
     lista.push({
       tono: 'critica',
@@ -87,7 +107,7 @@ function avisos(resultado: ResultadoPresupuesto): readonly AvisoAlerta[] {
 
 function Cargando() {
   return (
-    <p className="oc-aviso oc-aviso--tenue" role="status">
+    <p className="text-gray-600" role="status">
       Cargando presupuesto…
     </p>
   );
@@ -95,20 +115,20 @@ function Cargando() {
 
 function SinConexion() {
   return (
-    <div className="oc-aviso oc-aviso--tenue" role="status" data-estado="sin-conexion">
+    <div className="rounded-lg border border-gray-300 bg-gray-50 p-4" role="status" data-estado="sin-conexion">
       <strong>Sin conexión.</strong> Se muestra lo último guardado en el teléfono.
       <br />
-      <span className="oc-badge">pendiente de sincronizar</span>
+      <span className="rounded bg-gray-200 px-2 py-1 text-sm">pendiente de sincronizar</span>
     </div>
   );
 }
 
 function Error({ onReintentar }: { readonly onReintentar?: () => void }) {
   return (
-    <div className="oc-aviso oc-aviso--critica" role="alert">
+    <div className="rounded-lg border border-red-400 bg-red-50 p-4" role="alert">
       No se pudo calcular el presupuesto con los datos guardados.
       {onReintentar !== undefined && (
-        <div className="oc-accion">
+        <div className="mt-2">
           <BotonGrande variante="secundario" onClick={onReintentar}>
             Reintentar
           </BotonGrande>
@@ -118,6 +138,7 @@ function Error({ onReintentar }: { readonly onReintentar?: () => void }) {
   );
 }
 
+/** MEDIA 4: esto se pinta dentro del <main> de Shell; va como <section>. */
 export function PresupuestoPantalla({
   movimientos,
   corte,
@@ -126,19 +147,19 @@ export function PresupuestoPantalla({
 }: PresupuestoPantallaProps) {
   if (estado === 'cargando') {
     return (
-      <main className="oc-pantalla" aria-busy="true">
-        <h1 className="oc-titulo">Presupuesto de la olla</h1>
+      <section className="flex flex-col gap-4" aria-busy="true">
+        <h2 className="text-2xl font-bold">Presupuesto de la olla</h2>
         <Cargando />
-      </main>
+      </section>
     );
   }
 
   if (estado === 'error') {
     return (
-      <main className="oc-pantalla">
-        <h1 className="oc-titulo">Presupuesto de la olla</h1>
+      <section className="flex flex-col gap-4">
+        <h2 className="text-2xl font-bold">Presupuesto de la olla</h2>
         <Error onReintentar={onReintentar} />
-      </main>
+      </section>
     );
   }
 
@@ -146,10 +167,10 @@ export function PresupuestoPantalla({
   const listaAvisos = avisos(resultado);
 
   return (
-    <main className="oc-pantalla">
-      <header className="oc-cabecera">
-        <h1 className="oc-titulo">Presupuesto de la olla</h1>
-        <p className="oc-tenue">
+    <section className="flex flex-col gap-4">
+      <header className="flex flex-col gap-1">
+        <h2 className="text-2xl font-bold">Presupuesto de la olla</h2>
+        <p className="text-gray-600">
           Período {corte.periodoDesde} a {corte.periodoHasta}
         </p>
       </header>
@@ -157,41 +178,49 @@ export function PresupuestoPantalla({
       {estado === 'sin-conexion' && <SinConexion />}
 
       {listaAvisos.length > 0 && (
-        <section className="oc-alertas" aria-live="polite" aria-label="Alertas de presupuesto">
+        <div className="flex flex-col gap-2" aria-live="polite" aria-label="Alertas de presupuesto">
           {listaAvisos.map((aviso) => (
             <p
               key={aviso.texto}
-              className={`oc-aviso oc-aviso--${aviso.tono}`}
+              className={
+                aviso.tono === 'critica'
+                  ? 'rounded-lg border border-red-400 bg-red-50 p-4'
+                  : 'rounded-lg border border-amber-400 bg-amber-50 p-4'
+              }
               data-tono={aviso.tono}
             >
               {aviso.texto}
             </p>
           ))}
-        </section>
+        </div>
       )}
 
       <section aria-label="Resumen del presupuesto">
-        <table className="oc-tabla">
+        <table className="w-full border-collapse text-left">
           <tbody>
             {filas(resultado).map((fila) => (
-              <tr key={fila.etiqueta}>
-                <th scope="row">
+              <tr key={fila.etiqueta} className="border-b border-gray-200">
+                <th scope="row" className="py-2 pr-4 font-normal">
                   {fila.etiqueta}
-                  <small className="oc-tenue">{fila.nota}</small>
+                  <small className="block text-gray-600">{fila.nota}</small>
                 </th>
-                <td className="oc-num">
-                  {fila.valor === null ? <span className="oc-tenue">sin dato</span> : formatearCentimos(fila.valor)}
+                <td className="py-2 text-right tabular-nums">
+                  {fila.valor === null ? (
+                    <span className="text-gray-600">sin dato</span>
+                  ) : (
+                    formatearCentimos(fila.valor)
+                  )}
                 </td>
               </tr>
             ))}
             <tr>
-              <th scope="row">
+              <th scope="row" className="py-2 pr-4 font-normal">
                 Consumo
-                <small className="oc-tenue">gastado + comprometido sobre asignado</small>
+                <small className="block text-gray-600">gastado + comprometido sobre asignado</small>
               </th>
-              <td className="oc-num">
+              <td className="py-2 text-right tabular-nums">
                 {resultado.consumoBp === null ? (
-                  <span className="oc-tenue">sin dato</span>
+                  <span className="text-gray-600">sin dato</span>
                 ) : (
                   formatearPuntosBase(resultado.consumoBp)
                 )}
@@ -200,6 +229,6 @@ export function PresupuestoPantalla({
           </tbody>
         </table>
       </section>
-    </main>
+    </section>
   );
 }

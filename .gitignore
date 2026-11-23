@@ -22,7 +22,10 @@ supabase/.temp/
 *.key
 
 # Datos locales y artefactos
-data/
+# Anclado a la raíz a propósito: un `data/` suelto ignora `apps/web/src/data/`,
+# que es código (Dexie + repositorio) y tiene que entrar al repo.
+/data/
+/supabase/data/
 !.gitkeep
 coverage/
 playwright-report/
