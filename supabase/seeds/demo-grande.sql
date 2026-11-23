@@ -48,6 +48,114 @@ insert into olla_members (member_id, olla_id, rol) values
 on conflict do nothing;
 
 -- ---------------------------------------------------------------------------
+-- Zonas y precios por zona (#92, ADR-0013). Las 3 zonas las crea la migracion
+-- 20261123220000; aca solo se reafirman con `do nothing` por si el seed corre
+-- contra una base donde esa migracion aun no existe (no la inventa).
+--
+-- Mapa zona -> ollas (por distrito):
+--   lima-sur  : 1 Villa El Salvador, 4 Villa Maria del Triunfo, 7 Lurin, 8 Pachacamac
+--   lima-este : 2 San Juan de Lurigancho, 5 Ate
+--   lima-norte: 3 Comas, 6 Independencia
+-- ---------------------------------------------------------------------------
+insert into zonas (id, nombre, distritos) values
+  ('lima-sur',  'Lima Sur',  array['Villa El Salvador', 'Villa Maria del Triunfo', 'Lurin', 'Pachacamac']),
+  ('lima-este', 'Lima Este', array['Ate', 'San Juan de Lurigancho']),
+  ('lima-norte','Lima Norte',array['Comas', 'Independencia'])
+on conflict (id) do nothing;
+
+update ollas set zona_id = case id
+    when '00000000-0000-4000-8000-000000000001' then 'lima-sur'
+    when '00000000-0000-4000-8000-000000000004' then 'lima-sur'
+    when '00000000-0000-4000-8000-000000000007' then 'lima-sur'
+    when '00000000-0000-4000-8000-000000000008' then 'lima-sur'
+    when '00000000-0000-4000-8000-000000000002' then 'lima-este'
+    when '00000000-0000-4000-8000-000000000005' then 'lima-este'
+    when '00000000-0000-4000-8000-000000000003' then 'lima-norte'
+    when '00000000-0000-4000-8000-000000000006' then 'lima-norte'
+  end
+where id in (
+  '00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000002',
+  '00000000-0000-4000-8000-000000000003', '00000000-0000-4000-8000-000000000004',
+  '00000000-0000-4000-8000-000000000005', '00000000-0000-4000-8000-000000000006',
+  '00000000-0000-4000-8000-000000000007', '00000000-0000-4000-8000-000000000008'
+)
+and zona_id is null;
+
+-- ---------------------------------------------------------------------------
+-- Equipo completo por olla (#92): cada una de las 8 ollas tiene organizadora,
+-- cocinera y nutricionista DISTINTOS (24 filas: 8 x 3) + un admin global
+-- (member 999) admin en las 8. Members 109..128 son los nuevos; 999 es el unico
+-- admin global. PIN ficticio '1234'.
+-- ---------------------------------------------------------------------------
+insert into members (id, pin_hash, recovery_hash)
+values
+  ('00000000-0000-4000-8000-000000000109', crypt('1234', gen_salt('bf', 8)), crypt('demo-recovery-109', gen_salt('bf', 8))),
+  ('00000000-0000-4000-8000-000000000110', crypt('1234', gen_salt('bf', 8)), crypt('demo-recovery-110', gen_salt('bf', 8))),
+  ('00000000-0000-4000-8000-000000000111', crypt('1234', gen_salt('bf', 8)), crypt('demo-recovery-111', gen_salt('bf', 8))),
+  ('00000000-0000-4000-8000-000000000112', crypt('1234', gen_salt('bf', 8)), crypt('demo-recovery-112', gen_salt('bf', 8))),
+  ('00000000-0000-4000-8000-000000000113', crypt('1234', gen_salt('bf', 8)), crypt('demo-recovery-113', gen_salt('bf', 8))),
+  ('00000000-0000-4000-8000-000000000114', crypt('1234', gen_salt('bf', 8)), crypt('demo-recovery-114', gen_salt('bf', 8))),
+  ('00000000-0000-4000-8000-000000000115', crypt('1234', gen_salt('bf', 8)), crypt('demo-recovery-115', gen_salt('bf', 8))),
+  ('00000000-0000-4000-8000-000000000116', crypt('1234', gen_salt('bf', 8)), crypt('demo-recovery-116', gen_salt('bf', 8))),
+  ('00000000-0000-4000-8000-000000000117', crypt('1234', gen_salt('bf', 8)), crypt('demo-recovery-117', gen_salt('bf', 8))),
+  ('00000000-0000-4000-8000-000000000118', crypt('1234', gen_salt('bf', 8)), crypt('demo-recovery-118', gen_salt('bf', 8))),
+  ('00000000-0000-4000-8000-000000000119', crypt('1234', gen_salt('bf', 8)), crypt('demo-recovery-119', gen_salt('bf', 8))),
+  ('00000000-0000-4000-8000-000000000120', crypt('1234', gen_salt('bf', 8)), crypt('demo-recovery-120', gen_salt('bf', 8))),
+  ('00000000-0000-4000-8000-000000000121', crypt('1234', gen_salt('bf', 8)), crypt('demo-recovery-121', gen_salt('bf', 8))),
+  ('00000000-0000-4000-8000-000000000122', crypt('1234', gen_salt('bf', 8)), crypt('demo-recovery-122', gen_salt('bf', 8))),
+  ('00000000-0000-4000-8000-000000000123', crypt('1234', gen_salt('bf', 8)), crypt('demo-recovery-123', gen_salt('bf', 8))),
+  ('00000000-0000-4000-8000-000000000124', crypt('1234', gen_salt('bf', 8)), crypt('demo-recovery-124', gen_salt('bf', 8))),
+  ('00000000-0000-4000-8000-000000000125', crypt('1234', gen_salt('bf', 8)), crypt('demo-recovery-125', gen_salt('bf', 8))),
+  ('00000000-0000-4000-8000-000000000126', crypt('1234', gen_salt('bf', 8)), crypt('demo-recovery-126', gen_salt('bf', 8))),
+  ('00000000-0000-4000-8000-000000000127', crypt('1234', gen_salt('bf', 8)), crypt('demo-recovery-127', gen_salt('bf', 8))),
+  ('00000000-0000-4000-8000-000000000128', crypt('1234', gen_salt('bf', 8)), crypt('demo-recovery-128', gen_salt('bf', 8))),
+  ('00000000-0000-4000-8000-000000000999', crypt('1234', gen_salt('bf', 8)), crypt('demo-recovery-admin', gen_salt('bf', 8)))
+on conflict (id) do nothing;
+
+-- 103..108 ya existen arriba con roles sueltos; aca se les suma lo que falta en
+-- cada olla para cerrar el trio. Una persona puede tener un solo rol por olla
+-- (PK), asi que los roles nuevos usan ids libres de 109..128.
+insert into olla_members (member_id, olla_id, rol)
+values
+  -- olla 1 (lima-sur): seed.sql ya tiene 101 organizadora
+  ('00000000-0000-4000-8000-000000000110', '00000000-0000-4000-8000-000000000001', 'cocinera'),
+  ('00000000-0000-4000-8000-000000000111', '00000000-0000-4000-8000-000000000001', 'nutricionista'),
+  -- olla 2 (lima-este): seed.sql ya tiene 102 cocinera
+  ('00000000-0000-4000-8000-000000000109', '00000000-0000-4000-8000-000000000002', 'organizadora'),
+  ('00000000-0000-4000-8000-000000000112', '00000000-0000-4000-8000-000000000002', 'nutricionista'),
+  -- olla 3 (lima-norte)
+  ('00000000-0000-4000-8000-000000000113', '00000000-0000-4000-8000-000000000003', 'organizadora'),
+  ('00000000-0000-4000-8000-000000000114', '00000000-0000-4000-8000-000000000003', 'cocinera'),
+  ('00000000-0000-4000-8000-000000000115', '00000000-0000-4000-8000-000000000003', 'nutricionista'),
+  -- olla 4 (lima-sur): 103 cocinera y 104 organizadora; falta nutricionista
+  ('00000000-0000-4000-8000-000000000117', '00000000-0000-4000-8000-000000000004', 'nutricionista'),
+  -- olla 5 (lima-este): 105 es organizadora, 103 nutricionista
+  ('00000000-0000-4000-8000-000000000118', '00000000-0000-4000-8000-000000000005', 'cocinera'),
+  -- olla 6 (lima-norte): 106 es cocinera
+  ('00000000-0000-4000-8000-000000000119', '00000000-0000-4000-8000-000000000006', 'organizadora'),
+  ('00000000-0000-4000-8000-000000000120', '00000000-0000-4000-8000-000000000006', 'nutricionista'),
+  -- olla 7 (lima-sur): 107 organizadora y 106 admin
+  ('00000000-0000-4000-8000-000000000121', '00000000-0000-4000-8000-000000000007', 'cocinera'),
+  ('00000000-0000-4000-8000-000000000122', '00000000-0000-4000-8000-000000000007', 'nutricionista'),
+  -- olla 8 (lima-norte): 108 es cocinera
+  ('00000000-0000-4000-8000-000000000123', '00000000-0000-4000-8000-000000000008', 'organizadora'),
+  ('00000000-0000-4000-8000-000000000124', '00000000-0000-4000-8000-000000000008', 'nutricionista')
+on conflict do nothing;
+
+-- Admin global (999) en las 8 ollas. El seed previo ya tenia admin en 2 y 7:
+-- 106 cubre la 7; aca se completa la red entera para 999.
+insert into olla_members (member_id, olla_id, rol)
+select '00000000-0000-4000-8000-000000000999'::uuid, o.id, 'admin'
+from ollas o
+where o.id in (
+  '00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000002',
+  '00000000-0000-4000-8000-000000000003', '00000000-0000-4000-8000-000000000004',
+  '00000000-0000-4000-8000-000000000005', '00000000-0000-4000-8000-000000000006',
+  '00000000-0000-4000-8000-000000000007', '00000000-0000-4000-8000-000000000008'
+)
+on conflict do nothing;
+
+-- ---------------------------------------------------------------------------
 -- Personas P-0007..P-0042 (36), repartidas entre las 8 ollas. Casos borde:
 -- anemia 'si' con peso/talla, consentimiento variado y 2 bajas logicas al final.
 -- ---------------------------------------------------------------------------
@@ -114,6 +222,56 @@ values
   ('avena', '00000000-0000-4000-8000-000000000001', 'Avena demo', 'cereal', 'g', null, 2000, false, '{gluten}', 'device_demo_01'),
   ('azucar', '00000000-0000-4000-8000-000000000001', 'Azucar demo', 'endulzante', 'g', null, 1000, false, '{}', 'device_demo_01')
 on conflict (id) do nothing;
+
+-- ---------------------------------------------------------------------------
+-- Serie por zona: 3 zonas x 6 insumos x 7 dias x 2 canales = 252 filas.
+-- Precio base en microcentesimos por unidad base (ADR-0004) con variacion fija
+-- por zona: sur x1,00, este x1,05, norte x1,03; y por canal (minorista +60000),
+-- como la serie por olla de arriba. La MISMA cifra dentro de la zona: las ollas
+-- de una zona comparten fila (es lo que prueba 013_zonas.sql).
+-- El id sale del contenido (md5), igual que la serie por olla, para que el
+-- `on conflict (id)` haga el seed idempotente.
+-- ---------------------------------------------------------------------------
+do $$
+declare
+  zonas_arr text[] := array['lima-sur', 'lima-este', 'lima-norte'];
+  factor bigint[]  := array[100, 105, 103];
+  prod text[] := array['arroz', 'lentejas', 'papa', 'pollo', 'huevo', 'quinua'];
+  base bigint[] := array[420000, 780000, 230000, 1100000, 50000, 940000];
+  z text;
+  zf bigint;
+  canal text;
+  dia int;
+  i int;
+  zi int;
+  clave text;
+begin
+  for zi in 1..array_length(zonas_arr, 1) loop
+    z := zonas_arr[zi];
+    zf := factor[zi];
+    for i in 1..array_length(prod, 1) loop
+      foreach canal in array array['mayorista', 'minorista'] loop
+        for dia in 1..7 loop
+          clave := z || '|' || prod[i] || '|' || canal || '|2026-11-0' || dia;
+          insert into precios_zona (id, zona_id, insumo_id, canal, unidad, precio, fecha, fuente)
+          values (
+            (substr(md5(clave), 1, 8) || '-' || substr(md5(clave), 9, 4) || '-4' ||
+             substr(md5(clave), 13, 3) || '-' || substr(md5(clave), 16, 4) || '-' ||
+             substr(md5(clave), 20, 12))::uuid,
+            z,
+            prod[i],
+            canal,
+            case when prod[i] = 'huevo' then 'unidad' else 'g' end,
+            ((base[i] + (dia * 1000) + (case when canal = 'minorista' then 60000 else 0 end)) * zf) / 100,
+            ('2026-11-0' || dia)::date,
+            'demo-ficticio'
+          )
+          on conflict (id) do nothing;
+        end loop;
+      end loop;
+    end loop;
+  end loop;
+end $$;
 
 -- ---------------------------------------------------------------------------
 -- Serie de precios: 6 productos x 2 canales x 7 dias = 84 observaciones, en olla 1.
