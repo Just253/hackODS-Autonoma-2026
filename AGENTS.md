@@ -53,7 +53,7 @@ packages/nutrition/  Contrato del motor nutricional y proveedores (sin cifras). 
 packages/sync/       Outbox, ids, versiones, conflictos. area:contracts.
 packages/ui/         Componentes y tokens. area:web.
 docs/                PROTOCOL.md, adr/, dominio/, guias/. area:infra.
-scripts/             preflight, claim, labels. area:infra.
+scripts/             preflight, labels, seed. area:infra.
 qa/evidencia/        Salidas de verificación (se commitea poco; ver §7).
 ```
 
@@ -70,7 +70,7 @@ pnpm dev                         # web en http://localhost:5173
 pnpm build                       # build de producción de todos los paquetes
 pnpm test                        # Vitest, todos los paquetes
 pnpm test --filter @hackods/nutrition
-pnpm test:e2e                    # Playwright (requiere build previo)
+pnpm test:e2e                    # PENDIENTE: Playwright no instalado (M0/M6)
 pnpm lint && pnpm typecheck
 pnpm exec supabase start         # Postgres + API local (Docker)
 pnpm exec supabase db reset      # migraciones + seed local. SOLO local
