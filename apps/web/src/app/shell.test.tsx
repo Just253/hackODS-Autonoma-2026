@@ -184,6 +184,80 @@ describe('cascaron', () => {
     expect(within(encabezado).getByText('Comprobante')).toBeInTheDocument();
   });
 
+  /**
+   * Reporte de usuario: "cada que seleccionamos la letra, sale de los recuadros
+   * y desaparece".
+   *
+   * Que se puede probar en jsdom y que no. `getBoundingClientRect` devuelve
+   * ceros y no hay motor de layout ni Tailwind aplicado: un test de medidas
+   * seria verde siempre. Lo que si se prueba aca es la CAUSA del desborde,
+   * que es determinista y vive en el marcado:
+   *
+   *  - el contenedor de la hoja "Más" no puede tener alto fijo (`max-h`,
+   *    `h-*`, `overflow-hidden`): al pasar a `enorme` el rail de escritorio
+   *    necesita ~910 px y el contenido se empuja fuera de la pantalla;
+   *  - lo que scrollea es el rail / la hoja, nunca la pagina (`#root` es
+   *    `overflow: hidden`): un `max-h` sin `overflow-y-auto` esconde el
+   *    control sin forma de llegar a el;
+   *  - la fila de los tres pasos y el boton "Cerrar" tiene que poder envolver
+   *    (`flex-wrap`): con `Enorme` los rotulos miden ~65 / 78 / 80 px + 16 px
+   *    de padding y de jamon ~98 px en una tablet de 768 px; con "Cerrar" al
+   *    lado y `justify-between` —que no baja de linea— se anulan su `flex-1` y
+   *    el grupo "sale de los recuadros" con scroll horizontal: "Enorme" queda
+   *    fuera de vista y parece desaparecer.
+   */
+  it('la hoja "Más" no se come el control de letra cuando se elige Enorme', () => {
+    const { container } = montarApp('/padron');
+    const rail = screen.getByRole('navigation', { name: 'Secciones principales' });
+    const aside = rail.parentElement as HTMLElement;
+
+    // El rail de escritorio scrollea DENTRO del alto de la ventana.
+    expect(aside.className).toContain('overflow-y-auto');
+    expect(aside.className).not.toMatch(/overflow-hidden/);
+
+    fireEvent.click(screen.getByRole('button', { name: /Más/i }));
+    const hoja = screen.getByRole('navigation', { name: 'Más secciones' });
+
+    // El atributo se aplica: el cambio llego al documento. Se toca en la hoja,
+    // que es el camino del telefono donde se reporto el bug.
+    act(() => {
+      fireEvent.click(
+        within(screen.getByRole('navigation', { name: 'Más secciones' })).getByRole('button', {
+          name: 'Letra enorme',
+        }),
+      );
+    });
+    expect(document.documentElement.dataset.texto).toBe('enorme');
+
+    // La hoja no tiene alto tope ni recorte ...
+    expect(hoja.className).not.toMatch(/\bmax-h-|\bh-dvh\b|\bh-screen\b|overflow-hidden/);
+    // ... y si algun dia se le pone un tope, tiene que scrollear, no recortar.
+    const conScroll = container.querySelectorAll('[class*="overflow-y-auto"]');
+    expect(conScroll.length).toBeGreaterThan(0);
+
+    // El control sigue montado y es el mismo nodo: no hubo remontaje.
+    const grupo = within(hoja).getByRole('group', { name: 'Tamaño de letra' });
+    expect(within(grupo).getByRole('button', { name: 'Letra enorme' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+
+    // La fila que junta los tres pasos con "Cerrar" envuelve en vez de
+    // desbordar: es lo que sacaba los botones de su recuadro.
+    const filaControl = grupo.parentElement?.parentElement;
+    expect(filaControl).not.toBeNull();
+    expect(filaControl?.className).toContain('flex-wrap');
+
+    // Y el control cabe: grid de columnas iguales, texto que no se corta.
+    const pasos = within(grupo).getAllByRole('button');
+    expect(pasos).toHaveLength(3);
+    expect(pasos[1]?.className).toContain('whitespace-nowrap');
+    for (const paso of pasos) {
+      expect(paso.className).not.toContain('truncate');
+      expect(paso.className).not.toMatch(/\bpx-2\b/);
+    }
+  });
+
   it('las reglas de navegacion no repiten destinos entre la barra y "Más"', () => {
     // Contrato del modelo, sin DOM. Admin es el unico que ve todo, asi que
     // sirve para verificar que barra + hoja parten el menu sin repetir.

@@ -189,9 +189,20 @@ export function Shell() {
         Ir al contenido
       </a>
 
-      {/* Rail de escritorio: marca, secciones agrupadas y tamano de letra. */}
-      <aside className="hidden w-[var(--ancho-rail)] shrink-0 flex-col border-r border-borde bg-superficie lg:flex">
-        <div className="flex flex-col gap-0.5 border-b border-borde px-4 py-4">
+      {/*
+        Rail de escritorio: marca, secciones agrupadas y tamano de letra.
+
+        Scrollea ENTERO (`overflow-y-auto` en el aside, no en el nav): la marca
+        y el bloque de ajustes no son fijos, porque a `Enorme` la suma de los
+        tres (~910 px en 22 px de base) pasa el alto de una tablet y, sin
+        scroll, el selector de letra y el de sesion quedaban fuera de la
+        pantalla: el control "desaparecia" justo cuando se agrandaba la letra.
+        `min-h-0` es lo que deja al hijo flex encogerse para scrollear; sin el,
+        el rail crece y empuja. Scrollea solo en vertical: el ancho lo fija
+        `--ancho-rail`, que no crece con `data-texto`.
+      */}
+      <aside className="hidden min-h-0 w-[var(--ancho-rail)] shrink-0 flex-col overflow-y-auto overflow-x-hidden border-r border-borde bg-superficie lg:flex">
+        <div className="flex shrink-0 flex-col gap-0.5 border-b border-borde px-4 py-4">
           <span className="text-[0.6875rem] font-bold uppercase tracking-[0.12em] text-texto-suave">
             Olla común
           </span>
@@ -201,7 +212,7 @@ export function Shell() {
           </span>
         </div>
 
-        <nav aria-label="Secciones principales" className="flex-1 overflow-y-auto px-2 py-4">
+        <nav aria-label="Secciones principales" className="flex-1 px-2 py-4">
           {secciones.map((seccion) => (
             <div key={seccion.titulo} className="mb-5 last:mb-0">
               <p className="px-2 pb-1.5 text-[0.6875rem] font-bold uppercase tracking-[0.12em] text-texto-suave">
@@ -232,7 +243,7 @@ export function Shell() {
           ))}
         </nav>
 
-        <div className="border-t border-borde px-3 py-3">
+        <div className="shrink-0 border-t border-borde px-3 py-3">
           <ControlTexto tamano={tamano} cambiar={cambiarTamano} />
           <div className="mt-3 border-t border-borde pt-3">
             <SelectorSesion control={controlSesion} />
@@ -346,8 +357,19 @@ export function Shell() {
             </div>
           ) : null}
 
-          <div className="mx-auto flex max-w-[var(--ancho-lectura)] items-end justify-between gap-3 border-t border-borde py-3">
-            <ControlTexto tamano={tamano} cambiar={cambiarTamano} />
+          {/*
+            El control de letra y "Cerrar" comparten fila pero NO se pelean el
+            ancho: `flex-wrap` deja bajar "Cerrar" a su propia linea cuando a
+            `Enorme` los dos no entran (a 360-768 px los tres pasos + Cerrar
+            pasan el ancho). Sin wrap y con `justify-between`, ninguna linea
+            puede encogerse: `flex-1` se anula y el fieldset se sale del
+            recuadro con scroll horizontal — "Enorme" queda fuera de vista y
+            parece que la hoja se cerro. Con wrap, el control conserva su fila
+            entera y el boton baja. `min-w-0` en los dos: sin el, el minimo
+            automatico de un flex item es su contenido y no hay wrap posible.
+          */}
+          <div className="mx-auto flex max-w-[var(--ancho-lectura)] flex-wrap items-end justify-between gap-3 border-t border-borde py-3">
+            <div className="min-w-0 flex-1 basis-[min(100%,16rem)]"><ControlTexto tamano={tamano} cambiar={cambiarTamano} /></div>
             <button
               type="button"
               onClick={() => setAbiertoMas(false)}
@@ -565,6 +587,20 @@ function SelectorSesion({ control }: { readonly control: ControlSesion }) {
  * escritorio no hacia nada. El tamano de letra sirve en las dos
  * distribuciones, se nota al instante y usa los tokens `data-texto` que ya
  * existian en `tokens.css` (18 / 22 / 26 px de base).
+ *
+ * Los tres pasos no se cortan ni se salen de su recuadro:
+ *
+ *  - `grid grid-cols-3` y no `flex-1`: la grilla reparte partes iguales con
+ *    `minmax(0, 1fr)` y cada boton encoge de verdad; con `flex` el minimo
+ *    automatico del texto imponia el ancho y el grupo desbordaba a `Enorme`.
+ *  - `px-2` → `px-1`: a 26 px de base 16 px de padding por boton son ~48 px
+ *    de los ~100 px utiles del rail; con el texto no entraba.
+ *  - `whitespace-nowrap` y nada de `truncate`: el rotulo es corto y se tiene
+ *    que leer entero; cortar "Enorme" en "Enor…" es peor que envolver la
+ *    fila entera, que hace el contenedor del llamador.
+ *  - `rem` en el boton (heredado de `html`, que escala con `--texto-base`) en
+ *    vez de un tamano en px fijo: el control crece con lo que gobierna. El
+ *    `leading-tight` evita que la caja `min-h-11` crezca de mas entre lineas.
  */
 function ControlTexto({
   tamano,
@@ -576,7 +612,7 @@ function ControlTexto({
   return (
     <fieldset className="flex min-w-0 flex-col gap-1">
       <legend className="text-xs font-semibold text-texto-suave">Tamaño de letra</legend>
-      <div className="flex gap-1">
+      <div className="grid min-w-0 grid-cols-3 gap-1">
         {TAMANOS.map((opcion) => {
           const elegido = opcion.valor === tamano;
           return (
@@ -587,7 +623,7 @@ function ControlTexto({
               aria-label={opcion.nota}
               onClick={() => cambiar(opcion.valor)}
               className={[
-                'min-h-11 min-w-0 flex-1 rounded-oc border px-2 text-xs font-semibold',
+                'min-h-11 min-w-0 rounded-oc border px-1 text-[0.8125rem] leading-tight font-semibold whitespace-nowrap',
                 elegido
                   ? 'border-primario bg-primario text-primario-texto'
                   : 'border-borde-fuerte bg-superficie text-texto',
