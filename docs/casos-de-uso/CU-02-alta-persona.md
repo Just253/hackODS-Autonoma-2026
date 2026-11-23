@@ -4,7 +4,7 @@
 **Objetivo:** que una persona quede registrada como `P-XXXX`, con lo mínimo para servirle un plato, y
 que el nombre —si se escribe— **no salga nunca del dispositivo**.
 
-**Guion:** 0:15 (`P-0471`, mujer 68, sin comorbilidad) · **Área:** `web` · **Estado:** PR #30 (mergeado)
+**Guion:** 0:15 (`P-0471`, mujer 68, sin comorbilidad) · **Área:** `web` · **Estado:** PR #30 (mergeado); el click de «Guardar alta» no envía el formulario (issue #41)
 
 ## Precondiciones
 

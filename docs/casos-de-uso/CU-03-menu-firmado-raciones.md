@@ -5,7 +5,7 @@
 de raciones del día, **con números que salgan de los datos**, no de una constante.
 
 **Guion:** 0:40 (sello + hash, 2 opciones, porción por grupo, total de raciones)
-**Área:** `contracts` (regla) + `web` (pantalla) · **Estado:** sin empezar · Issue: #17
+**Área:** `contracts` (regla) + `web` (pantalla) · **Estado:** regla `servirDelDia` en `main` (PR #26); falta la pantalla · Issue: #17
 
 ## Precondiciones
 
