@@ -33,3 +33,6 @@ dispositivo · ración guardada ("pendiente de sincronizar; la red no hizo falta
 **Qué NO hace:** no calcula peso, nutrientes ni grupo por edad —eso es de `packages/nutrition` y hoy
 dice `sin dato`— y no sincroniza: el envío y el Lamport de la ración corresponden a `packages/sync`
 (DEC-2026-0005).
+
+**En el cascarón móvil:** segundo destino en modo simple. Las opciones y el total de raciones van
+con cifras grandes; la barra inferior deja a la vista el resto del flujo sin salir de la pantalla.

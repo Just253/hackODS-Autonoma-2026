@@ -21,3 +21,7 @@ Ninguno bloquea por red: el alta se resuelve en el dispositivo.
 **Qué NO hace:** no valida duplicados de persona real (no hay identidad que comparar), no calcula
 grupo nutricional ni ración —eso es de `packages/nutrition` (DEC-2026-0003)— y no empuja nada a
 Supabase desde acá.
+
+**En el cascarón móvil:** es el primer destino de la barra inferior en modo simple. Formulario a
+pantalla completa, campos con toque de 56 px y el botón de alta al alcance del pulgar; la cifra de
+personas registradas se muestra como número grande.
