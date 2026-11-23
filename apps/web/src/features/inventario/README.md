@@ -26,7 +26,7 @@ manda una imagen PNG/JPEG de la boleta (`tipo: boleta`). La función guarda el b
 llama al compute con su `COMPUTE_TOKEN` y devuelve los ítems; la pantalla los pega como texto para
 revisarlos antes de confirmar. Sin sesión, los botones quedan deshabilitados; si el navegador no
 graba o se niega el permiso, lo dice y se escribe a mano. El navegador nunca conoce `COMPUTE_URL` ni
-el token, salvo que se configure el plan B (`VITE_COMPUTE_URL` + `VITE_COMPUTE_TOKEN`), que llama al
+el token, salvo que se configure el plan B (`VITE_COMPUTE_URL` + `VITE_COMPUTE_KEY`), que llama al
 compute directo y existe solo para la demo.
 
 **Limitación declarada:** `Movimiento` no modela el lote y `@hackods/sync` no tiene entidad `lotes`,

@@ -55,7 +55,7 @@ interface ConfigDirecta {
 function configDirecta(): ConfigDirecta | null {
   const entorno = import.meta.env as unknown as Record<string, string | undefined>;
   const url = entorno.VITE_COMPUTE_URL?.trim();
-  const token = entorno.VITE_COMPUTE_TOKEN?.trim();
+  const token = (entorno.VITE_COMPUTE_TOKEN ?? entorno.VITE_COMPUTE_KEY)?.trim();
   if (url === undefined || url === '' || token === undefined || token === '') return null;
   return { url: url.replace(/\/+$/, ''), token };
 }
