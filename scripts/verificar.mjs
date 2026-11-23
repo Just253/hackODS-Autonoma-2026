@@ -15,16 +15,27 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
+import { archivosDelCambio, soloDocumentacion } from './cambios.mjs';
 import { pareceSecreto } from './patrones-secretos.mjs';
 
 const RAIZ = resolve(import.meta.dirname, '..');
 const RAPIDO = process.argv.includes('--rapido');
 
+/**
+ * Un PR de documentación no puede pagar typecheck, tests y build: no hay nada que compilar.
+ *
+ * Pero el check `ci` es obligatorio en la rama protegida, así que el paso tiene que correr y reportar
+ * igual: se saltan los tres pasos pesados, no el workflow. La regla vive en `scripts/cambios.mjs`.
+ */
+const cambio = archivosDelCambio(RAIZ);
+const soloDocs = cambio !== null && soloDocumentacion(cambio);
+const MOTIVO_DOCS = 'sin código en el diff (sólo docs)';
+
 const resultados = [];
 
 function paso(nombre, fn, { omitir = false } = {}) {
   if (omitir) {
-    resultados.push({ nombre, estado: 'omitido', detalle: '--rapido' });
+    resultados.push({ nombre, estado: 'omitido', detalle: typeof omitir === 'string' ? omitir : '--rapido' });
     return;
   }
   const inicio = Date.now();
@@ -94,22 +105,33 @@ paso('entorno', () => {
 paso('ids', () => correr('node', ['scripts/chequear-ids.mjs']).trim().split('\n').pop());
 
 // 3. Tipos ---------------------------------------------------------------------
-paso('typecheck', () => {
-  correr('pnpm', ['typecheck']);
-  return 'sin errores de tipos';
-});
+// Los tres pasos pesados se saltan si el diff no toca código: un PR de docs no compila nada.
+const SALTAR_PESADOS = RAPIDO ? '--rapido' : soloDocs ? MOTIVO_DOCS : false;
+
+paso(
+  'typecheck',
+  () => {
+    correr('pnpm', ['typecheck']);
+    return 'sin errores de tipos';
+  },
+  { omitir: SALTAR_PESADOS },
+);
 
 // 4. Tests ---------------------------------------------------------------------
-paso('tests', () => {
-  // vitest colorea; sin limpiar los ANSI, "Tests 3 passed" no matchea.
-  const limpio = correr('pnpm', ['test']).replace(/\u001b\[[0-9;]*m/g, '');
-  const lineas = limpio.split('\n').filter((l) => /Tests\s+\d+ (passed|failed)/.test(l));
-  const fallos = lineas.filter((l) => /failed/.test(l));
-  if (fallos.length) throw new Error(fallos.join('\n'));
-  const total = lineas.reduce((n, l) => n + Number(l.match(/Tests\s+(\d+) passed/)[1]), 0);
-  if (total === 0) throw new Error('no se encontró ningún test: la suite no corrió');
-  return `${total} tests verdes`;
-});
+paso(
+  'tests',
+  () => {
+    // vitest colorea; sin limpiar los ANSI, "Tests 3 passed" no matchea.
+    const limpio = correr('pnpm', ['test']).replace(/\u001b\[[0-9;]*m/g, '');
+    const lineas = limpio.split('\n').filter((l) => /Tests\s+\d+ (passed|failed)/.test(l));
+    const fallos = lineas.filter((l) => /failed/.test(l));
+    if (fallos.length) throw new Error(fallos.join('\n'));
+    const total = lineas.reduce((n, l) => n + Number(l.match(/Tests\s+(\d+) passed/)[1]), 0);
+    if (total === 0) throw new Error('no se encontró ningún test: la suite no corrió');
+    return `${total} tests verdes`;
+  },
+  { omitir: SALTAR_PESADOS },
+);
 
 // 5. Build ---------------------------------------------------------------------
 paso(
@@ -118,7 +140,7 @@ paso(
     correr('pnpm', ['build']);
     return 'build de producción ok';
   },
-  { omitir: RAPIDO },
+  { omitir: SALTAR_PESADOS },
 );
 
 // 6. Términos muertos ----------------------------------------------------------
@@ -143,7 +165,18 @@ paso('términos muertos', () => {
   return `${MUERTOS.length} términos en cero`;
 });
 
-// 7. Links internos de la documentación ---------------------------------------
+// 6b. Regla de "sólo docs" ----------------------------------------------------
+// `scripts/` no es un paquete del monorepo, así que `turbo run test` no lo mira: su test corre acá,
+// con el runner de Node, o la regla que salta typecheck/tests/build queda sin anclar.
+paso('regla de cambios', () => {
+  const salida = correr('node', ['--test', 'scripts/cambios.test.mjs']);
+  const pass = Number(salida.match(/^# pass (\d+)/m)?.[1] ?? 0);
+  const fail = Number(salida.match(/^# fail (\d+)/m)?.[1] ?? 0);
+  if (fail > 0) throw new Error(`${fail} caso(s) en rojo: ${salida.split('\n').slice(-12).join('\n')}`);
+  if (pass === 0) throw new Error('el test de la regla no corrió');
+  return `${pass} casos: docs vs código`;
+});
+
 paso('links', () => {
   const rotos = [];
   let revisados = 0;
@@ -192,4 +225,10 @@ if (fallas.length) {
   console.error(`\n${fallas.length} paso(s) en rojo. No se pushea así.`);
   process.exit(1);
 }
+if (soloDocs) {
+  console.log(
+    `\n· diff de sólo documentación (${cambio.length} archivo(s)): typecheck, tests y build no aplican.`,
+  );
+}
 console.log('\nTodo verde. Se puede pushear.');
+

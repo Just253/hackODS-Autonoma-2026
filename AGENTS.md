@@ -89,6 +89,8 @@ pnpm build                       # build de todos los paquetes + app
 pnpm test                        # Vitest, todos los paquetes (turbo run test)
 pnpm typecheck                   # TypeScript en todos los paquetes
 pnpm verificar                   # la puerta completa (lo mismo que CI); --rapido saltea el build
+                                 # si el diff no trae código (sólo docs), typecheck/tests/build se
+                                 # omiten solos: el check `ci` corre igual y reporta verde
 pnpm docs:chequear               # ¿el diff trae la doc que le corresponde? (PROCESO-DOCS.md §2)
 pnpm hooks:install               # una vez por máquina: activa .githooks (pre-commit y pre-push)
 pnpm --filter @hackods/nutrition test   # un paquete concreto
@@ -108,9 +110,10 @@ Linux/macOS/Git Bash: `bash scripts/preflight.sh ...`.
 
 Nunca `npm install`, `yarn`, `bun install` ni `pnpm add` en un paquete que no es el tuyo.
 
-**Worktrees de agentes:** van en `.worktrees/<slug>` **dentro** del repo (excluido en
-`.git/info/exclude`), no al lado. Los chequeos (`verificar`, `chequear-ids`) omiten `.worktrees`
-justamente para no escanear una copia del repo como si fuera fuente.
+**Worktrees de agentes:** van en `.worktrees/<slug>` **dentro** del repo, no al lado. Los chequeos
+(`verificar`, `chequear-ids`) omiten `.worktrees` justamente para no escanear una copia del repo como
+si fuera fuente. Ojo: `.git/info/exclude` es local y no viene versionado, así que cada clon agrega la
+línea una vez (`pnpm hooks:install` lo hace) o `git status` va a mostrar el worktree como sin trackear.
 
 ---
 
