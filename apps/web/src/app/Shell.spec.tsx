@@ -81,7 +81,7 @@ describe('badge del outbox', () => {
     await waitFor(() => {
       expect(within(encabezado()).getByText('En este dispositivo')).toBeInTheDocument();
     });
-    expect(within(encabezado()).queryByRole('button', { name: /Sincronizar ahora/i })).toBeNull();
+    expect(within(encabezado()).queryByRole('button', { name: /Guardar ahora/i })).toBeNull();
     // Nunca "Sincronizado" a secas: no hay red que lo respalde.
     expect(screen.queryByText(/^Sincronizado$/)).not.toBeInTheDocument();
   });
@@ -95,7 +95,7 @@ describe('badge del outbox', () => {
     montar();
 
     expect(await within(encabezado()).findByText(textoPendientes(1))).toBeInTheDocument();
-    expect(within(encabezado()).getByRole('button', { name: /Sincronizar ahora/i })).toBeEnabled();
+    expect(within(encabezado()).getByRole('button', { name: /Guardar ahora/i })).toBeEnabled();
     expect(within(encabezado()).queryByText('En este dispositivo')).toBeNull();
   });
 
@@ -109,7 +109,7 @@ describe('badge del outbox', () => {
     await within(encabezado()).findByText(textoPendientes(1));
 
     await act(async () => {
-      fireEvent.click(within(encabezado()).getByRole('button', { name: /Sincronizar ahora/i }));
+      fireEvent.click(within(encabezado()).getByRole('button', { name: /Guardar ahora/i }));
     });
 
     await waitFor(() => {
@@ -143,7 +143,7 @@ describe('badge del outbox', () => {
 
     // Sin desmontar ni recargar: el outbox aviso y el header ya lo dice.
     expect(await within(encabezado()).findByText(textoPendientes(1))).toBeInTheDocument();
-    const boton = within(encabezado()).getByRole('button', { name: /Sincronizar ahora/i });
+    const boton = within(encabezado()).getByRole('button', { name: /Guardar ahora/i });
 
     await act(async () => {
       fireEvent.click(boton);
