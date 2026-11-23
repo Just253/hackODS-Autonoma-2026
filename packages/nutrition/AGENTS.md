@@ -41,6 +41,11 @@ El sistema **no prescribe dietas ni calcula requerimientos individuales**.
 - Sustituciones: **solo** las aprobadas en la plantilla, con factor. Nada de equivalencias
   inventadas ni "parecidos razonables".
 
+`validarMenu` (implementado, #75) recalcula el SHA-256 del contenido con la misma
+serialización que `packages/domain` (`serializarContenido`), exige estado `aprobado|publicado`
+y sello coherente, y devuelve `selloValido: false` con un hallazgo `firma` por cada campo
+que falla. Una alergia sin sello resoluble también es hallazgo `firma` (no un 0 silencioso).
+
 ## Porción por grupo
 
 - La porción la define el nutricionista para cada grupo etario (edad/condición).
