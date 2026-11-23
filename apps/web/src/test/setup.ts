@@ -19,6 +19,11 @@ beforeEach(() => {
   // resultado de los tests. Cada test que necesite configuracion la stubea.
   vi.stubEnv('VITE_SUPABASE_URL', '');
   vi.stubEnv('VITE_SUPABASE_ANON_KEY', '');
+  // El plan B del compute tampoco puede activarse desde el `.env` de la maquina:
+  // sin esto, los botones de captura quedan habilitados y los tests salen a red.
+  vi.stubEnv('VITE_COMPUTE_URL', '');
+  vi.stubEnv('VITE_COMPUTE_KEY', '');
+  vi.stubEnv('VITE_COMPUTE_TOKEN', '');
   vi.stubGlobal('fetch', vi.fn(sinRed));
 });
 
