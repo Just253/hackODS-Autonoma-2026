@@ -84,3 +84,5 @@ romper: una regla mal pensada bloquea a las otras dos personas.
 11. Métricas del producto (#55): `metricas.ts` **compone** las salidas de `servirDelDia` y
     `agregadoEntreOllas` — raciones, gramos y volumen nunca se recalculan; solo el padrón
     por categoría cuenta personas vigentes por sí mismo.
+12. Catálogo de precios (#63): `medianaPorProducto` agrupa por (producto, canal) y reutiliza
+    `medianaMovil`; nunca mezcla mayorista con minorista ni inventa una mediana con <2 obs.
