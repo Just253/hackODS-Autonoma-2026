@@ -4,10 +4,15 @@ PWA **offline-first** para ollas comunes del Perú. Hackathon U. Autónoma (ODS 
 Monorepo pnpm. **3 personas, 3 orquestadores, un repo.** Este archivo es de lectura obligatoria
 para todo agente antes de tocar nada.
 
+> ⏱ **MODO 6 HORAS VIGENTE.** Mientras dure la ventana del hackathon manda `docs/MODO-6H.md` sobre
+> §6 y §8.2 de este archivo: push directo a `main` en la carpeta propia, sin claims ni PRs. Las reglas
+> duras (§5) **no** se relajan.
+
 ---
 
 ## 1. Orden de lectura antes de trabajar
 
+0. `docs/MODO-6H.md` — si el reloj está en la ventana del hackathon, este archivo manda sobre §6 y §8.2.
 1. Este archivo (reglas y mapa).
 2. `docs/DECISIONES.md` — decisiones que mandan (D1–D9). Si choca con otro doc, gana este.
 3. `docs/PROTOCOL.md` — claims, labels, ramas, gate. Único dueño de esa materia.

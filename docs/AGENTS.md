@@ -7,6 +7,7 @@ docs/
   DECISIONES.md        decisiones que mandan (D1–D9). Único nivel que decide
   PROTOCOL.md          claims, labels, ramas, gate. Único dueño de esa materia
   FUENTES.md           tabla tema → archivo canónico → commit o archivo:línea
+  MODO-6H.md           reglas de la ventana de 6 horas: manda sobre PROTOCOL.md
   ids/REGISTRO.md      el único que emite identificadores (DEC/PRB/SPK)
   problemas/           un archivo por problema, por categoría
   decisiones/          decisiones nuevas (DEC), una por archivo
