@@ -36,6 +36,12 @@ const PALABRAS_PROHIBIDAS: readonly { readonly patron: RegExp; readonly motivo: 
   { patron: /\bitem-[0-9]/, motivo: 'id interno de línea' },
   { patron: /\b20[0-9]{2}-[0-9]{2}-[0-9]{2}/, motivo: 'fecha ISO' },
   { patron: /demo-ficticio/i, motivo: 'etiqueta de andamiaje' },
+  // Metatexto de desarrollo: el dictado mostraba "TODO" en el placeholder y
+  // pasaba la guardia. Son marcas de trabajo pendiente, no texto de producto.
+  { patron: /\bTODO\b/, motivo: 'marca de trabajo pendiente' },
+  { patron: /\bFIXME\b/, motivo: 'marca de trabajo pendiente' },
+  { patron: /\bBearer\b/i, motivo: 'cabecera HTTP' },
+  { patron: /\bendpoint\b/i, motivo: 'jerga de API' },
 ];
 
 /** Texto visible: se quitan los tags (y con ellos los atributos y su contenido). */

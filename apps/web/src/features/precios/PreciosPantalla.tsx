@@ -21,6 +21,7 @@ import { BotonGrande, EncabezadoPantalla, EstadoPantalla } from '@hackods/ui';
 import { formatearVariacionBp } from '../presupuesto/formato';
 import { formatearPrecioSoles } from './formato-precio';
 import { calcularTendencia, type Tendencia } from './tendencia';
+import { unidadLegible } from './unidad';
 import type { ObservacionPrecio } from './dominio';
 
 export type EstadoPantallaPrecio = 'listo' | 'cargando' | 'error' | 'sin-conexion';
@@ -50,7 +51,7 @@ export interface PreciosPantallaProps {
 
 /** "S/ 1,40 / kg". */
 function precioConUnidad(micro: number | null, unidad: string): string {
-  return `${formatearPrecioSoles(micro)} / ${unidad}`;
+  return `${formatearPrecioSoles(micro)} / ${unidadLegible(unidad)}`;
 }
 
 /** Texto de variación: "+12,00 %", "−0,50 %" o "sin dato". */
@@ -217,7 +218,7 @@ export function PreciosPantalla({
                         {suya === undefined ? 'sin dato' : formatearPrecioSoles(suya.medianaActual)}
                         <span className="text-xs font-normal text-texto-suave">
                           {' '}
-                          / {item.unidad}
+                          / {unidadLegible(item.unidad)}
                         </span>
                       </span>
                       {suya === undefined ? null : (
