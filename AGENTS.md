@@ -9,10 +9,11 @@ para todo agente antes de tocar nada.
 ## 1. Orden de lectura antes de trabajar
 
 1. Este archivo (reglas y mapa).
-2. `docs/PROTOCOL.md` — claims, labels, ramas, gate. Copiado de `_orquestacion-research/02`.
-3. `docs/adr/` — decisiones vigentes. Si no hay ADR, la decisión no existe.
-4. El `AGENTS.md` del paquete que vas a tocar.
-5. La skill del dominio si la tarea lo pide (`/skills` o el `description` de cada una).
+2. `docs/DECISIONES.md` — decisiones que mandan (D1–D7). Si choca con otro doc, gana este.
+3. `docs/PROTOCOL.md` — claims, labels, ramas, gate. Copiado de `_orquestacion-research/02`.
+4. `docs/adr/` — decisiones vigentes de implementación. Si no hay ADR, la decisión no existe.
+5. El `AGENTS.md` del paquete que vas a tocar.
+6. La skill del dominio si la tarea lo pide (`/skills` o el `description` de cada una).
 
 Si algo de este archivo contradice a `docs/PROTOCOL.md`, gana `PROTOCOL.md` y se corrige acá en el
 mismo PR.
@@ -30,9 +31,9 @@ nuevo cambia algo, este archivo y los comandos de abajo se actualizan en el mism
 | Web | Vite + React 19 + TypeScript + Tailwind 4, PWA básica (manifest + SW) | `apps/web` |
 | Estado/red | React Router 7 en modo datos + cliente Supabase JS (solo en sync) | `apps/web` |
 | Persistencia local | IndexedDB (Dexie), patrón **outbox** | `packages/sync`, `apps/web` |
-| Backend | Supabase (Postgres + RLS + Edge Functions) | `supabase/` |
-| Dominio | TypeScript puro + Zod, sin React ni Supabase | `packages/domain` |
-| Nutrición | contrato de interfaces + proveedores inyectados, **sin cifras** | `packages/nutrition` |
+| Backend | Supabase (Postgres + RLS + Edge Functions `sync-push`/`sync-pull`) | `supabase/` |
+| Dominio | TypeScript puro + Zod, sin React ni Supabase | `packages/contracts`, `packages/domain` |
+| Nutrición | menú firmado + porción por grupo, **sin cifras** | `packages/nutrition` |
 | UI | Tailwind 4 + tokens CSS en `packages/ui` | `packages/ui` |
 | Tests | Vitest + Testing Library + MSW + Playwright | por paquete |
 | Android (opcional) | Capacitor, solo si un ADR lo justifica | `apps/mobile` |
@@ -47,12 +48,14 @@ PR con su `pnpm-lock.yaml`, (c) avisar en el issue `coordination`.
 
 ```text
 apps/web/            PWA. Pantallas, service worker, acceso a IndexedDB.
-supabase/            Migraciones, RLS, seed, edge functions. Dueño: area:api.
-packages/domain/     Tipos, esquemas Zod, reglas de negocio puras. area:contracts.
-packages/nutrition/  Contrato del motor nutricional y proveedores (sin cifras). area:contracts.
+supabase/            Migraciones, RLS, seed, tests y Edge Functions de sync. Dueño: area:api.
+packages/contracts/  Tipos + esquemas Zod del dominio (compartido). area:contracts.
+packages/domain/     Reglas de negocio puras (servicios, despensa, menú servible). area:contracts.
+packages/nutrition/  Menú firmado, porción por grupo y validación (sin cifras). area:contracts.
 packages/sync/       Outbox, ids, versiones, conflictos. area:contracts.
 packages/ui/         Componentes y tokens. area:web.
-docs/                PROTOCOL.md, adr/, dominio/, guias/. area:infra.
+packages/printing/   Folio y plantilla imprimible. area:web.
+docs/                DECISIONES.md, PROTOCOL.md, adr/, contracts/, guias/. area:infra.
 scripts/             preflight, labels, seed. area:infra.
 qa/evidencia/        Salidas de verificación (se commitea poco; ver §7).
 ```
@@ -175,7 +178,7 @@ Si falta un ítem, no se pide review. El revisor **checkoutea y corre**; no lee 
 | Pregunta | Archivo |
 |---|---|
 | ¿Qué es una olla común, qué actores hay, qué reglas de negocio? | `.opencode/skills/ollas-dominio/` + `docs/dominio/` |
-| ¿Cómo se calcula una ración y qué no se inventa? | `.opencode/skills/nutricion-reglas/` |
+| ¿Cómo se calcula una ración y qué no se inventa? | `.opencode/skills/nutricion-reglas/` + `docs/DECISIONES.md` D3 |
 | ¿Cómo funciona el offline, el outbox y los conflictos? | `.opencode/skills/pwa-offline/` |
 | ¿Cómo se escribe una política RLS o una migración? | `.opencode/skills/supabase-rls/` |
 | ¿PDF, térmica, OCR? | `.opencode/skills/impresion-escaneo/` |

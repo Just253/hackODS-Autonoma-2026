@@ -10,7 +10,7 @@ Prepará el entorno local con el seed de demo. Argumento (opcional): perfil **$A
    **pará** y avisá; no se sigue.
 2. `pnpm exec supabase db reset` (aplica migraciones + `supabase/seed.sql`).
 3. Cargá el perfil:
-   - `minimo`: 1 olla, 3 socias (alias), 2 insumos, 1 jornada.
+   - `minimo`: 1 olla, 3 personas ficticias (P-XXXX), 2 insumos, 1 menú.
    - `demo`: 2 ollas, 30 días de jornadas, 5 recetas, aportes y donaciones, y un caso de conflicto
      (un registro editado en dos dispositivos) para mostrar en la demo.
 4. Verificá: `pnpm exec supabase test db` y una consulta que muestre el conteo por olla.

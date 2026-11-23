@@ -54,7 +54,9 @@ contradice, se cambia la regla y se anota en `docs/dominio/`.
   con un evento contrario (`ajuste`), no borrando.
 - **R4 — Los totales se derivan.** El total del mes, el saldo de despensa y el costo por ración se
   calculan de los eventos. Si un total está guardado y se puede desincronizar, es un bug.
-- **R5 — Sin datos personales innecesarios.** Alias + id local. Sin DNI, sin dirección, sin teléfono,
+- **R5 — Sin datos personales innecesarios.** `codigoP` (P-XXXX) en el servidor; la etiqueta local
+  (`nombreLocal`/`alias`) vive solo en el dispositivo con `localOnly: true`. Sin documento, sin
+  dirección, sin teléfono.
   sin diagnóstico, sin foto de personas.
 - **R6 — Sin dato no es cero.** Si falta el precio o la cantidad, el resultado es `sin_dato` y se
   muestra como tal.
@@ -72,7 +74,7 @@ contradice, se cambia la regla y se anota en `docs/dominio/`.
 ## Errores de modelado frecuentes
 
 1. Guardar `total_raciones` en la jornada **y** las raciones individuales → se desincroniza.
-2. Poner el nombre completo como clave de socia → PII y duplicados.
+2. Usar la identidad como clave de una persona → PII y duplicados. La clave es `P-XXXX`.
 3. Modelar la donación como ingreso de caja sin distinguir especie de dinero.
 4. Un `olla_id` que llega por query string y se usa sin comprobar membresía → fuga entre ollas.
 

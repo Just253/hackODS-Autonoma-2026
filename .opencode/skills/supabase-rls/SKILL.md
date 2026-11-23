@@ -20,34 +20,38 @@ hace RLS. Un `olla_id` que llega del cliente es una **petición**, no un permiso
 ## Esquema mínimo
 
 ```
-ollas(id, nombre, distrito, created_at)
-members(olla_id, user_id, role, created_at, primary key (olla_id, user_id))
-jornadas(id, olla_id, fecha, menu, created_at, updated_at)
-raciones(id, olla_id, jornada_id, cantidad, created_at)          -- evento
-movimientos(id, olla_id, tipo, monto, insumo_id, fecha, created_at) -- evento
-insumos(id, olla_id, nombre, unidad, precio_centimos, updated_at)   -- maestro
+ollas(id, titulo, codigo, tipo, distrito, creada_en)
+members(id, pin_hash, recovery_hash, creado_en)
+olla_members(member_id, olla_id, rol, primary key (member_id, olla_id))
+devices(user_id, member_id, enrolled_at, revoked_at)
+personas(codigo_p, olla_id, anio_nacimiento, sexo, categoria, anemia,
+         consentimiento_seguimiento, created_at, updated_at, deleted_at, device_id, lamport)
+insumos(id, olla_id, denominacion, grupo, unidad_base, stock_minimo, updated_at)
+precios(id, olla_id, insumo_id, canal, unidad, precio, fecha, fuente, url)
+movimientos(id, olla_id, insumo_id, delta, motivo, autor, at, lamport) -- evento
+evento_sync(event_uuid, idempotency_key, lamport, device_id, olla_id, entidad, payload, estado)
 ```
 
 Reglas: `id` uuid (los eventos usan el id del cliente, UUIDv7), `olla_id` **not null** y con índice,
 `created_at`/`updated_at` con `timestamptz default now()`. Nada de `serial` para eventos que nacen
-offline.
+offline. **Ninguna tabla guarda identidad personal**: `personas` solo tiene `codigo_p` (P-XXXX).
 
 ## Políticas
 
 Helper único, `security definer`, con `search_path` fijo:
 
 ```sql
-create or replace function public.is_member(p_olla uuid)
-returns boolean
+create or replace function app.mis_ollas()
+returns setof uuid
 language sql
 stable
 security definer
 set search_path = public
 as $$
-  select exists (
-    select 1 from public.members m
-    where m.olla_id = p_olla and m.user_id = auth.uid()
-  );
+  select om.olla_id
+  from devices d
+  join olla_members om on om.member_id = d.member_id
+  where d.user_id = auth.uid() and d.revoked_at is null;
 $$;
 ```
 
@@ -91,9 +95,9 @@ Reglas:
 ## Seed
 
 - `supabase/seed.sql`, idempotente (`on conflict do nothing` / `do update`).
-- 2 ollas, usuarios de prueba, 30 días de jornadas, 5 recetas, un conflicto preparado.
-- Fechas relativas a un reloj fijo (`2026-11-01T08:00:00-05:00`), no a `now()`.
-- Datos sintéticos: alias (`socia-01`), montos redondos. Sin nombres, DNI ni teléfonos.
+- Menú demo firmado con hash calculado, movimientos y un evento de sync; sin identidad personal.
+- Fechas fijas (`2026-11-23`), no `now()`.
+- Datos sintéticos: personas `P-0001..P-0006`. Sin identidad, sin documento, sin teléfono.
 
 ## Probar el aislamiento
 

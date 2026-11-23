@@ -46,7 +46,8 @@ no está probando lo que importa.
 2. **Nada de `fetch` suelto.** El cliente HTTP y el outbox se usan desde un solo módulo.
 3. **No se muestran datos de otra olla.** `olla_id` sale de la sesión, nunca de un input.
 4. **La UI nunca bloquea por red**: si no hay conexión, guarda y avisa "pendiente de sincronizar".
-5. **Nada de PII**: la pantalla de socias usa alias, no nombres completos ni DNI.
+5. **Nada de PII**: la pantalla muestra `P-XXXX`; `nombreLocal`/`alias` viven en Dexie marcados
+   `localOnly: true` y nunca se serializan ni se envían al servidor.
 6. **Bundle**: una dependencia nueva en `apps/web` se justifica en el issue (peso y por qué).
 7. **Sin `dangerouslySetInnerHTML`** con texto que venga de OCR, importación o usuario.
 

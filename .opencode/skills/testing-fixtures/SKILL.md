@@ -29,7 +29,7 @@ La pirámide se respeta: si un caso se puede probar en unidad, no se prueba en e
 
 1. **Determinista**: reloj inyectado, ids fijos, cero `Math.random()` y cero `Date.now()` dentro del
    código bajo test.
-2. **Sintético**: alias (`socia-01`), montos redondos, fechas del dataset canónico. Nunca datos reales.
+2. **Sintético**: personas `P-0001..P-000N`, montos redondos, fechas del dataset canónico. Nunca datos reales.
 3. **Explícito**: un builder con overrides, no un JSON gigante que nadie entiende.
 4. **Compartido cuando es canónico**: hay **un** dataset de demo (`fixtures/canonico.json`) que usan los
    tests y `/seed demo`. Si se duplica, se desincroniza.
@@ -41,7 +41,7 @@ La pirámide se respeta: si un caso se puede probar en unidad, no se prueba en e
 ```text
 fixtures/canonico.json
   ollas:      2  (una con datos completos, una casi vacía para estados vacíos)
-  socias:     8  (alias, sin PII)
+  socias:     8  (codigoP P-XXXX, sin identidad)
   jornadas:   30 (fechas fijas desde 2026-11-01)
   recetas:    5  (una con ingrediente faltante a propósito → sin_dato)
   conflicto:  1  (mismo insumo editado en dos "dispositivos")
