@@ -1,90 +1,43 @@
 # hackODS-Autonoma-2026
 
-PWA **offline-first** para **ollas comunes y comedores PCA**: padrón por código, despensa,
-menú semanal firmado por nutricionista, porción por grupo, solicitudes de insumos entre ollas,
-impresión y escaneo. Pensada para equipos de gama baja y organizadoras con baja alfabetización digital.
+Una aplicación para ollas comunes y comedores del Perú que ayuda a saber **a quién alimenta**, **qué va
+a cocinar** y **cuánto le queda**. Está pensada para funcionar sin internet, en un celular compartido y
+con personas que no tienen por qué saber usar una computadora.
 
-Hackathon ODS — Universidad Autónoma del Perú.
+La olla registra a sus personas, publica un menú aprobado por una nutricionista, anota lo que entra y
+sale de la despensa, guarda sus boletas y ve cuánto puede gastar. Cuando vuelve la señal, todo se pone
+al día sin perder ni duplicar lo que se anotó sin red.
 
-> **Vigente: `docs/DECISIONES.md`.** Ese archivo manda sobre el PRD, la arquitectura, el contrato
-> nutricional y el plan; los demás quedan como insumo e historia.
+## Para quién
 
-## Estado
+Para organizadoras, cocineras y nutricionistas de ollas comunes y comedores PCA. El contexto manda:
+baja alfabetización digital, un solo celular por olla y una red que se corta.
 
-Esqueleto M0 con las decisiones D1–D9 documentadas: el monorepo instala, compila y arranca.
-D8/D9 ya tienen contratos (`packages/contracts`) y reglas puras con tests (`packages/domain`).
-**La PWA sigue siendo una prueba de humo** (router + Tailwind + tokens + paquetes): todavía no hay
-pantallas de comprobantes, presupuesto ni captura por voz.
+## Las seis funciones
 
-Alcance de la demo: **3 minutos** (+ anexo de 2). El **75 °C** es checklist de inocuidad del
-servicio, no un cálculo.
+1. **Padrón por código.** Cada persona es `P-0001`. El nombre, si se usa, queda solo en el celular.
+2. **Menú semanal firmado.** Lo aprueba una nutricionista con su colegiatura y una huella verificable;
+   el sistema ajusta la porción según el grupo de edad o condición.
+3. **Comprobantes.** Una foto o un PDF de la boleta se convierte en ítems que una persona revisa y
+   confirma antes de que cuenten.
+4. **Presupuesto.** Cuánto se asignó, cuánto se gastó, cuánto está comprometido y cuánto queda, con
+   avisos antes de pasarse.
+5. **Solicitud entre ollas.** Una olla puede pedir insumos a otra y seguir el estado del pedido.
+6. **Reporte agregado.** Cada olla ve su detalle; las demás ven solo totales, sin nombres de personas
+   ni de proveedores.
 
-## Requisitos
+## Qué NO hace
 
-- Node 22 (`.nvmrc`)
-- pnpm 10.18.2 (`packageManager` en `package.json`)
-
-## Comandos
-
-```bash
-pnpm install          # instala todo el workspace
-pnpm dev              # PWA en http://localhost:5173
-pnpm build            # build de todos los paquetes + app
-pnpm test             # Vitest
-pnpm typecheck        # TypeScript en todos los paquetes
-pnpm lint             # placeholder: aún no hay ESLint configurado
-pnpm db:reset         # Supabase local: migraciones + seed (requiere Docker)
-pnpm db:seed          # seed contra SUPABASE_DB_URL (requiere psql)
-pnpm db:types         # genera tipos desde la base local
-```
-
-## Estructura
-
-```text
-apps/web/              PWA Vite + React 19 + TypeScript + Tailwind 4
-packages/contracts/    tipos + zod del dominio (contrato compartido)
-packages/domain/       reglas puras (firmas con TODO)
-packages/nutrition/    motor de menú firmado + porción por grupo (sin cifras)
-packages/ui/           componentes y tokens
-packages/sync/         SyncPort + outbox (orden lamport, lote ≤ 100)
-packages/printing/     folio y plantilla imprimible (sin PDF aún)
-supabase/              config, migraciones, seed ficticio, tests
-supabase/functions/    Edge Functions: sync-push y sync-pull (Deno)
-scripts/               preflight, labels, seed
-.github/               CI, plantillas, CODEOWNERS, labels
-```
-
-## Identidad y privacidad
-
-- El servidor **solo** conoce `Persona.codigoP` (`P-XXXX`). El esquema SQL no tiene identidad
-  personal, documento, teléfono ni dirección.
-- `nombreLocal`/`alias` viven **solo en el dispositivo** (`IdentidadLocal`, `localOnly: true`) y
-  nunca se serializan ni se envían a `/sync/push`.
-- Los impresos usan la etiqueta local si existe; si no, imprimen `P-XXXX`.
-- Seeds ficticios y marcados. Cero datos de los PDF fuente.
+- No diagnostica ni detecta enfermedades.
+- No prescribe dietas ni calcula requerimientos individuales.
+- No reemplaza el criterio de la nutricionista.
+- No guarda la identidad de las personas en la nube: allí solo existe el código `P-XXXX`.
+- No hace contabilidad, facturación ni trámites con la municipalidad.
 
 ## Documentación
 
-- `docs/DECISIONES.md` — **decisiones que mandan** (D1–D9), fuente: PDFs + respuestas del usuario.
-- `docs/contracts/comprobantes.md` — comprobantes, clasificación de productos, presupuesto y series de precio (D8).
-- `docs/contracts/clasificacion.md` — catálogo, embeddings y umbrales de revisión (D8).
-- `docs/contracts/captura-voz.md` — captura por texto o voz y parser determinista (D9).
-- `docs/ARQUITECTURA-COMPUTE.md` — segundo backend de cómputo, `ComputePort` y degradación (D9).
-- `AGENTS.md` — reglas para todo agente/persona antes de tocar nada.
-- `docs/PROTOCOL.md` — coordinación: claims, ramas, PRs, verificación.
-- `docs/VERIFICACION.md` — búsqueda anti-duplicados antes de abrir un issue.
-- `docs/PLAN.md` — milestones y backlog (insumo; manda `DECISIONES.md`).
-- `docs/ARQUITECTURA.md` — decisiones técnicas (insumo; manda `DECISIONES.md`).
-- `docs/AGENTES.md` — roster de agentes, permisos y comandos.
-- `docs/contracts/sync.md` — `POST /sync/push` y `GET /sync/pull`.
-- `docs/contracts/nutricion.md` — contrato histórico del motor nutricional.
-- `docs/research/01-prd.md` — PRD.
-- `docs/adr/` — decisiones de implementación, una por archivo.
-- `docs/dia-1.md` — orden del día 1.
-
-## Reglas
-
-- Sin datos personales reales en el repo: los seeds son ficticios y evidentes.
-- Sin secretos en el repo; al cliente solo va la `anon key`.
-- Nada se dice resuelto sin prueba que falle antes y pase después.
-- No se inventan valores nutricionales ni reglas clínicas: `[valor a confirmar]`.
+- [Decisiones que mandan](docs/DECISIONES.md)
+- [Cómo se coordina el equipo](docs/PROTOCOL.md)
+- [Contratos de comprobantes](docs/contracts/comprobantes.md)
+- [Segundo backend de cómputo](docs/ARQUITECTURA-COMPUTE.md)
+- [Mapa de fuentes por tema](docs/FUENTES.md)
