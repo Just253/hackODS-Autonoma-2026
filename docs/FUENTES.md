@@ -27,10 +27,9 @@
 
 ## Pendientes anotados
 
-- Labels duplicados o fuera del set canónico en GitHub (p. ej. `needs-verification`): **no se borran en
-  este PR**; se limpian en un issue aparte, después de confirmar que ningún issue abierto los usa.
-  Registrado como `PRB-20261123-0947-db51d4` (`docs/problemas/infra/`), con la evidencia y el
-  criterio de cierre.
+- ~~Labels duplicados o fuera del set canónico en GitHub~~: **resuelto** el 2026-11-23
+  (`PRB-20261123-0947-db51d4`, `docs/problemas/infra/`). Se borraron 6 labels con 0 uso y se migró el
+  issue #4; quedan 22 canónicos + 10 de GitHub por defecto.
 
 ## Regla de conflicto
 

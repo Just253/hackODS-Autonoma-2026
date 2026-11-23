@@ -58,7 +58,7 @@ Se agregan al final, una fila por ID, con la salida de `pnpm ids:nuevo`.
 
 | ID | Tipo | Título | Estado | Abierto | Autor | Archivo | Relacionado |
 |---|---|---|---|---|---|---|---|
-| PRB-20261123-0947-db51d4 | PRB | Labels fuera del set canónico en GitHub | abierto | 2026-11-23T09:47:54-05:00 | GAMA | `problemas/infra/PRB-20261123-0947-db51d4.md` | — |
+| PRB-20261123-0947-db51d4 | PRB | Labels fuera del set canónico en GitHub | resuelto | 2026-11-23T09:47:54-05:00 | GAMA | `problemas/infra/PRB-20261123-0947-db51d4.md` | — |
 
 ## 5. Estados
 
