@@ -65,6 +65,7 @@ Toda tabla nueva entra **con su política y su test en el mismo PR**. Tabla sin 
 5. Los ids de cliente son UUIDv7 generados en el dispositivo: la base no los inventa para eventos.
 6. Seed con `on conflict do nothing` y fechas fijas, no `now()`.
 7. `evento_sync` no se edita ni se borra desde el cliente: solo `insert` y `select` bajo RLS.
+8. pgTAP vive en el schema `extensions` (migración `20261123155000_pgtap`); todo test de `supabase/tests` abre con `set search_path to extensions, pg_temp, public;`. El CLI de supabase crea la extensión de forma transitoria al correr `test db`; la migración la deja persistente para `db reset` + psql.
 
 ## Dueño y revisión
 
