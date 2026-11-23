@@ -10,7 +10,7 @@ begin;
 
 set local search_path to extensions, pg_temp, public;
 
-select plan(2);
+select plan(3);
 
 select is(
   (select data_type from information_schema.columns
@@ -19,10 +19,29 @@ select is(
   'precios.precio es bigint (microcentesimos por unidad base, ADR-0004)'
 );
 
+-- Se acota a la serie BASE (ids 201..206 de seed.sql): es la que este test
+-- afirma. `seeds/demo-grande.sql` agrega 84 precios mas sobre la misma olla y
+-- no debe romper esta afirmacion (el reset local corre ambos seeds).
 select is(
-  (select array_agg(precio order by id) from precios),
+  (select array_agg(precio order by id) from precios
+    where id in (
+      '00000000-0000-4000-8000-000000000201',
+      '00000000-0000-4000-8000-000000000202',
+      '00000000-0000-4000-8000-000000000203',
+      '00000000-0000-4000-8000-000000000204',
+      '00000000-0000-4000-8000-000000000205',
+      '00000000-0000-4000-8000-000000000206'
+    )),
   '{420000,510000,780000,230000,550000,940000}'::bigint[],
-  'los valores sembrados son enteros de microcentesimos exactos'
+  'los valores base sembrados son enteros de microcentesimos exactos'
+);
+
+-- Y toda la tabla, incluida la demo grande, sigue en microcentesimos enteros
+-- positivos: un 0 o un negativo seria un precio mal capturado.
+select is(
+  (select count(*) from precios where precio <= 0),
+  0::bigint,
+  'todos los precios (base y demo) son enteros positivos de microcentesimos'
 );
 
 select * from finish();
