@@ -7,7 +7,12 @@ dist/
 build/
 out/
 .turbo/
+.vite/
 *.tsbuildinfo
+
+# Supabase local (Docker)
+supabase/.branches/
+supabase/.temp/
 
 # Entornos y secretos
 .env

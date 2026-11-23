@@ -1,0 +1,76 @@
+/**
+ * Tokens de diseno. Los mismos nombres se usan en pantalla y en impresion
+ * (docs/ARQUITECTURA.md 3.4). Ningun componente usa un hexadecimal suelto.
+ */
+:root {
+  --color-fondo: #ffffff;
+  --color-texto: #111111;
+  --color-primario: #1d4ed8;
+  --color-primario-texto: #ffffff;
+  --color-borde: #c7c7c7;
+  --color-tenue: #f3f4f6;
+  --radio: 0.5rem;
+  --toque-minimo: 48px;
+
+  /* Escala tipografica: 18 px por defecto, no 16. Se ajusta con data-texto. */
+  --texto-base: 18px;
+  --texto-titulo: 1.5rem;
+}
+
+html[data-texto='grande'] {
+  --texto-base: 22px;
+}
+
+html[data-texto='enorme'] {
+  --texto-base: 26px;
+}
+
+html {
+  font-size: var(--texto-base);
+}
+
+.oc-boton {
+  min-height: var(--toque-minimo);
+  min-width: var(--toque-minimo);
+  padding: 0.5rem 1.25rem;
+  border-radius: var(--radio);
+  border: 1px solid var(--color-borde);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.oc-boton--primario {
+  background: var(--color-primario);
+  border-color: var(--color-primario);
+  color: var(--color-primario-texto);
+}
+
+.oc-boton--secundario {
+  background: var(--color-fondo);
+  color: var(--color-texto);
+}
+
+.oc-boton:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.oc-boton:focus-visible {
+  outline: 3px solid var(--color-primario);
+  outline-offset: 2px;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  .pagina {
+    break-after: page;
+  }
+
+  .fila {
+    break-inside: avoid;
+  }
+}

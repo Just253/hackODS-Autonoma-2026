@@ -1,0 +1,31 @@
+-- 0001_init.sql — migracion inicial del esqueleto.
+--
+-- A PROPOSITO VACIA: el esquema real se disena en el PR de contratos v1
+-- (issue #3, docs/ARQUITECTURA.md 6.2) y nace con RLS default-deny.
+-- Una migracion aplicada no se edita nunca: el esquema entra en una migracion nueva.
+--
+-- Forma prevista (no activar sin el PR de contratos):
+--
+-- create table ollas (
+--   id uuid primary key default gen_random_uuid(),
+--   nombre text not null,
+--   codigo text not null unique,
+--   distrito text,
+--   creada_en timestamptz not null default now()
+-- );
+--
+-- create table members (
+--   id uuid primary key default gen_random_uuid(),
+--   nombre text not null,
+--   telefono text,
+--   pin_hash text not null,
+--   recovery_hash text not null,
+--   creado_en timestamptz not null default now()
+-- );
+--
+-- create table olla_members (...);
+-- create table devices (...);
+--
+-- Regla: toda tabla nueva nace con `enable row level security` y sin policies.
+-- El test `supabase/tests/000_rls_encendido.sql` falla si una tabla de public
+-- queda con RLS deshabilitado.

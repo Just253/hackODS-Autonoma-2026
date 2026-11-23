@@ -1,0 +1,9 @@
+packages:
+  - apps/*
+  - packages/*
+
+# pnpm 10 no ejecuta lifecycle scripts por defecto. Sin estos, Vite falla con
+# un error de binario de esbuild y Tailwind no compila (ver docs/ARQUITECTURA.md 2.1).
+onlyBuiltDependencies:
+  - esbuild
+  - '@tailwindcss/oxide'

@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "paths": {
+      "@hackods/contracts": ["./packages/contracts/src/index.ts"],
+      "@hackods/domain": ["./packages/domain/src/index.ts"],
+      "@hackods/nutrition": ["./packages/nutrition/src/index.ts"],
+      "@hackods/ui": ["./packages/ui/src/index.ts"],
+      "@hackods/sync": ["./packages/sync/src/index.ts"],
+      "@hackods/printing": ["./packages/printing/src/index.ts"]
+    }
+  }
+}
