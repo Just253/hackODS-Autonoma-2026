@@ -12,6 +12,7 @@
 | Sincronización (Lamport, outbox, conflicto) | `docs/contracts/sync.md` | §0–§3 |
 | Comprobantes, ítems y revisión humana | `docs/contracts/comprobantes.md` | §2–§5 |
 | Dinero: enteros, IGV, presupuesto, serie de precios | `docs/contracts/comprobantes.md` + `packages/domain/src/presupuesto/presupuesto.ts` | §1 y §7 |
+| Serie de precios D4 (`precios`): unidad del dinero | `docs/adr/0004-escala-precios.md` + `docs/contracts/precios.md` | ADR-0004 |
 | Captura por texto o voz | `docs/contracts/captura-voz.md` | §0–§4 |
 | Clasificación de productos y umbrales | `docs/contracts/clasificacion.md` + `packages/domain/src/clasificacion/config.ts` | `config.ts:13` (`TAU = 0.69`, commit `f627b45`) |
 | Medición de embeddings | `docs/research/11-ollama-embeddings.md` | tabla de modelos y conclusiones |

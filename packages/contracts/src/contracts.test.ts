@@ -57,7 +57,7 @@ describe('contracts v1', () => {
       insumoId: 'arroz',
       canal: 'mayorista',
       unidad: 'g',
-      precio: 4.2,
+      precio: 420000,
       fecha: '2026-11-23',
       fuente: 'visit_data_demo',
       url: null,

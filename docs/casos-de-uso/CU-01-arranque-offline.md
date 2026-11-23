@@ -3,7 +3,7 @@
 **Actor:** la cocinera, con la tablet de la olla y sin señal.
 **Objetivo:** que la app abra y se pueda usar aunque no haya internet, y que recargar no la rompa.
 
-**Guion:** 0:00 · **Área:** `web` · **Estado:** PR #16 (mergeado)
+**Guion:** 0:00 · **Área:** `web` · **Estado:** PR #16 (mergeado); probado en código, no en modo avión real
 
 ## Precondiciones
 

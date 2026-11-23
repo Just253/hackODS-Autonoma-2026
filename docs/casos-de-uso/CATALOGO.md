@@ -40,7 +40,7 @@ en un PR abierto.
 | CU-13 | organizadora | Encontrar a una persona por `P-XXXX` o por su alias local | CU-02 | no | no: `personas` solo tiene `codigo_p`; el alias vive en `identidadLocalSchema` (`localOnly`) y no tiene tabla | esta tabla |
 | CU-14 | organizadora | Corregir datos o dar de baja sin borrar el historial | CU-13 | no | parcial: `deleted_at` y trigger `personas_touch`; `personas` no tiene policy de update | esta tabla |
 | CU-15 | organizadora, nutricionista | Consentir con dos casillas y registrar salud opt-in decidiendo quién la ve | CU-14 | no | parcial: un solo `consentimiento_seguimiento` boolean; sin columna de visibilidad; RLS de salud en #4 (PR #23, draft) | esta tabla |
-| CU-16 | cocinera | Ver el padrón del día sin datos de salud | CU-02 | no | parcial: hoy `personas_select` deja leer `anemia`, `peso_kg` y `talla_cm` a toda la olla; #4 lo corrige | esta tabla |
+| CU-16 | cocinera | Ver el padrón del día sin datos de salud | CU-02 | no | sí: #23 revoca las columnas de salud y deja `v_salud_agregado` solo para nutricionista/admin | esta tabla |
 | CU-17 | nutricionista | Firmar, publicar o retirar el menú con sello y hash | CU-12, CU-28 | no | parcial: `menu_template.estado`, `sello_*`, `hash` y `validation`; solo policy de select, sin escritura | esta tabla |
 | CU-18 | cualquiera | Ver el menú publicado del día | CU-17 | no | no: `menu_day_select` exige ser miembro (`app.mis_ollas()`); no hay vista ni ruta pública | esta tabla |
 | CU-19 | cocinera | Registrar el servicio del día y el checklist de 75 °C | CU-17 | no | parcial: `servicios.cocido_a_75c` e `inocuidad_verificada_en`; sin policy de insert | esta tabla |
@@ -121,22 +121,24 @@ resuelve sembrando el menú publicado en `seed.sql`, no construyendo CU-17 antes
 | `hecho` | PR mergeado y issue cerrado. | El merge (keyword de cierre) o el orquestador. |
 | `descartado` | Se decidió no hacerlo: issue cerrado como *not planned* con motivo. | El orquestador o quien tenga el alcance. |
 
-Estado actual de `CU-01`…`CU-09`, verificado con `gh pr list --state all` y `gh issue list --state all`:
+Estado actual de `CU-01`…`CU-09`, verificado contra `main` en `16f9419`:
 
-| CU | estado | evidencia |
-|---|---|---|
-| CU-01 | `hecho` | PR #16 mergeado; issue #3 cerrado (quedó el label `status:claimed` pegado). |
-| CU-02 | `en_curso` | Issue #1 abierto con `status:claimed`; PR #14 en draft. |
-| CU-03 | `listo` | Issue #17 `status:ready` (contracts); sin PR. |
-| CU-04 | `listo` | Issues #9 (web) y #5 (contracts) `status:ready`; sin PR. |
-| CU-05 | `en_curso` | Issue #10 `status:claimed`; PR #21 en draft. |
-| CU-06 | `en_curso` | Mismo issue #10 y PR #21 (cubre presupuesto y precios). |
-| CU-07 | `listo` | Issue #18 `status:ready`; sin PR. |
-| CU-08 | `listo` | Issue #19 `status:ready`; sin PR. |
-| CU-09 | `en_revision` | Sin issue propio; el copy vive en `CU-09-cierre-honesto.md`, que viaja en el PR #20 abierto. |
+| CU | estado | ¿sirve hoy? | evidencia |
+|---|---|---|---|
+| CU-01 | `hecho` | ⚠️ | PWA y SW en `main` (#16). Probado en código, **no** en modo avión real. |
+| CU-02 | `en_curso` | ❌ | PR #30 mergeado, pero el alta **no guarda al hacer click** (#41). |
+| CU-03 | `en_revision` | ⚠️ | `servirDelDia` en `main` (#26); la pantalla va en el PR #44. |
+| CU-04 | `en_curso` | ⚠️ | Pantalla en `main` (#32), pero pinta **6 de 6 en rojo** y dice «6 por revisar» (#9); sin enchufe al presupuesto. |
+| CU-05 | `en_curso` | ⚠️ | Pantalla en `main` (#31) sobre fixture; confirmar no mueve el presupuesto (#9). |
+| CU-06 | `en_curso` | ✅ | Mediana real, +12,00 %, descarta el outlier; la serie es fixture, no cargada. |
+| CU-07 | `hecho` | ✅ | PR #37 mergeado (`377bff1`): solicitud, agregado sin identidades y reporte. |
+| CU-08 | `en_revision` | ⚠️ | PR #45: outbox Dexie real y badge; el badge se lee una sola vez y no se refresca. |
+| CU-09 | `en_curso` | ⚠️ | El pie dice «datos simulados / no es un diagnóstico»; faltan «no prescribe dietas» y «no guarda nombres en la nube». |
 
-`CU-15` y `CU-16` no entran en esa lista: el issue #4 está `claimed` y el PR #23 en draft, pero no tienen
-issue `status:ready` propio ni archivo, así que siguen en la tabla.
+«Sirve hoy» significa que se puede mostrar sin explicar por qué no anda. Hoy: **2 sí, 6 a medias, 1 no**.
+
+`CU-15` y `CU-16` ya tienen su parte de lectura en `main`: #23 mergeó la RLS de salud y las vistas
+agregadas. Siguen sin archivo propio, así que se quedan en la tabla del catálogo.
 
 ## 7. Los cinco que más duelen si no están
 
