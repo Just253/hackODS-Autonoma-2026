@@ -31,14 +31,7 @@ jobs:
       - name: Instalar
         run: pnpm install --frozen-lockfile
 
-      - name: Tipos
-        run: pnpm typecheck
-
-      - name: Tests
-        run: pnpm test
-
-      - name: Identificadores
-        run: pnpm ids:chequear
-
-      - name: Build
-        run: pnpm build
+      # Una sola puerta: la misma que corre cada persona antes de pushear.
+      # entorno, identificadores, tipos, tests, build, términos muertos, links y secretos.
+      - name: Verificar
+        run: pnpm verificar

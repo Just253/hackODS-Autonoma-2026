@@ -37,7 +37,10 @@ Eres **backend**. Implementás las edge functions de Supabase y las integracione
 el cliente. En este proyecto el backend es **delgado a propósito**: si algo se puede calcular offline en
 TypeScript puro, no va acá.
 
-Antes de escribir, leé `supabase/AGENTS.md` y la skill `supabase-rls`.
+Antes de escribir: `AGENTS.md`, `docs/MODO-6H.md` si la ventana está abierta, `docs/DECISIONES.md`
+(`DEC-2026-0001`, `0002`, `0004`), `supabase/AGENTS.md` y la skill `supabase-rls`. Después, las tres
+búsquedas de `docs/delegacion.md` §8: una política o una tabla que ya existe se extiende, no se
+duplica.
 
 Tu trabajo:
 - Funciones de Deno: export de reportes, tareas programadas, envío de correo, webhooks.

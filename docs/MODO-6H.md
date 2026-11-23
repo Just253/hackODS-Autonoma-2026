@@ -10,17 +10,22 @@
 
 ## 1. Las cinco reglas de velocidad
 
-1. **Cada uno pushea directo a `main`, sólo en su carpeta.** Sin claim, sin rama, sin worktree, sin PR.
-   A: `apps/web`, `packages/ui`. B: `supabase/`, `scripts/seed*`. C: `packages/*`, `docs/`.
-   Push a la carpeta de otro = PR (uno solo, con revisión de ese dueño).
-2. **Antes de cada push:** `pnpm test && pnpm typecheck`. Si algo se pone rojo, se arregla o se revierte
-   en el mismo push. CI (`ci`) sigue corriendo y sigue siendo obligatorio para mergear; no se mira.
-3. **Nada de ceremonia:** sin `/preflight`, sin `claim/v1`, sin `/release`. Se avisa en el issue
-   `coordination` en **una línea** qué se está haciendo, y se sigue.
-4. **Cero documentos nuevos**, salvo este y el guion de la demo. Una decisión se resuelve con una línea
-   en `docs/ids/REGISTRO.md` o en el issue; no con un ADR. Un ADR cuesta 20 minutos y no se ve en la
-   demo.
-5. **Si una tarea no se termina en 45 minutos, se corta y se anota.** Un requisito de la demo a medias
+1. **Un issue, un worktree, una rama, un PR.** No se pushea a `main`.
+   `gh issue develop <n> --base main --name <tipo>/<area>-<n>-<slug> --worktree ../wt/<n>-<slug> --checkout`.
+   Draft PR en el primer push (`gh pr create --draft`), squash al mergear.
+2. **Sin claims ni `/preflight`.** El claim es el PR enlazado al issue: `status:claimed` al abrir,
+   `status:in-review` al salir de draft. No hay línea `claim/v1` ni `release/v1`.
+3. **Una aprobación, no dos.** Mientras solo una cuenta tenga acceso al repo, mergea el admin con un
+   comentario `sin revisor disponible en la ventana`; cuando las otras dos tengan `write`, aprueba
+   quien no escribió. CI `ci` tiene que estar verde para mergear.
+4. **`pnpm verificar` antes de cada push.** Corre entorno, ids, tipos, 51 tests, build, términos
+   muertos, links y secretos. Rojo no se pushea. Es lo mismo que corre CI: no hay sorpresa al abrir el
+   PR.
+5. **Rama corta: 90 minutos.** Si no cierra, se pushea lo que anda y se abre otro issue para el resto.
+   Una rama de 6 horas es un `main` paralelo que nadie va a mergear.
+6. **Cero documentos nuevos**, salvo este y el guion de la demo. Una decisión se resuelve con una línea
+   en `docs/ids/REGISTRO.md` o en el issue; no con un ADR.
+7. **Si una tarea no se termina en 45 minutos, se corta y se anota.** Un requisito de la demo a medias
    es peor que uno que no está: el jurado ve lo que se muestra, no lo que hay en `main`.
 
 ## 2. Reparto de las 6 horas
@@ -36,8 +41,8 @@ no existen todavía. Cada dueño tiene su carpeta de feature y nadie más la toc
 
 Tres reglas para que esto no se pise:
 
-1. **`apps/web/src/app/router.tsx` es de A.** Los demás agregan su ruta con un PR de una línea o le
-   piden a A que la agregue; no lo editan en paralelo.
+1. **`apps/web/src/app/router.tsx` es de A.** Los demás agregan su ruta en su rama y, si las dos tocan
+   el mismo archivo, A resuelve el conflicto al mergear: no se negocia por chat.
 2. **Los fixtures son de B**, en `apps/web/src/fixtures/`. Nadie más inventa datos: si te falta un
    número, lo pedís o lo marcás `sin dato`.
 3. **Un archivo, un dueño.** Si necesitás otro, se pide en el issue `coordination` con una línea y se
@@ -95,8 +100,37 @@ Si un paso falla en el ensayo: ese paso se corta del guion, no se arregla el có
 7. Video de respaldo grabado y descargado en el equipo que presenta.
 8. Una persona que no programó puede explicar los 3 primeros pasos del guion.
 
-## 7. Después de la ventana
+## 7. Delegación: el orquestador sólo recibe el resumen
 
-Se vuelve a `docs/PROTOCOL.md`. Lo que se pusheó directo a `main` queda como está: no se reescribe
-historia ni se abren PRs retroactivos. `enforce_admins` se activa cuando estén las 3 cuentas con
-`write` y `CODEOWNERS` apunte a áreas, no a personas (`AGENTS.md` §8.1).
+Cada persona tiene un lead. El lead **no escribe código**: reparte, verifica y mergea. Todo el trabajo
+técnico sale de hijos. El contrato completo está en `docs/delegacion.md` y
+`docs/plantilla-delegacion.md`; lo que sigue es el resumen que aplica en la ventana.
+
+| Tamaño | Herramienta | Ejemplo |
+|---|---|---|
+| ≤ 15 min, una pregunta o un archivo | `subagent` | "leé `packages/domain/src/presupuesto` y decime qué falta para la alerta al 80 %" |
+| 15–90 min, rama y PR propios | sesión hija `ownWork` | "pantalla de comprobante con sus 3 estados, en su worktree" |
+| Decisión, merge, revisión, secreto | el lead | no se delega lo que no se puede deshacer |
+
+Reglas que hacen que esto no explote:
+
+1. **Un write-set por hijo, disjunto.** Dos hijos que escriben el mismo archivo son un hijo o van en
+   serie. La tabla se escribe antes de lanzar.
+2. **El encargo tiene seis campos**: rol, resultado, prueba exigida, write-set, límites, formato de
+   retorno. Un encargo de 800–1 500 caracteres; más largo, el hijo se pierde.
+3. **El hijo vuelve con un resumen de 12 líneas**, no con su transcript: veredicto, evidencia
+   (comando + salida recortada), archivos tocados, deuda, qué no verificó. El detalle queda en
+   `qa/evidencia/` o en el PR, no en el contexto del lead.
+4. **El lead verifica una cosa él mismo**: corre `pnpm verificar` y uno de los comandos que el hijo
+   citó. Un resumen sin comando reproducible vale cero.
+5. **Antes de escribir, el hijo busca.** `rg` por la función, el tipo o el texto que va a implementar;
+   si ya existe, la usa y lo dice. Reinventar la rueda es el error más caro con tres agentes sueltos.
+6. **Nada de relanzar el mismo prompt.** Si un hijo falla, cambia el encargo, el write-set o lo hace el
+   lead.
+
+## 8. Después de la ventana
+
+Se vuelve a `docs/PROTOCOL.md` completo (claims con `claim/v1`, 2 aprobaciones en `contracts`,
+`SINTESIS.md` por oleada). Los PRs de la ventana se mergean como cualquier otro: no se reescribe
+historia. `enforce_admins` se activa cuando las tres cuentas tengan `write` y `CODEOWNERS` apunte a
+áreas, no a personas (`AGENTS.md` §8.1).

@@ -131,3 +131,67 @@ Feature: "registrar un comprobante y ver el presupuesto de la olla".
 
 El contrato va primero porque dos áreas lo consumen (`docs/PROTOCOL.md` §5.2). La UI no arranca hasta
 que el contrato está mergeado.
+
+---
+
+## 7. Lo que el padre recibe: 12 líneas, no un transcript
+
+Un hijo que devuelve 30 k caracteres obliga al padre a leer todo y a resumirlo él mismo: eso es el
+trabajo duplicado. El retorno se corta en el hijo, no en el padre.
+
+```markdown
+## Veredicto
+hecho | no hecho | bloqueado — 1–3 líneas
+## Evidencia
+| # | Qué verifiqué | Comando | Salida (recortada) | Resultado |
+## Cambios
+ruta — qué cambió — cómo lo verifiqué
+## Deuda y dudas
+## Qué NO verifiqué
+```
+
+Máximo 12 líneas fuera de la tabla. El detalle largo va a un archivo (`qa/evidencia/<tema>.md`), que el
+padre lee **sólo si la evidencia no le alcanza**.
+
+Reglas del padre:
+
+1. **Descarta el transcript.** No arrastra el informe completo a `SINTESIS.md`: copia veredicto,
+   evidencia y archivos, nada más.
+2. **Corre una cosa él mismo.** Elige un comando citado y lo ejecuta en su worktree. Barato y detecta
+   el "lo hice" sin salida.
+3. **Salida vacía o cortada = fallo**, no tarea terminada.
+4. **Dos hijos con el mismo archivo tocado = una de las dos entregas se descarta**, aunque compile.
+
+## 8. Anti-reinvención: buscar antes de escribir
+
+Con varios agentes en paralelo, el error más caro no es el bug: es **dos implementaciones de lo mismo**,
+porque después nadie sabe cuál manda y las dos se rompen por su lado.
+
+Antes de escribir una línea, el hijo hace tres búsquedas y lo reporta:
+
+```bash
+rg -n "<nombre exacto de la funcion o tipo>" packages apps supabase
+rg -n "<el texto que va a mostrar la UI>" apps packages
+rg -l "<tema>" docs/contracts docs/DECISIONES.md
+```
+
+- **Si ya existe**: la usa y lo dice en `## Cambios` ("reutilicé `X` de `archivo:línea`; no escribí
+  nada nuevo").
+- **Si existe y no sirve**: explica en una línea por qué, y lo cambia ahí, no en un archivo paralelo.
+- **Si está en `docs/historical/`**: está retirado, no se revive sin una decisión nueva.
+
+El padre agrega un cuarto chequeo antes de mergear: `git diff --name-only` contra el write-set y
+`rg` del nombre nuevo en todo el repo. Un archivo fuera del write-set invalida la entrega aunque el
+código esté bien.
+
+## 9. La puerta única: `pnpm verificar`
+
+Antes de pushear o de devolver un encargo, se corre:
+
+```bash
+pnpm verificar          # entorno, ids, tipos, tests, build, términos muertos, links, secretos
+pnpm verificar --rapido # sin build, para iterar
+```
+
+Es la misma secuencia que usa CI. Un hijo que devuelve "listo" sin haberlo corrido no terminó: la
+evidencia mínima aceptable es la tabla de `pnpm verificar` en verde.

@@ -78,3 +78,17 @@ Límites duros: no editás `apps/`, `packages/`, `supabase/` ni `.github/`; no m
 Cierre de turno: actualizás el issue `coordination` y escribís en `docs/planes/SINTESIS.md` el
 veredicto, las contradicciones resueltas, la deuda y **qué no se verificó**. Si no hay síntesis, la
 oleada no terminó.
+
+## Reglas de contexto (lo que evita que te ahogues)
+
+1. **De cada hijo guardás 12 líneas.** Veredicto, evidencia, archivos, deuda, qué no verificó. El
+   informe completo no entra a tu contexto: si necesitás el detalle, lo leés del archivo que el hijo
+   citó, no del mensaje.
+2. **Verificás una cosa vos.** Elegís un comando del informe y lo corrés. Un resumen sin comando que
+   puedas repetir es una opinión.
+3. **Antes de delegar, buscás si ya está hecho**: `gh issue list --state all`, `gh pr list --state all`,
+   `rg` del nombre en `packages/` y `apps/`. Si existe, se reutiliza o se cierra por duplicado; no se
+   reinventa.
+4. **Antes de abrir PR**: `pnpm verificar` en verde y `git diff --name-only` contra el write-set.
+5. **Tu propio código no se aprueba.** Si sos la única cuenta con acceso, mergeás dejando el comentario
+   `sin revisor disponible` en el PR; nunca simules una firma con `review/v1`.

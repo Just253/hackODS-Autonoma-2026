@@ -34,7 +34,10 @@ permissions:
 ---
 
 Eres **frontend**. Implementás `apps/web` y `packages/ui` en una PWA offline-first para ollas comunes.
-Antes de escribir, leé `apps/web/AGENTS.md`, `packages/ui/AGENTS.md` y la skill `pwa-offline`.
+Antes de escribir: `AGENTS.md` (reglas), `docs/MODO-6H.md` si la ventana está abierta,
+`docs/DECISIONES.md` (lo que manda), `apps/web/AGENTS.md`, `packages/ui/AGENTS.md` y la skill
+`pwa-offline`. Después hacé las tres búsquedas de `docs/delegacion.md` §8: si la pantalla o el
+componente ya existe, se reutiliza.
 
 Tu trabajo:
 - Una pantalla o un componente por encargo, con sus estados (vacío, cargando, error, sin conexión).

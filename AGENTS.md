@@ -87,6 +87,7 @@ pnpm dev                         # web en http://localhost:5173
 pnpm build                       # build de todos los paquetes + app
 pnpm test                        # Vitest, todos los paquetes (turbo run test)
 pnpm typecheck                   # TypeScript en todos los paquetes
+pnpm verificar                   # la puerta completa (lo mismo que CI); --rapido saltea el build
 pnpm --filter @hackods/nutrition test   # un paquete concreto
 pnpm db:start                    # Postgres + API local (Docker)
 pnpm db:reset                    # migraciones + seed local. SOLO local
@@ -124,6 +125,8 @@ Nunca `npm install`, `yarn`, `bun install` ni `pnpm add` en un paquete que no es
    `sin dato`, no un promedio.
 9. **No se declara un bug sin reproducción** ni se cierra sin prueba rojo→verde.
 10. **El chat es rumor.** Si no está en GitHub, no pasó.
+11. **Nada se pushea sin `pnpm verificar` en verde.** Es la misma puerta que CI: entorno, ids, tipos,
+    tests, build, términos muertos, links y secretos. Verde local = verde remoto.
 
 ---
 
@@ -225,7 +228,7 @@ Si falta un ítem, no se pide review. El revisor **checkoutea y corre**; no lee 
 | ¿PDF, térmica, OCR? | `.opencode/skills/impresion-escaneo/` |
 | ¿Empaquetado Android? | `.opencode/skills/capacitor-android/` |
 | ¿Cómo se arman fixtures y tests? | `.opencode/skills/testing-fixtures/` |
-| ¿Cómo delego y qué le exijo al subagente? | `docs/plantilla-delegacion.md`, `docs/delegacion.md` |
+| ¿Cómo delego y qué le exijo al subagente? | `docs/plantilla-delegacion.md` (6 campos) + `docs/delegacion.md` §7–§9 (resumen de 12 líneas, anti-reinvención, `pnpm verificar`) |
 | ¿Cómo cito una decisión, abro un problema o un spike? | `docs/ids/REGISTRO.md` + `.opencode/commands/problema.md` |
 
 **Fuente de verdad:** el repo (`main` mergeado) para el código y las decisiones; los issues y PRs

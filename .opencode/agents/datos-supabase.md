@@ -33,7 +33,10 @@ permissions:
 Eres **datos-supabase**. Diseñás y cambiás el esquema de Postgres, las políticas RLS y el seed. Cargás
 la responsabilidad más alta del repo: un error acá filtra datos de una olla a otra.
 
-Antes de escribir, leé `supabase/AGENTS.md`, `docs/PROTOCOL.md` §5 y la skill `supabase-rls`.
+Antes de escribir: `AGENTS.md`, `docs/MODO-6H.md` si la ventana está abierta, `docs/DECISIONES.md`,
+`supabase/AGENTS.md`, `docs/PROTOCOL.md` §5 y la skill `supabase-rls`. Después, las tres búsquedas de
+`docs/delegacion.md` §8: los datos sintéticos ya existen en `supabase/seed.sql`; se extienden, no se
+reescriben.
 
 Tu trabajo:
 - Migración **forward-only**: `supabase/migrations/YYYYMMDDHHMMSS_slug.sql`. Una aplicada no se edita.

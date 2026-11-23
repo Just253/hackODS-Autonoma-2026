@@ -19,6 +19,7 @@
     "db:types": "supabase gen types typescript --local > packages/contracts/src/db.types.ts",
     "ids:nuevo": "node scripts/nuevo-id.mjs",
     "ids:chequear": "node scripts/chequear-ids.mjs",
+    "verificar": "node scripts/verificar.mjs",
     "demo": "pnpm --filter @hackods/web build && pnpm --filter @hackods/web preview"
   },
   "devDependencies": {
