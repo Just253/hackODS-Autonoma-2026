@@ -28,6 +28,10 @@ export { formatearCentimos };
  * decide `clasificarItem()` y los totales salen de `totalDeLineasConfirmadas()`
  * / `totalDelPapel()`, todo en `@hackods/domain`. Antes de confirmar no se toca
  * un numero del papel: se muestra textual.
+ *
+ * Presentacion movil: el total confirmado es la cifra grande de la pantalla
+ * (fija arriba, va cambiando mientras se revisa) y cada linea es una tarjeta
+ * con su boton de confirmar al ancho completo.
  */
 
 function cantidadLegible(item: ItemBoleta): string {
@@ -75,24 +79,25 @@ export function ComprobantePage() {
   const totalPapel = totalDelPapel(ITEMS_BOLETA);
 
   return (
-    <section className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1">
-        <h2 className="text-2xl font-bold">Comprobante</h2>
-        <p className="text-gray-600">
+    <section className="flex flex-col gap-4">
+      <header className="flex flex-col gap-1">
+        <h2 className="text-xl font-bold">Comprobante</h2>
+        <p className="text-sm text-texto-suave">
           Boleta de ejemplo: 6 líneas leídas del papel. Nada suma al presupuesto hasta que
           confirmes la línea.
         </p>
-      </div>
+      </header>
 
-      <div className="rounded-lg border border-gray-300 bg-gray-50 p-4">
-        <p className="text-gray-600" data-estado="por-revisar">
+      {/* Resumen pegajoso: el numero que se mira mientras se revisa. */}
+      <div className="oc-tarjeta sticky top-0 z-10 flex flex-col gap-1 bg-superficie">
+        <p className="text-sm text-texto-suave" data-estado="por-revisar">
           {lineasPorRevisar.length} de {ITEMS_BOLETA.length} líneas por revisar: no suman al
           presupuesto.
         </p>
-        <p className="text-3xl font-bold" aria-live="polite" data-estado="total-confirmado">
+        <p className="oc-cifra" aria-live="polite" data-estado="total-confirmado">
           {formatearCentimos(totalConfirmado)}
         </p>
-        <p className="text-gray-600">
+        <p className="text-sm text-texto-suave">
           Confirmado de {formatearCentimos(totalPapel)} del papel
         </p>
       </div>
@@ -110,16 +115,18 @@ export function ComprobantePage() {
               data-suma={suma ? 'si' : 'no'}
               className={
                 confirmado
-                  ? 'flex flex-col gap-2 rounded-lg border border-green-600 p-4'
-                  : 'flex flex-col gap-2 rounded-lg border border-red-500 bg-red-50 p-4'
+                  ? 'oc-tarjeta flex flex-col gap-2 border-primario'
+                  : 'oc-tarjeta flex flex-col gap-2 border-l-4 border-l-error'
               }
             >
               <div className="flex items-baseline justify-between gap-3">
-                <span className="font-mono text-lg">{item.descripcionCruda}</span>
-                <span className="font-semibold">{formatearCentimos(item.totalLineaCentavos)}</span>
+                <span className="font-mono text-base">{item.descripcionCruda}</span>
+                <span className="text-lg font-bold tabular-nums">
+                  {formatearCentimos(item.totalLineaCentavos)}
+                </span>
               </div>
 
-              <dl className="grid grid-cols-3 gap-2 text-sm text-gray-700">
+              <dl className="grid grid-cols-3 gap-2 text-xs text-texto-suave">
                 <div>
                   <dt className="font-semibold">Cantidad</dt>
                   <dd>{cantidadLegible(item)}</dd>
@@ -139,13 +146,15 @@ export function ComprobantePage() {
               </dl>
 
               {confirmado ? (
-                <p className="font-semibold text-green-700">Confirmado: suma al presupuesto.</p>
+                <p className="flex items-center gap-2 text-sm font-bold text-primario">
+                  <span aria-hidden="true">✓</span> Confirmado: suma al presupuesto.
+                </p>
               ) : (
                 <div className="flex flex-col gap-2">
-                  <p className="font-semibold text-red-700">
+                  <p className="text-sm font-semibold text-error">
                     Por revisar: no suma. {motivoLegible(clasificacion)}.
                   </p>
-                  <div>
+                  <div className="[&>button]:w-full">
                     <BotonGrande variante="secundario" onClick={() => confirmar(item.id)}>
                       {`Confirmar ${item.descripcionCruda}`}
                     </BotonGrande>
@@ -157,7 +166,7 @@ export function ComprobantePage() {
         })}
       </ul>
 
-      <footer className="flex flex-col gap-1 text-sm text-gray-600">
+      <footer className="flex flex-col gap-1 text-xs text-texto-suave">
         <span>
           Umbrales del catálogo: TAU {CONFIG_CLASIFICACION.tau}, margen {CONFIG_CLASIFICACION.margen}, piso {CONFIG_CLASIFICACION.piso}.
         </span>

@@ -1,43 +1,106 @@
 /**
  * Tokens de diseno. Los mismos nombres se usan en pantalla y en impresion
  * (docs/ARQUITECTURA.md 3.4). Ningun componente usa un hexadecimal suelto.
+ *
+ * Una sola familia de color: verde de olla y pallar sobre papel calido. Nada
+ * decorativo. El sol de la sierra borra los contrastes bajos, por eso el texto
+ * sobre fondo siempre pasa AA/AAA y los bordes son de 1 px solidos, no grises
+ * de 1 tono de diferencia.
+ *
+ * Cada apariencia se define como triplete RGB ("24 103 68") y `tailwind.css`
+ * la envuelve con `rgb(var(--color-x))` (`@theme inline`): una sola fuente de
+ * verdad y `bg-primario/20` funciona. El CSS a mano de este mismo archivo usa
+ * `var(--color-x)` directo, que es un color CSS valido por ser triplete.
+ *
+ * Si algo de fuera necesitara un hex (impresion, PDF), se convierte en la
+ * plantilla que lo consume, no se agrega un duplicado aca.
  */
 :root {
-  --color-fondo: #ffffff;
-  --color-texto: #111111;
-  --color-primario: #1d4ed8;
-  --color-primario-texto: #ffffff;
-  --color-borde: #c7c7c7;
-  --color-tenue: #f3f4f6;
+  /* --- Superficies ------------------------------------------------------- */
+  /* Papel calido: se lee con la luz del mediodia sin encandilar. */
+  --color-fondo: 255 250 241;
+  --color-superficie: 255 255 255;
+  /* Tono de apoyo para estados de espera y bloques que no son accion. */
+  --color-tenue: 243 234 217;
+  --color-borde: 207 195 173;
+  /* El borde que aguanta el sol: para separar zonas, no para decorar. */
+  --color-borde-fuerte: 138 122 94;
+
+  /* --- Texto ------------------------------------------------------------- */
+  /* Verde casi negro: mas suave que #000 sobre papel y contrasta 14:1. */
+  --color-texto: 13 43 32;
+  --color-texto-suave: 64 81 63;
+
+  /* --- Accion (un solo color) -------------------------------------------- */
+  --color-primario: 24 103 68;
+  --color-primario-texto: 255 255 255;
+  /* Hover/presionado: mas oscuro, no mas claro. */
+  --color-primario-fuerte: 15 74 48;
+  /* Lavado de accion para seleccionados. */
+  --color-primario-suave: 226 240 232;
+
+  /* --- Alerta y error ---------------------------------------------------- */
+  /* Ocre: "ojo, mira esto" (80 % del presupuesto, dato atipico). */
+  --color-alerta: 138 90 0;
+  --color-alerta-suave: 253 241 216;
+  /* Ladrillo: error, no se guardo, no suma. */
+  --color-error: 168 31 31;
+  --color-error-suave: 251 231 227;
+
+  /* --- Sync ------------------------------------------------------------- */
+  /* Pendiente de sincronizar no es error ni alerta: es un estado normal. */
+  --color-pendiente: 91 83 66;
+  --color-pendiente-suave: 239 232 219;
+
+  /* --- Forma y medida ---------------------------------------------------- */
   --radio: 0.5rem;
+  --radio-grande: 0.75rem;
   --toque-minimo: 48px;
+  /* Navegacion inferior: 64 px de caja + area segura del sistema. */
+  --alto-nav: 64px;
+  --alto-header: 56px;
+  --ancho-columna: 34rem;
+  --sombra-alta: 0 -1px 0 var(--color-borde);
 
   /* Escala tipografica: 18 px por defecto, no 16. Se ajusta con data-texto. */
   --texto-base: 18px;
   --texto-titulo: 1.5rem;
+  /* La cifra que importa (total, raciones, saldo). Nunca decorativa. */
+  --texto-cifra: 2.25rem;
 }
 
 html[data-texto='grande'] {
   --texto-base: 22px;
+  --texto-cifra: 2.5rem;
 }
 
 html[data-texto='enorme'] {
   --texto-base: 26px;
+  --texto-cifra: 2.75rem;
 }
 
 html {
   font-size: var(--texto-base);
+  /* El contenido no se corre cuando aparece el teclado en pantalla. */
+  -webkit-text-size-adjust: 100%;
 }
 
+/* --- Botones -------------------------------------------------------------*/
+
 .oc-boton {
-  min-height: var(--toque-minimo);
+  min-height: calc(var(--toque-minimo) + 8px);
   min-width: var(--toque-minimo);
-  padding: 0.5rem 1.25rem;
+  padding: 0.6rem 1.25rem;
   border-radius: var(--radio);
-  border: 1px solid var(--color-borde);
+  border: 1px solid var(--color-borde-fuerte);
+  background: var(--color-superficie);
+  color: var(--color-texto);
   font: inherit;
   font-weight: 600;
   cursor: pointer;
+  /* Sin hover pegajoso: en tablet se queda "encendido" despues del toque. */
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .oc-boton--primario {
@@ -46,19 +109,113 @@ html {
   color: var(--color-primario-texto);
 }
 
+.oc-boton--primario:active {
+  background: var(--color-primario-fuerte);
+  border-color: var(--color-primario-fuerte);
+}
+
 .oc-boton--secundario {
-  background: var(--color-fondo);
+  background: var(--color-superficie);
   color: var(--color-texto);
 }
 
 .oc-boton:disabled {
   cursor: not-allowed;
-  opacity: 0.6;
+  opacity: 0.55;
 }
 
 .oc-boton:focus-visible {
   outline: 3px solid var(--color-primario);
   outline-offset: 2px;
+}
+
+/* --- Estados -------------------------------------------------------------
+ * Los cuatro estados de pantalla se distinguen por TEXTO y por COLOR. El color
+ * solo no alcanza: daltonismo, sol y pantalla rayada. Cada bloque lleva una
+ * etiqueta de palabra ("Cargando", "Error", "Sin conexion") y su borde.
+ */
+
+.oc-estado {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  border-radius: var(--radio);
+  border: 1px solid var(--color-borde);
+  border-left: 6px solid var(--color-borde);
+  background: var(--color-superficie);
+  padding: 0.75rem 1rem;
+}
+
+.oc-estado__etiqueta {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.oc-estado[data-estado='cargando'] {
+  border-left-color: var(--color-primario);
+  background: var(--color-primario-suave);
+}
+.oc-estado[data-estado='cargando'] .oc-estado__etiqueta {
+  color: var(--color-primario-fuerte);
+}
+
+.oc-estado[data-estado='sin-conexion'] {
+  border-left-color: var(--color-pendiente);
+  background: var(--color-pendiente-suave);
+}
+.oc-estado[data-estado='sin-conexion'] .oc-estado__etiqueta {
+  color: var(--color-pendiente);
+}
+
+.oc-estado[data-estado='error'] {
+  border-left-color: var(--color-error);
+  background: var(--color-error-suave);
+}
+.oc-estado[data-estado='error'] .oc-estado__etiqueta {
+  color: var(--color-error);
+}
+
+.oc-estado[data-estado='alerta'] {
+  border-left-color: var(--color-alerta);
+  background: var(--color-alerta-suave);
+}
+.oc-estado[data-estado='alerta'] .oc-estado__etiqueta {
+  color: var(--color-alerta);
+}
+
+/* --- Piezas de pantalla --------------------------------------------------*/
+
+/* Tarjeta base: una sola forma, con borde visible al sol. */
+.oc-tarjeta {
+  border-radius: var(--radio);
+  border: 1px solid var(--color-borde);
+  background: var(--color-superficie);
+  padding: 1rem;
+}
+
+/* La cifra que manda en la pantalla: alineada a la derecha, tabular. */
+.oc-cifra {
+  font-size: var(--texto-cifra);
+  font-weight: 800;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* "Pendiente de sincronizar": se lee como estado, no como error. */
+.oc-pendiente {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-pendiente);
+  background: var(--color-pendiente-suave);
+  color: var(--color-pendiente);
+  padding: 0.125rem 0.625rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
 }
 
 @media print {
@@ -72,5 +229,14 @@ html {
 
   .fila {
     break-inside: avoid;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
   }
 }

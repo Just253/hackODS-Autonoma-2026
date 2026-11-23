@@ -2,8 +2,12 @@
  * Pantalla de precio del pollo (issue #10, D8 / DEC-2026-0008). Muestra la
  * variación contra la MEDIANA de la ventana actual vs la previa, con la fuente
  * visible. Nunca un promedio. Si falta una ventana, dice "sin dato".
+ *
+ * Presentacion movil: el precio por unidad es la cifra heroe y la variacion va
+ * en una pastilla con flecha + numero + palabra, no solo color: al sol y para
+ * quien no distingue verde de rojo, la flecha y el signo dicen lo mismo.
  */
-import { BotonGrande } from '@hackods/ui';
+import { BotonGrande, EstadoPantalla } from '@hackods/ui';
 
 import { formatearVariacionBp } from '../presupuesto/formato';
 import { formatearPrecioSoles } from './formato-precio';
@@ -53,7 +57,10 @@ function textoVariacion(tendencia: ReturnType<typeof calcularTendencia>): string
 function TendenciaBadge({ tendencia }: { readonly tendencia: ReturnType<typeof calcularTendencia> }) {
   if (tendencia.sinDato) {
     return (
-      <span className="rounded bg-gray-200 px-2 py-1 text-sm" data-estado="sin-dato">
+      <span
+        className="inline-flex items-center gap-1 rounded-full border border-borde bg-tenue px-3 py-1 text-sm font-semibold text-texto-suave"
+        data-estado="sin-dato"
+      >
         sin dato
       </span>
     );
@@ -62,13 +69,20 @@ function TendenciaBadge({ tendencia }: { readonly tendencia: ReturnType<typeof c
   const baja = tendencia.variacionBp !== null && tendencia.variacionBp < 0;
   const tono = sube ? 'alza' : baja ? 'baja' : 'igual';
   const clase = sube
-    ? 'rounded bg-red-100 px-2 py-1 text-sm'
+    ? 'border-error bg-error-suave text-error'
     : baja
-      ? 'rounded bg-green-100 px-2 py-1 text-sm'
-      : 'rounded bg-gray-200 px-2 py-1 text-sm';
+      ? 'border-primario bg-primario-suave text-primario'
+      : 'border-borde bg-tenue text-texto-suave';
+  // La flecha repite lo que dice el color: subio, bajo o igual.
+  const flecha = sube ? '▲' : baja ? '▼' : '=';
   return (
-    <span className={clase} data-tono={tono}>
+    <span
+      className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-sm font-bold tabular-nums ${clase}`}
+      data-tono={tono}
+    >
+      <span aria-hidden="true">{flecha}</span>
       {textoVariacion(tendencia)}
+      <span className="sr-only">{sube ? 'subió' : baja ? 'bajó' : 'igual'}</span>
     </span>
   );
 }
@@ -86,10 +100,8 @@ export function PreciosPantalla({
   if (estado === 'cargando') {
     return (
       <section className="flex flex-col gap-4" aria-busy="true">
-        <h2 className="text-2xl font-bold">Precio del {producto}</h2>
-        <p className="text-gray-600" role="status">
-          Cargando observaciones…
-        </p>
+        <h2 className="text-xl font-bold">Precio del {producto}</h2>
+        <EstadoPantalla estado="cargando">Cargando observaciones…</EstadoPantalla>
       </section>
     );
   }
@@ -97,17 +109,19 @@ export function PreciosPantalla({
   if (estado === 'error') {
     return (
       <section className="flex flex-col gap-4">
-        <h2 className="text-2xl font-bold">Precio del {producto}</h2>
-        <div className="rounded-lg border border-red-400 bg-red-50 p-4" role="alert">
-          No se pudieron leer las observaciones guardadas.
-          {onReintentar !== undefined && (
-            <div className="mt-2">
+        <h2 className="text-xl font-bold">Precio del {producto}</h2>
+        <EstadoPantalla
+          estado="error"
+          accion={
+            onReintentar === undefined ? undefined : (
               <BotonGrande variante="secundario" onClick={onReintentar}>
                 Reintentar
               </BotonGrande>
-            </div>
-          )}
-        </div>
+            )
+          }
+        >
+          No se pudieron leer las observaciones guardadas.
+        </EstadoPantalla>
       </section>
     );
   }
@@ -120,44 +134,46 @@ export function PreciosPantalla({
   return (
     <section className="flex flex-col gap-4">
       <header className="flex flex-col gap-1">
-        <h2 className="text-2xl font-bold">Precio del {producto}</h2>
-        <p className="text-gray-600">Fuente: {fuente}</p>
+        <h2 className="text-xl font-bold">Precio del {producto}</h2>
+        <p className="text-sm text-texto-suave">Fuente: {fuente}</p>
       </header>
 
       {estado === 'sin-conexion' && (
-        <div className="rounded-lg border border-gray-300 bg-gray-50 p-4" role="status" data-estado="sin-conexion">
-          <strong>Sin conexión.</strong> Se muestran las observaciones guardadas.
-          <br />
-          <span className="rounded bg-gray-200 px-2 py-1 text-sm">pendiente de sincronizar</span>
-        </div>
+        <EstadoPantalla
+          estado="sin-conexion"
+          accion={<span className="oc-pendiente">pendiente de sincronizar</span>}
+        >
+          Se muestran las observaciones guardadas.
+        </EstadoPantalla>
       )}
 
-      <section className="rounded-lg border border-gray-300 p-4" aria-label="Tendencia del precio">
-        <p className="text-lg">
-          <strong>{precioConUnidad(tendencia.medianaActual, unidad)}</strong>
-          <small className="text-gray-600"> mediana de las últimas {ventanaActual.length} observaciones</small>
+      <section className="oc-tarjeta flex flex-col gap-2" aria-label="Tendencia del precio">
+        <p className="text-sm text-texto-suave">
+          mediana de las últimas {ventanaActual.length} observaciones
         </p>
-        <p>
-          Variación contra la mediana previa: <TendenciaBadge tendencia={tendencia} />
+        <p className="oc-cifra">{precioConUnidad(tendencia.medianaActual, unidad)}</p>
+        <p className="flex flex-wrap items-center gap-2">
+          <span className="text-sm text-texto-suave">Variación contra la mediana previa:</span>
+          <TendenciaBadge tendencia={tendencia} />
         </p>
         {tendencia.sinDato && (
-          <p className="text-gray-600" data-motivo={tendencia.motivo ?? 'na'}>
+          <p className="text-sm text-texto-suave" data-motivo={tendencia.motivo ?? 'na'}>
             No hay suficientes observaciones para comparar. No se interpola.
           </p>
         )}
         {tendencia.medianaPrevia !== null && !tendencia.sinDato && (
-          <p className="text-gray-600">
+          <p className="text-sm text-texto-suave">
             Mediana previa {precioConUnidad(tendencia.medianaPrevia, unidad)} · mediana actual{' '}
             {precioConUnidad(tendencia.medianaActual, unidad)}
           </p>
         )}
         {outlier !== null && (
-          <p className="text-gray-600" data-estado="outlier">
+          <p className="text-sm text-texto-suave" data-estado="outlier">
             Una observación se marcó como atípica y no entra en la tendencia.
           </p>
         )}
         {outlierPrevio !== null && (
-          <p className="text-gray-600" data-estado="outlier-previo">
+          <p className="text-sm text-texto-suave" data-estado="outlier-previo">
             Una observación de la ventana previa se marcó como atípica y no entra en esa mediana.
           </p>
         )}
