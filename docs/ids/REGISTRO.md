@@ -64,6 +64,10 @@ Se agregan al final, una fila por ID, con la salida de `pnpm ids:nuevo`.
 | DEC-20261123-1349-9c5d5a | DEC | Supabase local ahora; cloud después con admin, enrolamiento y seed | abierto | 2026-11-23T13:49:19-05:00 | GAMA | `decisiones/DEC-20261123-1349-9c5d5a.md` | — |
 | DEC-20261123-1349-d04467 | DEC | Roles separados: admin global y nutricionista que firma | abierto | 2026-11-23T13:49:26-05:00 | GAMA | `decisiones/DEC-20261123-1349-d04467.md` | — |
 | SPK-20261123-1349-96169d | SPK | Compute de pruebas: OCR, transcripcion y embeddings | abierto | 2026-11-23T13:49:33-05:00 | GAMA | `spikes/SPK-20261123-1349-96169d.md` | — |
+| PRB-20261123-1358-dbf227 | PRB | Una sola perspectiva: no hay sesion, rol ni olla activa | abierto | 2026-11-23T13:58:26-05:00 | GAMA | `problemas/web/PRB-20261123-1358-dbf227.md` | — |
+| DEC-20261123-1358-8feaf9 | DEC | Perspectivas por rol y divisor de contexto | abierto | 2026-11-23T13:58:32-05:00 | GAMA | `decisiones/DEC-20261123-1358-8feaf9.md` | — |
+| PRB-20261123-1358-ebe937 | PRB | El dataset no alcanza para probar OCR, voz y embeddings | abierto | 2026-11-23T13:58:39-05:00 | GAMA | `problemas/datos/PRB-20261123-1358-ebe937.md` | — |
+| PRB-20261123-1358-160661 | PRB | Operacion del backend sin tipos generados, backups ni retencion | abierto | 2026-11-23T13:58:44-05:00 | GAMA | `problemas/infra/PRB-20261123-1358-160661.md` | — |
 
 ## 5. Estados
 
