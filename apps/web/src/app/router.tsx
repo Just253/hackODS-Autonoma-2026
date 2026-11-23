@@ -19,9 +19,9 @@ import { RutaVacia } from '../pages/RutaVacia.js';
  * Una ruta por feature, con lazy() cuando exista.
  * Archivo caliente: cambios por el dueno de `area:web` (docs/PROTOCOL.md 5).
  *
- * Las rutas de B y C quedan vacias a proposito: existen para que el guion de la
- * demo tenga el camino completo y para que cada dueno reemplace su archivo sin
- * editar este.
+ * Las rutas de B y C que todavía no tienen pantalla quedan vacías a propósito: existen para que el
+ * guion de la demo tenga el camino completo y para que cada dueño reemplace su archivo sin editar
+ * este.
  */
 export const rutas = [
   {

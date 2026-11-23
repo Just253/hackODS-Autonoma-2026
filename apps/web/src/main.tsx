@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 
 import '@hackods/ui/tokens.css';
 import { App } from './app/App.js';
+import { registrarServiceWorker } from './pwa/registro-sw.js';
 import './styles/tailwind.css';
 
 const raiz = document.getElementById('root');
@@ -17,9 +18,12 @@ createRoot(raiz).render(
   </StrictMode>,
 );
 
-// PWA basica: el shell se precachea. La estrategia definitiva es M0/M6.
-if (import.meta.env.PROD && 'serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    void navigator.serviceWorker.register('/sw.js');
-  });
-}
+// PWA: el shell se precachea con el build real (src/pwa/contrato-sw.ts).
+// Se registra en dev y en prod: el modo avión de la demo se prueba en local,
+// y "solo en PROD" era lo que dejaba el arranque offline sin cubrir.
+void registrarServiceWorker(undefined, ({ versionNueva }) => {
+  if (versionNueva) {
+    // No se recarga sola: puede estar a mitad de un servicio.
+    window.dispatchEvent(new CustomEvent('hackods:version-nueva'));
+  }
+});
