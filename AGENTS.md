@@ -94,8 +94,9 @@ pnpm verificar                   # la puerta completa (lo mismo que CI); --rapid
 pnpm docs:chequear               # ¿el diff trae la doc que le corresponde? (PROCESO-DOCS.md §2)
 pnpm hooks:install               # una vez por máquina: activa .githooks (pre-commit y pre-push)
 pnpm --filter @hackods/nutrition test   # un paquete concreto
-pnpm db:start                    # Postgres + API local (Docker)
+pnpm db:start                    # Postgres + API local (Docker o Podman)
 pnpm db:reset                    # migraciones + seed local. SOLO local
+pnpm db:test                     # suite pgTAP; copia el seed junto a los tests y lo borra al final
 pnpm db:seed                     # seed contra SUPABASE_DB_URL (requiere psql)
 pnpm db:types                    # tipos desde la base local
 pnpm exec supabase db diff -f <slug>    # nueva migración
