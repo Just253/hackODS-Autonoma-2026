@@ -88,6 +88,13 @@ export const SECUNDARIOS: readonly Destino[] = [
     tarea: 'Ver el volumen movido por categoría.',
   },
   {
+    a: '/recetas',
+    texto: 'Recetas',
+    descripcion: 'Recetario',
+    icono: 'servicio',
+    tarea: 'Elegir un plato, contar comensales y registrar que se cocinó.',
+  },
+  {
     a: '/inventario',
     texto: 'Despensa',
     descripcion: 'Despensa',

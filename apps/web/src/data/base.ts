@@ -1,5 +1,6 @@
 import Dexie, { type EntityTable, type Table } from 'dexie';
 import type { IdentidadLocal, Insumo, Movimiento, Persona, Racion } from '@hackods/contracts';
+import type { ServicioDeReceta } from '@hackods/domain';
 import type { EventoSaliente } from '@hackods/sync';
 
 /**
@@ -13,9 +14,10 @@ import type { EventoSaliente } from '@hackods/sync';
  * - `identidadLocal` NO es sincronizable: `nombreLocal` y `alias` viven aca,
  *   marcados `localOnly: true` (DEC-2026-0002). Ningun serializador del outbox
  *   lee esta tabla.
- * - la despensa (v5): `insumos` es el catalogo local, `movimientos` es
- *   append-only y `lotes` guarda el vencimiento. `lotes` tambien es localOnly:
- *   el contrato no lo modela todavia (issue #69).
+ * - la despensa (v6): `insumos` es el catalogo local, `movimientos` es
+ *   append-only (lo comparten recetas y despensa) y `lotes` guarda el
+ *   vencimiento. `lotes` tambien es localOnly: el contrato no lo modela
+ *   todavia (issue #69).
  *
  * `meta` guarda el contador de Lamport del dispositivo (nunca `Date.now()`).
  */
@@ -33,7 +35,7 @@ import type { EventoSaliente } from '@hackods/sync';
  * pre-release y esas filas ni siquiera pueden formar la clave compuesta, porque
  * `null` no es un componente valido en IndexedDB.
  */
-export const VERSION_ESQUEMA = 5;
+export const VERSION_ESQUEMA = 6;
 
 export interface RegistroLamport {
   readonly clave: 'lamport';
@@ -79,11 +81,13 @@ export interface Lote {
 }
 
 /**
- * Fila de `movimientos`: el contrato `Movimiento` mas el vinculo local al lote.
- * `loteId` queda fuera del evento del outbox a proposito; el payload que viaja
- * es el `Movimiento` puro, porque es lo que el servidor sabe leer.
+ * Fila de `movimientos`: el contrato `Movimiento` mas el vinculo local al lote
+ * (issue #69). `loteId` es opcional porque los movimientos que escribe el
+ * recetario (#72) no abren lote. Queda fuera del evento del outbox a proposito;
+ * el payload que viaja es el `Movimiento` puro, que es lo que el servidor sabe
+ * leer.
  */
-export type MovimientoLocal = Movimiento & { readonly loteId: string | null };
+export type MovimientoLocal = Movimiento & { readonly loteId?: string | null };
 
 export type BaseOlla = Dexie & {
   personas: EntityTable<Persona, 'codigoP'>;
@@ -92,10 +96,21 @@ export type BaseOlla = Dexie & {
   identidadLocal: EntityTable<IdentidadLocal, 'codigoP'>;
   /** Catalogo de insumos de esta olla (seed local, marcado como ficticio). */
   insumos: EntityTable<Insumo, 'id'>;
-  /** Append-only: se agrega, nunca se actualiza ni se borra. */
+  /**
+   * Movimientos append-only de la despensa: el stock se deriva sumandolos
+   * (docs/DECISIONES.md D4). `[ollaId+insumoId]` es el indice del saldo por
+   * insumo; `at` ordena la historia sin depender de `createdAt`. `loteId` es el
+   * vinculo local al vencimiento (#69) y no viaja al servidor.
+   */
   movimientos: EntityTable<MovimientoLocal, 'id'>;
   /** Vencimiento por lote; local-only, no viaja al servidor. */
   lotes: EntityTable<Lote, 'loteId'>;
+  /**
+   * Servicio cocinado con receta, comensales por grupo, cocinero, 75 °C y
+   * costo. Todavia no es el contrato `Servicio` (no tiene esos campos): vive
+   * local y marcado como tal hasta que #62/#65 lo lleven a SQL.
+   */
+  serviciosCocidos: EntityTable<ServicioDeReceta, 'id'>;
   meta: EntityTable<RegistroLamport, 'clave'>;
   /**
    * `eventUuid` como clave = idempotencia gratis: guardar el mismo evento no
@@ -142,13 +157,20 @@ export function baseDeOlla(ollaId: string): BaseOlla {
     outbox: 'eventUuid, [lamport+deviceId], estado',
   });
 
-  // v5: despensa (issue #69). Aditiva tambien: las bases v4 abren con las tres
-  // tablas vacias y el catalogo se siembra desde el fixture al entrar a la
-  // pantalla. `movimientos` es append-only; `lotes` guarda el vencimiento y es
-  // local-only (no tiene entidad en el outbox).
+  // v5: recetario -> produccion. `movimientos` es append-only (nunca un saldo
+  // mutable) y `serviciosCocidos` guarda el cierre local del servicio. Ambas
+  // son aditivas: una base v4 arranca con las dos vacias, que es la verdad.
   base.version(5).stores({
+    movimientos: 'id, ollaId, insumoId, [ollaId+insumoId], at',
+    serviciosCocidos: 'id, ollaId, recetaId, fecha, [ollaId+fecha]',
+  });
+
+  // v6: despensa con vencimiento (issue #69). Aditiva: suma el catalogo de
+  // insumos y los lotes al `movimientos` que ya creo el recetario en v5 (mismos
+  // indices, para que los dos caminos de escritura convivan). `lotes` guarda el
+  // vencimiento y es local-only: no tiene entidad en el outbox.
+  base.version(6).stores({
     insumos: 'id, denominacion',
-    movimientos: 'id, insumoId, at',
     lotes: 'loteId, insumoId, fechaVencimiento, estado',
   });
 
