@@ -3,13 +3,12 @@ import { useMemo, useState } from 'react';
 import type { Clasificacion } from '@hackods/contracts';
 import {
   clasificarItem,
-  CONFIG_CLASIFICACION,
   formatearCentimos,
   sumaAlPresupuesto,
   totalDeLineasConfirmadas,
   totalDelPapel,
 } from '@hackods/domain';
-import { BotonGrande } from '@hackods/ui';
+import { BotonGrande, EncabezadoPantalla } from '@hackods/ui';
 
 import {
   CANDIDATOS_POR_ITEM,
@@ -29,9 +28,10 @@ export { formatearCentimos };
  * / `totalDelPapel()`, todo en `@hackods/domain`. Antes de confirmar no se toca
  * un numero del papel: se muestra textual.
  *
- * Presentacion movil: el total confirmado es la cifra grande de la pantalla
- * (fija arriba, va cambiando mientras se revisa) y cada linea es una tarjeta
- * con su boton de confirmar al ancho completo.
+ * Distribucion: el total confirmado es la cifra de la pantalla y va fija
+ * arriba en el telefono (se mira mientras se revisa) y a la derecha en
+ * escritorio, junto a la lista de lineas en vez de encima. Cada linea es una
+ * tarjeta con su boton de confirmar al ancho completo en el telefono.
  */
 
 function cantidadLegible(item: ItemBoleta): string {
@@ -44,13 +44,13 @@ function cantidadLegible(item: ItemBoleta): string {
 function motivoLegible(clasificacion: Clasificacion): string {
   switch (clasificacion.motivo) {
     case 'margen_insuficiente':
-      return 'dos productos del catálogo se parecen demasiado';
+      return 'Dos productos de la lista se parecen demasiado';
     case 'similitud_baja':
-      return 'el nombre del papel no coincide con el catálogo';
+      return 'El nombre del papel no coincide con la lista';
     case 'sin_catalogo':
-      return 'no hay candidatos en el catálogo';
+      return 'No hay candidatos en la lista';
     default:
-      return 'requiere tu revisión';
+      return 'Requiere tu revisión';
   }
 }
 
@@ -82,109 +82,124 @@ export function ComprobantePage() {
   const totalConfirmado = totalDeLineasConfirmadas(lineasConfirmadas);
   const totalPapel = totalDelPapel(ITEMS_BOLETA);
 
+  const revisadas = ITEMS_BOLETA.length - lineasPorRevisar.length;
+  const avance = Math.round((revisadas / ITEMS_BOLETA.length) * 100);
+
   return (
-    <section className="flex flex-col gap-4">
-      <header className="flex flex-col gap-1">
-        <h2 className="text-xl font-bold">Comprobante</h2>
-        <p className="text-sm text-texto-suave">
-          Boleta de ejemplo: 6 líneas leídas del papel. Nada suma al presupuesto hasta que
-          confirmes la línea.
-        </p>
-      </header>
+    <section className="flex flex-col gap-4 lg:gap-6">
+      <EncabezadoPantalla
+        titulo="Comprobante"
+        descripcion="Boleta de ejemplo: así se verían 6 líneas de una boleta leída."
+      />
 
-      {/* Resumen pegajoso: el numero que se mira mientras se revisa. */}
-      <div className="oc-tarjeta sticky top-0 z-10 flex flex-col gap-1 bg-superficie">
-        <p className="text-sm text-texto-suave" data-estado="por-revisar">
-          {lineasPorRevisar.length} de {ITEMS_BOLETA.length} líneas por revisar: no suman al
-          presupuesto.
-        </p>
-        <p className="oc-cifra" aria-live="polite" data-estado="total-confirmado">
-          {formatearCentimos(totalConfirmado)}
-        </p>
-        <p className="text-sm text-texto-suave">
-          Confirmado de {formatearCentimos(totalPapel)} del papel
-        </p>
-      </div>
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)] lg:items-start lg:gap-6">
+        {/* Resumen: en el telefono queda arriba y pegado; en escritorio, a la derecha. */}
+        <div className="oc-tarjeta sticky top-0 z-10 flex flex-col gap-2 bg-superficie lg:col-start-2 lg:row-start-1 lg:sticky lg:top-2">
+          <p className="text-sm text-texto-suave" data-estado="por-revisar">
+            {lineasPorRevisar.length === 0
+              ? `Las ${ITEMS_BOLETA.length} líneas coinciden con la lista.`
+              : `${revisadas} ${revisadas === 1 ? 'línea coincide' : 'líneas coinciden'} con la lista; ${lineasPorRevisar.length} ${lineasPorRevisar.length === 1 ? 'necesita' : 'necesitan'} tu revisión.`}
+          </p>
+          <p className="oc-cifra" aria-live="polite" data-estado="total-confirmado">
+            {formatearCentimos(totalConfirmado)}
+          </p>
+          <p className="text-sm text-texto-suave">
+            Confirmado de {formatearCentimos(totalPapel)} del papel
+          </p>
+          <div
+            className="h-2 w-full overflow-hidden rounded-full bg-tenue"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={avance}
+            aria-label="Líneas revisadas"
+          >
+            <div className="h-full rounded-full bg-primario" style={{ width: `${avance}%` }} />
+          </div>
+          <p className="text-xs text-texto-suave">
+            {revisadas} de {ITEMS_BOLETA.length} líneas listas
+          </p>
+        </div>
 
-      <ul className="flex flex-col gap-3" aria-label="Líneas de la boleta">
-        {ITEMS_BOLETA.map((item) => {
-          const clasificacion = clasificaciones[item.id];
-          if (clasificacion === undefined) return null;
-          const confirmado = confirmados.has(item.id);
-          const suma = sumaAlPresupuesto(confirmado ? 'confirmado' : clasificacion.estado);
-          return (
-            <li
-              key={item.id}
-              data-estado={confirmado ? 'confirmado' : clasificacion.estado}
-              data-suma={suma ? 'si' : 'no'}
-              className={
-                confirmado || clasificacion.estado === 'confirmado'
-                  ? 'oc-tarjeta flex flex-col gap-2 border-primario'
-                  : 'oc-tarjeta flex flex-col gap-2 border-l-4 border-l-error'
-              }
-            >
-              <div className="flex items-baseline justify-between gap-3">
-                <span className="font-mono text-base">{item.descripcionCruda}</span>
-                <span className="text-lg font-bold tabular-nums">
-                  {formatearCentimos(item.totalLineaCentavos)}
-                </span>
-              </div>
-
-              <dl className="grid grid-cols-3 gap-2 text-xs text-texto-suave">
-                <div>
-                  <dt className="font-semibold">Cantidad</dt>
-                  <dd>{cantidadLegible(item)}</dd>
+        <ul className="flex flex-col gap-3 lg:col-start-1 lg:row-start-1" aria-label="Líneas de la boleta">
+          {ITEMS_BOLETA.map((item) => {
+            const clasificacion = clasificaciones[item.id];
+            if (clasificacion === undefined) return null;
+            const confirmado = confirmados.has(item.id);
+            const suma = sumaAlPresupuesto(confirmado ? 'confirmado' : clasificacion.estado);
+            return (
+              <li
+                key={item.id}
+                data-estado={confirmado ? 'confirmado' : clasificacion.estado}
+                data-suma={suma ? 'si' : 'no'}
+                className={
+                  confirmado || clasificacion.estado === 'confirmado'
+                    ? 'oc-tarjeta flex flex-col gap-2 border-primario'
+                    : 'oc-tarjeta flex flex-col gap-2 border-l-4 border-l-error'
+                }
+              >
+                <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                  <span className="font-mono text-base">{item.descripcionCruda}</span>
+                  <span className="text-lg font-bold tabular-nums">
+                    {formatearCentimos(item.totalLineaCentavos)}
+                  </span>
                 </div>
-                <div>
-                  <dt className="font-semibold">Unidad</dt>
-                  <dd>{item.unidadCruda ?? 'sin unidad'}</dd>
-                </div>
-                <div>
-                  <dt className="font-semibold">Precio unitario</dt>
-                  <dd>
-                    {item.precioUnitarioCrudoCentavos === null
-                      ? 'sin dato'
-                      : formatearCentimos(item.precioUnitarioCrudoCentavos)}
-                  </dd>
-                </div>
-              </dl>
 
-              {confirmado ? (
-                <p className="flex items-center gap-2 text-sm font-bold text-primario">
-                  <span aria-hidden="true">✓</span> Confirmado: suma al presupuesto.
-                </p>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  <p
-                    className={
-                      clasificacion.estado === 'confirmado'
-                        ? 'text-sm font-semibold text-primario'
-                        : 'text-sm font-semibold text-error'
-                    }
-                  >
-                    {clasificacion.estado === 'confirmado'
-                      ? 'El clasificador lo confirmó: confirmá para sumar.'
-                      : `Por revisar: no suma. ${motivoLegible(clasificacion)}.`}
-                  </p>
-                  <div className="[&>button]:w-full">
-                    <BotonGrande variante="secundario" onClick={() => confirmar(item.id)}>
-                      {`Confirmar ${item.descripcionCruda}`}
-                    </BotonGrande>
+                <dl className="grid grid-cols-3 gap-2 text-xs text-texto-suave">
+                  <div>
+                    <dt className="font-semibold">Cantidad</dt>
+                    <dd>{cantidadLegible(item)}</dd>
                   </div>
-                </div>
-              )}
-            </li>
-          );
-        })}
-      </ul>
+                  <div>
+                    <dt className="font-semibold">Unidad</dt>
+                    <dd>{item.unidadCruda ?? 'sin unidad'}</dd>
+                  </div>
+                  <div>
+                    <dt className="font-semibold">Precio unitario</dt>
+                    <dd>
+                      {item.precioUnitarioCrudoCentavos === null
+                        ? 'sin dato'
+                        : formatearCentimos(item.precioUnitarioCrudoCentavos)}
+                    </dd>
+                  </div>
+                </dl>
+
+                {confirmado ? (
+                  <p className="flex items-center gap-2 text-sm font-bold text-primario">
+                    <span aria-hidden="true">✓</span> Confirmado: suma al presupuesto.
+                  </p>
+                ) : (
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <p
+                      className={
+                        clasificacion.estado === 'confirmado'
+                          ? 'text-sm font-semibold text-primario'
+                          : 'text-sm font-semibold text-error'
+                      }
+                    >
+                      {clasificacion.estado === 'confirmado'
+                        ? 'Coincide con la lista. Confirma para que sume.'
+                        : `Por revisar: no suma. ${motivoLegible(clasificacion)}.`}
+                    </p>
+                    <div className="shrink-0 [&>button]:w-full sm:[&>button]:w-auto">
+                      <BotonGrande variante="secundario" onClick={() => confirmar(item.id)}>
+                        {`Confirmar ${item.descripcionCruda}`}
+                      </BotonGrande>
+                    </div>
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </div>
 
       <footer className="flex flex-col gap-1 text-xs text-texto-suave">
         <span>
-          Umbrales del catálogo: TAU {CONFIG_CLASIFICACION.tau}, margen {CONFIG_CLASIFICACION.margen}, piso {CONFIG_CLASIFICACION.piso}.
+          Datos simulados: la boleta de demo ya viene leída, sin OCR ni cámara; cada línea se
+          confirma a mano.
         </span>
-        <span>
-          Pendiente de sincronizar: lo confirmado queda en este dispositivo hasta que haya red.
-        </span>
+        <span>Guardado en esta tablet. Todavía no se envía a ninguna parte.</span>
       </footer>
     </section>
   );

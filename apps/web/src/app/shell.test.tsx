@@ -3,31 +3,40 @@ import { RouterProvider } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { crearRouterDePrueba } from './router.js';
-import { CLAVE_MODO, MODO_INICIAL, leerModo } from './modo.js';
-import { destinosDeBarra, destinosDeMas } from './navegacion.js';
+import { CLAVE_TEXTO, TEXTO_INICIAL, leerTexto } from './texto.js';
+import { DIARIOS, SECUNDARIOS, destinosDeBarra, destinosDeMas } from './navegacion.js';
 import { reiniciarEstadoSync } from './sync.js';
 
 /**
- * Cascaron movil (Shell): modo simple/avanzado, navegacion inferior y estado
- * de sincronizacion honesto. La red esta apagada desde `test/setup.ts`: si el
- * header o el cambio de modo hicieran `fetch`, el test rompe.
+ * Cascaron (Shell): las dos distribuciones, la honestidad del estado de sync y
+ * el tamano de letra. La red esta apagada desde `test/setup.ts`: si el header o
+ * el control de letra hicieran `fetch`, el test rompe.
  *
- * Lo que se prueba es el comportamiento, no el CSS: cuantos destinos hay, cual
- * es el texto de cada estado y que la eleccion sobreviva a una recarga.
+ * Lo que se prueba es el comportamiento, no el CSS: cuantos destinos hay, que
+ * texto tiene cada estado y que la eleccion sobreviva a una recarga. El rail y
+ * la barra inferior existen a la vez en el DOM (el CSS muestra uno); por eso se
+ * buscan por su nombre accesible, no por posicion.
  */
 
 function montarApp(ruta = '/padron') {
   return render(<RouterProvider router={crearRouterDePrueba(ruta)} />);
 }
 
-/** Destinos de la barra inferior, por nombre accesible. */
+/** Destinos de la barra inferior del telefono, por nombre accesible. */
 function enlacesDeBarra(): readonly HTMLElement[] {
   const barra = screen.getByRole('navigation', { name: 'Secciones' });
   return within(barra).getAllByRole('link');
 }
 
+/** Destinos del rail de escritorio. */
+function enlacesDelRail(): readonly HTMLElement[] {
+  const rail = screen.getByRole('navigation', { name: 'Secciones principales' });
+  return within(rail).getAllByRole('link');
+}
+
 beforeEach(() => {
   window.localStorage.clear();
+  delete document.documentElement.dataset.texto;
   reiniciarEstadoSync();
 });
 
@@ -35,19 +44,18 @@ afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
   window.localStorage.clear();
+  delete document.documentElement.dataset.texto;
 });
 
-describe('cascaron movil', () => {
-  it('arranca en modo simple con tres destinos en la barra y el resto en "Más"', () => {
-    expect(MODO_INICIAL).toBe('simple');
+describe('cascaron', () => {
+  it('la barra del telefono muestra los cuatro diarios y deja los secundarios en "Más"', () => {
     montarApp('/padron');
 
     const barra = enlacesDeBarra();
-    // La regla del modo simple: la barra no pasa de tres destinos.
-    expect(barra).toHaveLength(3);
-    expect(barra.map((a) => a.textContent)).toEqual(['Padrón', 'Servir', 'Boleta']);
+    expect(barra).toHaveLength(4);
+    expect(barra.map((a) => a.textContent)).toEqual(['Padrón', 'Servir', 'Boleta', 'Plata']);
 
-    // "Más" es un boton, no un destino: abre lo que simple esconde.
+    // "Más" es un boton, no un destino: abre lo que la barra no muestra.
     const mas = screen.getByRole('button', { name: /Más/i });
     expect(mas).toHaveAttribute('aria-expanded', 'false');
     fireEvent.click(mas);
@@ -58,60 +66,96 @@ describe('cascaron movil', () => {
       .getAllByRole('link')
       .map((a) => a.textContent ?? '');
     // Cada enlace concatena `descripcion` + `tarea` sin espacio entre ambos:
-    // "Presupuesto de la ollaVer cuánto hay...". Por eso se compara con includes.
-    expect(nombres.some((t) => t.includes('Presupuesto de la olla'))).toBe(true);
-    expect(nombres.some((t) => t.includes('Precio del pollo'))).toBe(true);
+    // "Entre ollasPedir o entregar...". Por eso se compara con includes.
+    expect(nombres).toHaveLength(3);
+    expect(nombres.some((t) => t.includes('Precios de insumos'))).toBe(true);
     expect(nombres.some((t) => t.includes('Entre ollas'))).toBe(true);
     expect(nombres.some((t) => t.includes('Reporte entre ollas'))).toBe(true);
   });
 
-  it('el modo avanzado muestra cuatro destinos y persiste tras recargar, sin red', () => {
-    const { unmount } = montarApp('/padron');
-
+  it('la hoja "Más" se cierra con Escape y no queda tapando la accion', () => {
+    montarApp('/servicio');
     fireEvent.click(screen.getByRole('button', { name: /Más/i }));
-    const hoja = screen.getByRole('navigation', { name: 'Más secciones' });
-    const avanzado = within(hoja).getByRole('button', { name: 'Avanzado' });
-    expect(avanzado).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('navigation', { name: 'Más secciones' })).toBeInTheDocument();
 
-    fireEvent.click(avanzado);
+    act(() => {
+      fireEvent.keyDown(window, { key: 'Escape' });
+    });
+
+    expect(screen.queryByRole('navigation', { name: 'Más secciones' })).toBeNull();
+    expect(screen.getByRole('button', { name: /Más/i })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
+  });
+
+  it('el rail de escritorio lista las siete secciones en dos grupos', () => {
+    montarApp('/padron');
+
+    const rail = enlacesDelRail();
+    expect(rail).toHaveLength(7);
+    expect(rail.map((a) => a.textContent)).toEqual([
+      'Padrón',
+      'Servicio del día',
+      'Comprobante',
+      'Presupuesto',
+      'Precios de insumos',
+      'Entre ollas',
+      'Reporte entre ollas',
+    ]);
+
+    // El rail agrupa en "Día a día" y "Otros"; "Entre ollas" es ademas una pantalla.
+    const navegacion = screen.getByRole('navigation', { name: 'Secciones principales' });
+    expect(within(navegacion).getByText('Día a día')).toBeInTheDocument();
+    expect(within(navegacion).getByText('Otros')).toBeInTheDocument();
+    expect(within(navegacion).getAllByText('Entre ollas')).toHaveLength(1);
+
+    // La pantalla actual se marca sola (NavLink pone aria-current="page").
+    expect(within(navegacion).getByRole('link', { name: 'Padrón' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+  });
+
+  it('el tamaño de letra se guarda como preferencia local y sobrevive a recargar, sin red', () => {
+    const { unmount } = montarApp('/padron');
+    const rail = screen.getByRole('navigation', { name: 'Secciones principales' });
+    const normal = within(screen.getByRole('complementary')).getByRole('button', {
+      name: 'Letra normal',
+    });
+    expect(normal).toHaveAttribute('aria-pressed', 'true');
+    expect(document.documentElement.dataset.texto).toBeUndefined();
+
+    act(() => {
+      fireEvent.click(
+        within(screen.getByRole('complementary')).getByRole('button', { name: 'Letra grande' }),
+      );
+    });
 
     // Se guardo donde tiene que guardarse: preferencia local, no Dexie.
-    expect(window.localStorage.getItem(CLAVE_MODO)).toBe('avanzado');
-    expect(document.documentElement.dataset.modo).toBe('avanzado');
-    expect(enlacesDeBarra()).toHaveLength(4);
+    expect(window.localStorage.getItem(CLAVE_TEXTO)).toBe('grande');
+    expect(document.documentElement.dataset.texto).toBe('grande');
+    expect(rail).toBeInTheDocument();
 
     // Recarga: se desmonta la app entera y se vuelve a abrir.
     unmount();
+    document.documentElement.removeAttribute('data-texto');
     montarApp('/padron');
 
-    // Se lee de localStorage al montar: sigue en avanzado.
-    expect(leerModo()).toBe('avanzado');
-    expect(document.documentElement.dataset.modo).toBe('avanzado');
-    expect(enlacesDeBarra()).toHaveLength(4);
-    // Avanzado sigue teniendo un "Más" para precios, entre ollas y reporte.
-    fireEvent.click(screen.getByRole('button', { name: /Más/i }));
-    const hojas = within(screen.getByRole('navigation', { name: 'Más secciones' })).getAllByRole(
-      'link',
-    );
-    expect(hojas).toHaveLength(3);
+    // Se lee de localStorage al montar: sigue en grande.
+    expect(leerTexto()).toBe('grande');
+    expect(document.documentElement.dataset.texto).toBe('grande');
+
+    // Volver a normal borra el atributo en vez de dejar un estado muerto.
+    act(() => {
+      fireEvent.click(
+        within(screen.getByRole('complementary')).getByRole('button', { name: 'Letra normal' }),
+      );
+    });
+    expect(document.documentElement.dataset.texto).toBeUndefined();
 
     // Nada de esto salio a la red.
     expect(fetch).not.toHaveBeenCalled();
-  });
-
-  it('volver a simple desde ajustes deja la barra en tres, aunque habia cuatro', () => {
-    window.localStorage.setItem(CLAVE_MODO, 'avanzado');
-    montarApp('/padron');
-    expect(enlacesDeBarra()).toHaveLength(4);
-
-    fireEvent.click(screen.getByRole('button', { name: /Más/i }));
-    const hoja = screen.getByRole('navigation', { name: 'Más secciones' });
-    act(() => {
-      fireEvent.click(within(hoja).getByRole('button', { name: 'Simple' }));
-    });
-
-    expect(window.localStorage.getItem(CLAVE_MODO)).toBe('simple');
-    expect(enlacesDeBarra()).toHaveLength(3);
   });
 
   it('el header dice "En este dispositivo", nunca que ya sincronizo', () => {
@@ -122,14 +166,23 @@ describe('cascaron movil', () => {
     expect(screen.queryByText(/sincronizado|al día|al dia/i)).toBeNull();
   });
 
-  it('las reglas de navegacion no dejan crecer la barra simple', () => {
-    // Contrato del modelo, sin DOM: si alguien agrega un cuarto diario, esto falla.
-    expect(destinosDeBarra('simple').length).toBeLessThanOrEqual(3);
-    expect(destinosDeBarra('avanzado')).toHaveLength(4);
-    // En simple, todo destino de la barra tambien existe una sola vez.
-    const barra = destinosDeBarra('simple').map((d) => d.a);
-    expect(new Set(barra).size).toBe(barra.length);
-    // Y lo que esconde "Más" no repite la barra.
-    expect(destinosDeMas('simple').some((d) => barra.includes(d.a))).toBe(false);
+  it('el header nombra la seccion actual y no repite el nombre en la barra', () => {
+    montarApp('/comprobante');
+
+    const encabezado = screen.getByRole('banner');
+    expect(within(encabezado).getByText('Comprobante')).toBeInTheDocument();
+  });
+
+  it('las reglas de navegacion no repiten destinos entre la barra y "Más"', () => {
+    // Contrato del modelo, sin DOM: la barra y la hoja parten el menu en dos.
+    expect(destinosDeBarra()).toEqual(DIARIOS);
+    expect(destinosDeMas()).toEqual(SECUNDARIOS);
+    expect(TEXTO_INICIAL).toBe('normal');
+
+    const barra = destinosDeBarra().map((d) => d.a);
+    const hoja = destinosDeMas().map((d) => d.a);
+    expect(new Set([...barra, ...hoja]).size).toBe(barra.length + hoja.length);
+    // Todo lo que existe en la barra se puede alcanzar en un toque: sin "Más".
+    expect(barra).toHaveLength(4);
   });
 });

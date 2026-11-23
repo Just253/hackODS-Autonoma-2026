@@ -2,7 +2,12 @@ import { useEffect, useState } from 'react';
 
 import type { Persona } from '@hackods/contracts';
 import { racionSchema } from '@hackods/contracts';
-import { BotonGrande, EstadoPantalla } from '@hackods/ui';
+import {
+  BotonGrande,
+  CifraDestacada,
+  EncabezadoPantalla,
+  EstadoPantalla,
+} from '@hackods/ui';
 
 import { avisarCambioLocal } from '../../app/sync.js';
 import {
@@ -25,9 +30,10 @@ import { ServicioResumen } from './ServicioResumen.js';
  *
  * Estados: cargando / vacio (sin padron) / error / pendiente de sincronizar.
  *
- * Presentacion movil: primero "cuantas raciones van" (la cifra), despues la
- * lista de personas con el boton de servir grande, y debajo las razones: la
- * accion repetida -servir una por una- queda al alcance del pulgar.
+ * Orden: las razones van ANTES de la lista de personas porque son el requisito
+ * de la accion. Antes estaban despues: se tocaba "Servir ración", la app
+ * respondia "faltan razones" y habia que bajar a buscarlas. En escritorio la
+ * tarjeta de razones queda fija a la derecha mientras se recorre el padron.
  */
 /**
  * El mínimo de razones no se copia acá: lo manda `racionSchema.razones` y se
@@ -35,9 +41,6 @@ import { ServicioResumen } from './ServicioResumen.js';
  * antes de intentar guardar; el rechazo real es del contrato.
  */
 const RAZONES_DEL_CONTRATO = racionSchema.shape.razones;
-
-const CAMPO =
-  'min-h-[56px] w-full rounded-oc border border-borde-fuerte bg-superficie px-3 py-2 text-base';
 
 interface Fila {
   readonly codigoP: string;
@@ -105,7 +108,7 @@ export function ServicioPage() {
         setError(
           error instanceof RacionDuplicada
             ? error.message
-            : 'No se pudo guardar la ración en el dispositivo. Intentá otra vez.',
+            : 'No se pudo guardar la ración en el dispositivo. Intenta otra vez.',
         );
       })
       .finally(() => {
@@ -116,102 +119,118 @@ export function ServicioPage() {
   const totalGuardadas = filas?.filter((f) => f.guardada).length ?? 0;
 
   return (
-    <section className="flex flex-col gap-4">
-      <header className="flex flex-col gap-1">
-        <h2 className="text-xl font-bold">Servicio del día</h2>
-        <p className="text-sm text-texto-suave">
-          Raciones de hoy. Cada ración se explica con al menos dos razones.
-        </p>
-      </header>
+    <section className="flex flex-col gap-4 lg:gap-6">
+      <EncabezadoPantalla
+        titulo="Servicio del día"
+        descripcion="Raciones de hoy. Cada ración se explica con al menos dos razones."
+      />
 
-      {personas !== null && personas.length > 0 ? (
-        <ServicioResumen menus={menusDelDiaDemo()} personas={personas} />
-      ) : null}
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] lg:items-start lg:gap-6">
+        {/* A · la cifra del dia */}
+        <div className="flex flex-col gap-4 lg:col-start-1 lg:row-start-1">
+          {cargando ? (
+            <EstadoPantalla estado="cargando">
+              Leyendo el servicio guardado en este dispositivo…
+            </EstadoPantalla>
+          ) : null}
 
-      {cargando ? (
-        <EstadoPantalla estado="cargando">
-          Leyendo el servicio guardado en este dispositivo…
-        </EstadoPantalla>
-      ) : null}
+          {filas !== null && filas.length === 0 ? (
+            <div className="oc-tarjeta flex flex-col gap-1" data-estado="vacio">
+              <span className="oc-estado__etiqueta text-texto-suave">Sin padrón</span>
+              <p>No hay personas en el padrón. Primero se da de alta a alguien en Padrón.</p>
+            </div>
+          ) : null}
 
-      {filas !== null && filas.length === 0 ? (
-        <div className="oc-tarjeta flex flex-col gap-1" data-estado="vacio">
-          <span className="oc-estado__etiqueta text-texto-suave">Sin padrón</span>
-          <p>No hay personas en el padrón. Primero se da de alta a alguien en Padrón.</p>
-        </div>
-      ) : null}
-
-      {/* La cifra del dia: cuantas van de cuantas. */}
-      {filas !== null && filas.length > 0 ? (
-        <div className="oc-tarjeta flex items-baseline justify-between gap-3">
-          <p className="text-sm text-texto-suave">raciones registradas en este dispositivo</p>
-          <p className="oc-cifra">{totalGuardadas}</p>
-        </div>
-      ) : null}
-
-      {error !== null ? <EstadoPantalla estado="error">{error}</EstadoPantalla> : null}
-
-      {ultimaGuardada !== null ? (
-        <div
-          role="status"
-          className="oc-tarjeta border-primario bg-primario-suave"
-          data-estado="pendiente-de-sincronizar"
-        >
-          <p className="text-lg font-bold">Ración de {ultimaGuardada} guardada</p>
-          <p className="flex flex-wrap items-center gap-2 text-sm text-texto-suave">
-            <span className="oc-pendiente">Pendiente de sincronizar</span>
-            La red no hizo falta.
-          </p>
-        </div>
-      ) : null}
-
-      <div className="flex flex-col gap-1 text-sm text-texto-suave" aria-label="Datos de la ración">
-        <p>
-          Peso y nutrientes: <strong>sin dato</strong> — no se inventan cifras.
-        </p>
-      </div>
-
-      {filas !== null && filas.length > 0 ? (
-        <ul className="flex flex-col gap-2" aria-label="Personas del padrón">
-          {filas.map((fila) => (
-            <li
-              key={fila.codigoP}
-              className="oc-tarjeta flex flex-wrap items-center justify-between gap-2"
+          {filas !== null && filas.length > 0 ? (
+            <CifraDestacada
+              etiqueta="Raciones registradas"
+              nota={`de ${filas.length} personas en este dispositivo`}
             >
-              <span className="font-mono text-lg font-bold">{fila.codigoP}</span>
-              {fila.guardada ? (
-                <span className="oc-pendiente">Ración registrada · pendiente de sincronizar</span>
-              ) : (
-                <BotonGrande disabled={guardando} onClick={() => guardar(fila.codigoP)}>
-                  Servir ración
-                </BotonGrande>
-              )}
-            </li>
-          ))}
-        </ul>
-      ) : null}
+              <span data-testid="total-raciones-cifra">{totalGuardadas}</span>
+            </CifraDestacada>
+          ) : null}
 
-      <fieldset className="oc-tarjeta flex flex-col gap-2">
-        <legend className="px-1 text-sm font-bold">Razones de la ración (más de una)</legend>
-        {razones.map((valor, indice) => (
-          <label key={indice} className="flex flex-col gap-1">
-            <span className="text-sm">Razón {indice + 1}</span>
-            <input
-              name={`razon-${indice + 1}`}
-              value={valor}
-              onChange={(e) =>
-                setRazones((rs) => rs.map((r, i) => (i === indice ? e.target.value : r)))
-              }
-              className={CAMPO}
-            />
-          </label>
-        ))}
-        <div>
-          <BotonGrande variante="secundario" onClick={() => setRazones((rs) => [...rs, ''])}>
-            Agregar otra razón
-          </BotonGrande>
+          {ultimaGuardada !== null ? (
+            <div
+              role="status"
+              className="oc-tarjeta flex flex-col gap-1 border-primario bg-primario-suave"
+              data-estado="pendiente-de-sincronizar"
+            >
+              <p className="text-lg font-bold">Ración de {ultimaGuardada} guardada</p>
+              <p className="flex flex-wrap items-center gap-2 text-sm text-texto-suave">
+                Guardado en esta tablet. Todavía no se envía a ninguna parte. La red no hizo falta.
+              </p>
+            </div>
+          ) : null}
+
+          {error !== null ? <EstadoPantalla estado="error">{error}</EstadoPantalla> : null}
         </div>
-      </fieldset>
+
+        {/* B · el requisito: las razones, junto a la accion */}
+        {filas !== null && filas.length > 0 ? (
+          <div className="oc-tarjeta flex flex-col gap-2 lg:sticky lg:top-2 lg:col-start-2 lg:row-span-2 lg:row-start-1">
+            <h3 className="text-sm font-bold">Razones de la ración (más de una)</h3>
+            <p className="text-xs text-texto-suave">
+              Se guardan con la ración que sirvas; después se limpian para la siguiente persona.
+            </p>
+            {razones.map((valor, indice) => (
+              <label key={indice} className="flex flex-col gap-1">
+                <span className="text-sm">Razón {indice + 1}</span>
+                <input
+                  name={`razon-${indice + 1}`}
+                  value={valor}
+                  onChange={(e) =>
+                    setRazones((rs) => rs.map((r, i) => (i === indice ? e.target.value : r)))
+                  }
+                  className="oc-campo"
+                />
+              </label>
+            ))}
+            <div className="[&>button]:w-full">
+              <BotonGrande variante="secundario" onClick={() => setRazones((rs) => [...rs, ''])}>
+                Agregar otra razón
+              </BotonGrande>
+            </div>
+            <p className="text-xs text-texto-suave">
+              Peso y nutrientes: <strong>sin dato</strong> — no se inventan cifras.
+            </p>
+          </div>
+        ) : null}
+
+        {/* C · a quien se sirve */}
+        <div className="flex flex-col gap-4 lg:col-start-1 lg:row-start-2">
+          {filas !== null && filas.length > 0 ? (
+            <ul className="flex flex-col gap-2" aria-label="Personas del padrón">
+              {filas.map((fila) => (
+                <li
+                  key={fila.codigoP}
+                  className="oc-tarjeta flex flex-wrap items-center justify-between gap-3 py-3"
+                >
+                  <span className="font-mono text-lg font-bold">{fila.codigoP}</span>
+                  {fila.guardada ? (
+                    <span className="oc-pendiente">Ración registrada · guardada en esta tablet</span>
+                  ) : (
+                    <div className="w-full sm:w-auto [&>button]:w-full sm:[&>button]:w-auto">
+                      <BotonGrande disabled={guardando} onClick={() => guardar(fila.codigoP)}>
+                        Servir ración
+                      </BotonGrande>
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+
+          {personas !== null && personas.length > 0 ? (
+            <section className="flex flex-col gap-2" aria-label="Menú firmado del día">
+              <h3 className="text-sm font-bold uppercase tracking-wide text-texto-suave">
+                Menú firmado del día
+              </h3>
+              <ServicioResumen menus={menusDelDiaDemo()} personas={personas} />
+            </section>
+          ) : null}
+        </div>
+      </div>
     </section>
   );
 }

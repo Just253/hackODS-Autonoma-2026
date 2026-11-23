@@ -121,21 +121,21 @@ resuelve sembrando el menú publicado en `seed.sql`, no construyendo CU-17 antes
 | `hecho` | PR mergeado y issue cerrado. | El merge (keyword de cierre) o el orquestador. |
 | `descartado` | Se decidió no hacerlo: issue cerrado como *not planned* con motivo. | El orquestador o quien tenga el alcance. |
 
-Estado actual de `CU-01`…`CU-09`, verificado contra `main` en `16f9419`:
+Estado actual de `CU-01`…`CU-09`, verificado contra `main` en `bd82ca8` (261 tests):
 
 | CU | estado | ¿sirve hoy? | evidencia |
 |---|---|---|---|
 | CU-01 | `hecho` | ⚠️ | PWA y SW en `main` (#16). Probado en código, **no** en modo avión real. |
-| CU-02 | `en_curso` | ❌ | PR #30 mergeado, pero el alta **no guarda al hacer click** (#41). |
-| CU-03 | `en_revision` | ⚠️ | `servirDelDia` en `main` (#26); la pantalla va en el PR #44. |
-| CU-04 | `en_curso` | ⚠️ | Pantalla en `main` (#32), pero pinta **6 de 6 en rojo** y dice «6 por revisar» (#9); sin enchufe al presupuesto. |
+| CU-02 | `hecho` | ✅ | El alta guarda al hacer click desde #57; test con click, no `fireEvent.submit`. |
+| CU-03 | `hecho` | ✅ | `servirDelDia` (#26) y la pantalla con sello/hash/A-B/porción/total (#57). |
+| CU-04 | `en_curso` | ⚠️ | Pantalla en `main` con **2 de 6** (#32/#57); falta el enchufe al presupuesto y la captura. |
 | CU-05 | `en_curso` | ⚠️ | Pantalla en `main` (#31) sobre fixture; confirmar no mueve el presupuesto (#9). |
-| CU-06 | `en_curso` | ✅ | Mediana real, +12,00 %, descarta el outlier; la serie es fixture, no cargada. |
+| CU-06 | `hecho` | ✅ | 6 insumos con precio típico y variación desde #61; el detalle sale de `medianaMovil`. Sigue siendo fixture. |
 | CU-07 | `hecho` | ✅ | PR #37 mergeado (`377bff1`): solicitud, agregado sin identidades y reporte. |
-| CU-08 | `en_revision` | ⚠️ | PR #45: outbox Dexie real y badge; el badge se lee una sola vez y no se refresca. |
+| CU-08 | `hecho` | ✅ | Outbox Dexie + badge reactivo desde #67; el sync es **local**, no habla con Supabase. |
 | CU-09 | `en_curso` | ⚠️ | El pie dice «datos simulados / no es un diagnóstico»; faltan «no prescribe dietas» y «no guarda nombres en la nube». |
 
-«Sirve hoy» significa que se puede mostrar sin explicar por qué no anda. Hoy: **2 sí, 6 a medias, 1 no**.
+«Sirve hoy» significa que se puede mostrar sin explicar por qué no anda. Hoy: **5 sí, 4 a medias, 0 no**.
 
 `CU-15` y `CU-16` ya tienen su parte de lectura en `main`: #23 mergeó la RLS de salud y las vistas
 agregadas. Siguen sin archivo propio, así que se quedan en la tabla del catálogo.

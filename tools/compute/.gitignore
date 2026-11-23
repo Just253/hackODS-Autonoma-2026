@@ -1,0 +1,5 @@
+# Lo que se genera en esta carpeta al correr el servicio. Nada de esto se commitea.
+.token
+*.pid
+*.log
+tunel-url.txt

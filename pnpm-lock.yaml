@@ -38,6 +38,9 @@ importers:
       '@hackods/domain':
         specifier: workspace:*
         version: link:../../packages/domain
+      '@hackods/sync':
+        specifier: workspace:*
+        version: link:../../packages/sync
       '@hackods/ui':
         specifier: workspace:*
         version: link:../../packages/ui
