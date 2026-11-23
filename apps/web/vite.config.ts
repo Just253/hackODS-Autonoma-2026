@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { fileURLToPath, URL } from 'node:url';
 
 import tailwindcss from '@tailwindcss/vite';
@@ -51,5 +52,10 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+  },
+  test: {
+    // Entorno de DOM + IndexedDB falsa: el offline se prueba sin red y sin navegador.
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.ts'],
   },
 });
