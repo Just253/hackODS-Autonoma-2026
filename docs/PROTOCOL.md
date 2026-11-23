@@ -197,7 +197,7 @@ heartbeat/v1 issue:142 agent:ana-lead-3f2a at:2026-11-23T20:10Z head:9c1e4ab sta
 - Un claim **nunca** se hereda por silencio de un agente: siempre hay una línea `reclaim/v1` con evidencia. Si dos reclaman a la vez, gana el timestamp más viejo del `notice` y el otro espera; si es el mismo minuto, decide el humano del área.
 
 ```
-reclaim/v1 issue:142 by:@caro agent:caro-lead-77c1 from:@ana agent:ana-lead-3f2a last_activity:2026-11-22T09:14Z evidence:9c1e4ab at:2026-11-24T11:00Z notice:12h
+reclaim/v1 issue:142 by:@caro agent:caro-lead-77c1 from:@ana agent:ana-lead-3f2a last_activity:2026-11-23T09:14Z evidence:9c1e4ab at:2026-11-24T11:00Z notice:12h
 ```
 
 Acción mecánica del reclaim: comentario + `gh issue edit 142 --add-assignee @caro`, y la rama vieja **no se borra ni se reescribe**: se sigue desde el último commit con `git rebase main` en un worktree nuevo, o se empieza de cero y se cierra el PR viejo con `dup:`/`superseded:`.
@@ -1033,7 +1033,7 @@ release/v1 issue:142 by:@ana agent:ana-lead-3f2a reason:done at:2026-11-23T18:40
 ```
 
 ```text
-reclaim/v1 issue:142 by:@caro agent:caro-lead-77c1 from:@ana agent:ana-lead-3f2a last_activity:2026-11-22T09:14Z evidence:9c1e4ab at:2026-11-24T11:00Z notice:12h
+reclaim/v1 issue:142 by:@caro agent:caro-lead-77c1 from:@ana agent:ana-lead-3f2a last_activity:2026-11-23T09:14Z evidence:9c1e4ab at:2026-11-24T11:00Z notice:12h
 ```
 
 ```text

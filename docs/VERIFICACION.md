@@ -542,7 +542,7 @@ release/v1 issue:142 by:@ana agent:ana-lead-3f2a reason:done at:2026-11-23T18:40
 ```
 
 ```text
-reclaim/v1 issue:142 by:@caro agent:caro-lead-77c1 from:@ana agent:ana-lead-3f2a last_activity:2026-11-22T09:14Z evidence:9c1e4ab at:2026-11-24T11:00Z notice:12h
+reclaim/v1 issue:142 by:@caro agent:caro-lead-77c1 from:@ana agent:ana-lead-3f2a last_activity:2026-11-23T09:14Z evidence:9c1e4ab at:2026-11-24T11:00Z notice:12h
 ```
 
 Campos que agrega este doc y por qué:
@@ -600,7 +600,7 @@ Esto sigue 02 §3.5 al pie de la letra. Resumen operativo:
 2. **Aviso público con plazo (`notice:12h`)**, no takeover inmediato:
 
    ```text
-   reclaim/v1 issue:142 by:@caro agent:caro-lead-77c1 from:@ana agent:ana-lead-3f2a last_activity:2026-11-22T09:14Z evidence:9c1e4ab at:2026-11-24T11:00Z notice:12h
+   reclaim/v1 issue:142 by:@caro agent:caro-lead-77c1 from:@ana agent:ana-lead-3f2a last_activity:2026-11-23T09:14Z evidence:9c1e4ab at:2026-11-24T11:00Z notice:12h
 
    @ana: claim sin actividad desde el 22 (idle 51h, ttl 24h; rama sin commits nuevos; PR #187 sin updates).
    Si no hay heartbeat/v1 válido antes de 2026-11-24T23:00Z, sigo yo con fp_api_auth_login_timeout.
