@@ -8,6 +8,8 @@
  *   - `supabase/functions` — Deno, tiene su propio lint.
  *   - `apps/web/public`    — service worker crudo; `self`/`caches` son globals del navegador.
  *   - `scripts/*.mjs`      — herramientas de proceso que imprimen a propósito en la terminal.
+ *   - `tools/**`           — el compute de pruebas (#64): herramientas de proceso, mismo criterio,
+ *                            con globals de Node que el flat config no declara (`process`, `Buffer`).
  *   - `dist/`, `node_modules`, `.worktrees` (copias del repo, no fuentes).
  */
 import js from '@eslint/js';
@@ -24,6 +26,7 @@ export default tseslint.config(
       'supabase/functions/**',
       'apps/web/public/**',
       'scripts/**',
+      'tools/**',
     ],
   },
   js.configs.recommended,
