@@ -17,6 +17,10 @@ Modelo y alcance: `docs/DECISIONES.md` D2/D3/D4/D8.
 - **Conciliación de comprobante**: `conciliarComprobante()` — cuadra/faltante/sobrante por ítem.
 - **Parser de captura** (texto o voz transcrita): `parsearCaptura()` — ítems, unidades y montos
   ambiguos marcados para revisión, nunca `parseFloat` sobre el texto.
+- **Dictado tolerante a ASR** (`parsearDictado`, #98): reconoce el insumo contra un diccionario base
+  con Levenshtein sobre forma escrita y clave fonética (≤2, ≤1 si es corta); sin match cercano no
+  crea ítem (nunca inventa). `"2 kilos ne arothi un litro ne afeite"` → arroz 2 kg y aceite 1 lt.
+  `normalizarBase(url)` quita las barras finales de `COMPUTE_URL` (`//extract` era 404).
 - **Configuración de clasificación**: `CONFIG_CLASIFICACION` con los umbrales calibrados
   (`τ=0,69`, margen 0,04, piso 0,45); los tests no repiten los números.
 - **Aritmética de dominio**: `mediana()`, redondeo, comparación de instantes.

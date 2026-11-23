@@ -19,6 +19,15 @@ import { TAU } from './clasificacion/config.js';
 // Dictado (audio -> texto -> items hablados)
 // ---------------------------------------------------------------------------
 
+/**
+ * Base de una URL de compute sin barras finales. `COMPUTE_URL` configurada con
+ * `/` al final producía `//extract` -> 404 en el smoke real (#98). La ruta
+ * interna (`/api/v1`) se conserva: solo se quitan las barras de cola.
+ */
+export function normalizarBase(url: string): string {
+  return url.replace(/\/+$/, '');
+}
+
 export interface ItemDictado {
   readonly insumoTexto: string;
   readonly cantidad: number | null;
@@ -80,25 +89,194 @@ function unidadEn(trozo: string): { unidad: string | null; resto: string } {
   return { unidad: null, resto: trozo };
 }
 
-function limpiarProducto(trozo: string): string {
-  return trozo
+/** Minúsculas, sin tildes (NFD) y sin puntuación: lo que el ASR puede ensuciar. */
+function normalizarIngreso(texto: string): string {
+  return texto
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, ' ')
     .replace(/\s+/g, ' ')
-    .trim()
-    .replace(/^(?:de\s+|del\s+)/i, '')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .toLowerCase();
+    .trim();
+}
+
+/**
+ * Clave fonética aproximada del español (no IPA, solo para tolerar ASR):
+ * `h` muda, `v`→`b`, `z`/`c(e,i)`→`s`, `c`→`k`, `q`→`k`, `ll`→`y`, `y`→`i`,
+ * `x`→`ks`, `w`→`u` y letras dobles colapsadas. "arroz"→"aros", "arothi"→
+ * "aroti", "afeite"→"afeite": a distancia ≤2, el Levenshtein los cruza.
+ */
+function fonetica(palabra: string): string {
+  let s = normalizarIngreso(palabra).replace(/[^a-z]/g, '');
+  s = s.replace(/h/g, '');
+  s = s.replace(/v/g, 'b');
+  s = s.replace(/z/g, 's');
+  s = s.replace(/c(?=[ei])/g, 's');
+  s = s.replace(/c/g, 'k');
+  s = s.replace(/q/g, 'k');
+  s = s.replace(/ll/g, 'y');
+  s = s.replace(/y/g, 'i');
+  s = s.replace(/x/g, 'ks');
+  s = s.replace(/w/g, 'u');
+  s = s.replace(/(.)\1+/g, '$1');
+  return s;
+}
+
+/**
+ * Insumos base de una olla. El dictado se compara solo contra esta lista: lo que
+ * no está (ni por fuzzy) no crea ítem. `insumoTexto` devuelve la forma canónica.
+ */
+const INSUMOS_BASE: readonly string[] = [
+  'arroz',
+  'aceite',
+  'papa',
+  'lentejas',
+  'huevo',
+  'quinua',
+  'pollo',
+  'azúcar',
+  'sal',
+  'leche',
+  'zanahoria',
+  'frijol',
+  'avena',
+  'cebolla',
+  'tomate',
+  'camote',
+  'plátano',
+  'atún',
+  'fideo',
+  'trigo',
+  'garbanzo',
+  'haba',
+  'queso',
+  'mantequilla',
+  'panela',
+];
+
+/**
+ * Palabras que el ASR mete entre el número y el insumo ("2 kilos **ne** arroz"):
+ * se saltan y no se confunden con el producto.
+ */
+const PALABRAS_RUIDO: ReadonlySet<string> = new Set([
+  'de',
+  'del',
+  'la',
+  'el',
+  'los',
+  'las',
+  'un',
+  'una',
+  'uno',
+  'y',
+  'ne',
+  'en',
+  'eh',
+  'n',
+]);
+
+function levenshtein(a: string, b: string): number {
+  if (a === b) return 0;
+  if (a.length === 0) return b.length;
+  if (b.length === 0) return a.length;
+  let previa: number[] = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i += 1) {
+    const actual: number[] = [i];
+    for (let j = 1; j <= b.length; j += 1) {
+      const coste = a[i - 1] === b[j - 1] ? 0 : 1;
+      actual[j] = Math.min((actual[j - 1] ?? 0) + 1, (previa[j] ?? 0) + 1, (previa[j - 1] ?? 0) + coste);
+    }
+    previa = actual;
+  }
+  return previa[b.length] ?? 0;
+}
+
+/**
+ * Distancia máxima tolerada: 2 para palabras largas, 1 para cortas (≤4 letras).
+ * `sal`/`sol` a 1 sí; `arroz`/`arros` a 1; `frijol`/`frychol` a 2.
+ */
+function distanciaMaxima(palabra: string): number {
+  return palabra.length <= 4 ? 1 : 2;
+}
+
+/** Insumo canónico (forma declarada, con tildes) para una palabra, o `null` si no matchea. */
+function insumoCanonico(palabra: string): string | null {
+  const p = normalizarIngreso(palabra);
+  if (p === '') return null;
+  const pFon = fonetica(p);
+  let mejor: { insumo: string; distancia: number } | null = null;
+  for (const insumo of INSUMOS_BASE) {
+    const candidato = normalizarIngreso(insumo);
+    if (p === candidato) return insumo;
+    // Distancia mínima entre la forma escrita y la fonética: el ASR se equivoca
+    // tanto en letras como en sonido ("arothi" es "arroz" fonético, no escrito).
+    // La fonética exige claves de ≥3 letras: un "st" de ruido no es "sal".
+    const candidatoFon = fonetica(candidato);
+    const distanciaFon = pFon.length >= 3 && candidatoFon.length >= 3 ? levenshtein(pFon, candidatoFon) : Infinity;
+    const distancia = Math.min(levenshtein(p, candidato), distanciaFon);
+    if (distancia <= distanciaMaxima(p) && (mejor === null || distancia < mejor.distancia)) {
+      mejor = { insumo, distancia };
+    }
+  }
+  return mejor?.insumo ?? null;
+}
+
+/** Primer insumo reconocible del trozo (ya sin número ni unidad). */
+function buscarInsumo(resto: string): { insumo: string; sobrante: string } | null {
+  const palabras = normalizarIngreso(resto).split(' ').filter(Boolean);
+  for (let i = 0; i < palabras.length; i += 1) {
+    const palabra = palabras[i] ?? '';
+    if (PALABRAS_RUIDO.has(palabra)) continue;
+    const insumo = insumoCanonico(palabra);
+    if (insumo !== null) {
+      const sobrante = palabras.filter((_, j) => j !== i).join(' ');
+      return { insumo, sobrante };
+    }
+  }
+  return null;
+}
+
+/**
+ * Trozos del dictado. Además de la separación por coma / "y" / salto, sin la
+ * cual el ASR pega dos productos ("2 kilos ne arroz 1 litro ne aceite"), se
+ * corta al aparecer un segundo número (dígito o palabra): un nuevo número
+ * arranca otro ítem. Los casos exactos con coma no cambian.
+ */
+function trocearDictado(texto: string): string[] {
+  const base = texto.split(RE_SEPARADOR).filter((t) => t.trim() !== '');
+  const salida: string[] = [];
+  for (const trozo of base) {
+    const palabras = trozo.trim().split(/\s+/);
+    let actual: string[] = [];
+    let conNumero = false;
+    for (const palabra of palabras) {
+      const esNumero = RE_NUMERO.test(palabra) || PALABRAS[palabra.toLowerCase()] !== undefined;
+      if (esNumero && conNumero && actual.length > 0) {
+        salida.push(actual.join(' '));
+        actual = [];
+        conNumero = false;
+      }
+      actual.push(palabra);
+      if (esNumero) conNumero = true;
+    }
+    if (actual.length > 0) salida.push(actual.join(' '));
+  }
+  return salida;
 }
 
 /**
  * "2 kilos de arroz, medio saco de papa" -> `[{arroz, 2, kg}, {papa, 0.5, saco}]`.
  * Cada trozo con un número (dígito o palabra) y un producto. Un trozo sin
  * producto se descarta: nunca se adivina cuál.
+ *
+ * Tolerante a ASR (#98): el producto se reconoce contra `INSUMOS_BASE` con
+ * Levenshtein (≤2, ≤1 si la palabra es corta); sin match cercano no hay ítem
+ * (`"2 kilos ne arothi"` -> arroz 2 kg; `"2 kilos de xyz"` -> []).
  */
 export function parsearDictado(texto: string): ItemDictado[] {
   if (typeof texto !== 'string' || texto.trim() === '') return [];
 
-  const trozos = texto.split(RE_SEPARADOR).filter((t) => t.trim() !== '');
+  const trozos = trocearDictado(texto);
   const items: ItemDictado[] = [];
 
   for (const trozo of trozos) {
@@ -119,7 +297,10 @@ export function parsearDictado(texto: string): ItemDictado[] {
     }
 
     const { unidad, resto: sinUnidad } = unidadEn(resto);
-    const insumoTexto = limpiarProducto(sinUnidad);
+
+    // Solo el diccionario (exacto o fuzzy) crea ítem: lo que no matchea no se
+    // adivina ("2 kilos de xyz" -> []).
+    const insumoTexto = buscarInsumo(sinUnidad)?.insumo ?? '';
     if (insumoTexto === '' || cantidad === null) continue;
 
     items.push({ insumoTexto, cantidad, unidad });
