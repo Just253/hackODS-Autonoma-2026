@@ -7,10 +7,16 @@
 --   * Sin documento, sin telefono, sin direccion, sin fotos.
 --   * Los valores de salud son ficticios y estan declarados aca como tales.
 
-insert into ollas (id, titulo, codigo, tipo, distrito) values
-  ('00000000-0000-4000-8000-000000000001', 'Olla Demo Villa El Salvador', 'DEMHAA', 'comun', 'Villa El Salvador'),
-  ('00000000-0000-4000-8000-000000000002', 'Olla Demo San Juan de Lurigancho', 'DEMHBB', 'comun', 'San Juan de Lurigancho'),
-  ('00000000-0000-4000-8000-000000000003', 'Comedor Demo Comas', 'DEMHCC', 'comedor_pca', 'Comas')
+insert into zonas (id, nombre, distritos) values
+  ('lima-sur',  'Lima Sur',  array['Villa El Salvador', 'Villa Maria del Triunfo', 'Lurin', 'Pachacamac']),
+  ('lima-este', 'Lima Este', array['Ate', 'San Juan de Lurigancho']),
+  ('lima-norte','Lima Norte',array['Comas', 'Independencia'])
+on conflict (id) do nothing;
+
+insert into ollas (id, titulo, codigo, tipo, distrito, zona_id) values
+  ('00000000-0000-4000-8000-000000000001', 'Olla Demo Villa El Salvador', 'DEMHAA', 'comun', 'Villa El Salvador', 'lima-sur'),
+  ('00000000-0000-4000-8000-000000000002', 'Olla Demo San Juan de Lurigancho', 'DEMHBB', 'comun', 'San Juan de Lurigancho', 'lima-este'),
+  ('00000000-0000-4000-8000-000000000003', 'Comedor Demo Comas', 'DEMHCC', 'comedor_pca', 'Comas', 'lima-norte')
 on conflict (id) do nothing;
 
 -- Hashes de PIN ficticios: bcrypt real de '1234' (docs/adr/0008-enrolamiento.md).
